@@ -83,17 +83,20 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductResponse getProductById(Long id) {
         return toResponse(findById(id));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ProductResponse> searchProducts(String name, Long categoryId, Long farmId, Pageable pageable) {
         return productRepository.searchProducts(name, categoryId, farmId, pageable)
                 .map(this::toResponse);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ProductResponse> getTopSellingProducts(Pageable pageable) {
         return productRepository.findTopSellingProducts(pageable).map(this::toResponse);
     }

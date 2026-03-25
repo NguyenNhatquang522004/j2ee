@@ -74,16 +74,19 @@ public class FarmServiceImpl implements FarmService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public FarmResponse getFarmById(Long id) {
         return toResponse(findById(id));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<FarmResponse> getActiveFarms(Pageable pageable) {
         return farmRepository.findByIsActiveTrue(pageable).map(this::toResponse);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<FarmResponse> searchFarms(String name, Pageable pageable) {
         return farmRepository.findByNameContainingIgnoreCase(name, pageable).map(this::toResponse);
     }

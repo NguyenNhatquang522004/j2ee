@@ -26,4 +26,6 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     List<Object[]> findTopSellingProductsWithStats();
 
     boolean existsByOrderUserIdAndProductId(Long userId, Long productId);
+
+    boolean existsByOrderUserIdAndProductIdAndOrderStatus(Long userId, Long productId, nhom5.demo.enums.OrderStatusEnum status);
 }

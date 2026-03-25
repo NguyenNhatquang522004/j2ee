@@ -36,9 +36,10 @@ public class ReviewServiceImpl implements ReviewService {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", request.getProductId()));
 
-        // Validate: user must have purchased this product
-        if (!orderItemRepository.existsByOrderUserIdAndProductId(user.getId(), product.getId())) {
-            throw new BusinessException("Bạn chỉ có thể đánh giá sản phẩm đã mua");
+        // Validate: user must have purchased and received this product
+        if (!orderItemRepository.existsByOrderUserIdAndProductIdAndOrderStatus(
+                user.getId(), product.getId(), nhom5.demo.enums.OrderStatusEnum.DELIVERED)) {
+            throw new BusinessException("Bạn chỉ có thể đánh giá sản phẩm sau khi đã nhận được hàng");
         }
 
         if (reviewRepository.existsByProductIdAndUserId(product.getId(), user.getId())) {
