@@ -21,13 +21,16 @@
     cursor: pointer;
     border: none;
   }
+
   .btn-primary:hover {
     background-color: #15803d;
   }
+
   .btn-primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
+
   .btn-secondary {
     background-color: white;
     color: #374151;
@@ -38,9 +41,11 @@
     transition: background-color 0.2s;
     cursor: pointer;
   }
+
   .btn-secondary:hover {
     background-color: #f3f4f6;
   }
+
   .btn-danger {
     background-color: #dc2626;
     color: white;
@@ -51,9 +56,11 @@
     cursor: pointer;
     border: none;
   }
+
   .btn-danger:hover {
     background-color: #b91c1c;
   }
+
   .input-field {
     width: 100%;
     border: 1px solid #d1d5db;
@@ -62,14 +69,16 @@
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
   }
+
   .input-field:focus {
     border-color: #16a34a;
-    box-shadow: 0 0 0 3px rgba(22,163,74,0.15);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
   }
+
   .card {
     background-color: white;
     border-radius: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
     border: 1px solid #f3f4f6;
     padding: 1.5rem;
   }
@@ -81,6 +90,7 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
@@ -109,9 +119,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -122,9 +134,11 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }

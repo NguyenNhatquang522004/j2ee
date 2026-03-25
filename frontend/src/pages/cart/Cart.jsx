@@ -5,113 +5,113 @@ import Layout from '../../components/Layout';
 import toast from 'react-hot-toast';
 
 export default function Cart() {
-  const { cart, loading, updateItem, removeItem, clearCart } = useCart();
-  const { user } = useAuth();
-  const navigate = useNavigate();
+    const { cart, loading, updateItem, removeItem, clearCart } = useCart();
+    const { user } = useAuth();
+    const navigate = useNavigate();
 
-  if (!user) return (
-    <Layout>
-      <div className="text-center py-20">
-        <p className="text-gray-500 mb-4">Vui lòng đăng nhập để xem giỏ hàng</p>
-        <Link to="/login" className="btn-primary">Đăng nhập</Link>
-      </div>
-    </Layout>
-  );
-
-  if (loading) return <Layout><div className="text-center py-20 text-gray-400">Đang tải...</div></Layout>;
-
-  const items = cart?.items || [];
-
-  return (
-    <Layout>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Giỏ hàng của bạn</h1>
-
-      {items.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="text-6xl mb-4">🛒</div>
-          <p className="text-gray-500 mb-4">Giỏ hàng trống</p>
-          <Link to="/products" className="btn-primary">Mua sắm ngay</Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Items */}
-          <div className="lg:col-span-2 space-y-4">
-            {items.map((item) => (
-              <CartItem key={item.cartItemId} item={item} onUpdate={updateItem} onRemove={removeItem} />
-            ))}
-            <button
-              onClick={async () => {
-                if (!confirm('Xóa tất cả sản phẩm?')) return;
-                await clearCart();
-                toast.success('Đã xóa giỏ hàng');
-              }}
-              className="btn-danger text-sm"
-            >
-              Xóa tất cả
-            </button>
-          </div>
-
-          {/* Summary */}
-          <div className="card h-fit">
-            <h2 className="font-bold text-lg text-gray-800 mb-4">Tóm tắt đơn hàng</h2>
-            <div className="space-y-2 text-sm mb-4">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Số lượng sản phẩm</span>
-                <span>{items.reduce((s, i) => s + i.quantity, 0)}</span>
-              </div>
-              <div className="flex justify-between font-semibold text-base border-t pt-2">
-                <span>Tổng cộng</span>
-                <span className="text-green-700">{cart?.totalAmount?.toLocaleString('vi-VN')}đ</span>
-              </div>
+    if (!user) return (
+        <Layout>
+            <div className="text-center py-20">
+                <p className="text-gray-500 mb-4">Vui lòng đăng nhập để xem giỏ hàng</p>
+                <Link to="/login" className="btn-primary">Đăng nhập</Link>
             </div>
-            <button onClick={() => navigate('/checkout')} className="btn-primary w-full">
-              Đặt hàng →
-            </button>
-          </div>
-        </div>
-      )}
-    </Layout>
-  );
+        </Layout>
+    );
+
+    if (loading) return <Layout><div className="text-center py-20 text-gray-400">Đang tải...</div></Layout>;
+
+    const items = cart?.items || [];
+
+    return (
+        <Layout>
+            <h1 className="text-2xl font-bold text-gray-800 mb-6">Giỏ hàng của bạn</h1>
+
+            {items.length === 0 ? (
+                <div className="text-center py-20">
+                    <div className="text-6xl mb-4">🛒</div>
+                    <p className="text-gray-500 mb-4">Giỏ hàng trống</p>
+                    <Link to="/products" className="btn-primary">Mua sắm ngay</Link>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Items */}
+                    <div className="lg:col-span-2 space-y-4">
+                        {items.map((item) => (
+                            <CartItem key={item.cartItemId} item={item} onUpdate={updateItem} onRemove={removeItem} />
+                        ))}
+                        <button
+                            onClick={async () => {
+                                if (!confirm('Xóa tất cả sản phẩm?')) return;
+                                await clearCart();
+                                toast.success('Đã xóa giỏ hàng');
+                            }}
+                            className="btn-danger text-sm"
+                        >
+                            Xóa tất cả
+                        </button>
+                    </div>
+
+                    {/* Summary */}
+                    <div className="card h-fit">
+                        <h2 className="font-bold text-lg text-gray-800 mb-4">Tóm tắt đơn hàng</h2>
+                        <div className="space-y-2 text-sm mb-4">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Số lượng sản phẩm</span>
+                                <span>{items.reduce((s, i) => s + i.quantity, 0)}</span>
+                            </div>
+                            <div className="flex justify-between font-semibold text-base border-t pt-2">
+                                <span>Tổng cộng</span>
+                                <span className="text-green-700">{cart?.totalAmount?.toLocaleString('vi-VN')}đ</span>
+                            </div>
+                        </div>
+                        <button onClick={() => navigate('/checkout')} className="btn-primary w-full">
+                            Đặt hàng →
+                        </button>
+                    </div>
+                </div>
+            )}
+        </Layout>
+    );
 }
 
 function CartItem({ item, onUpdate, onRemove }) {
-  return (
-    <div className="card flex items-center gap-4">
-      <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
-        {item.productImageUrl ? (
-          <img src={item.productImageUrl} alt={item.productName} className="h-full w-full object-cover" />
-        ) : (
-          <span className="text-3xl">🥦</span>
-        )}
-      </div>
-      <div className="flex-1">
-        <Link to={`/products/${item.productId}`} className="font-semibold text-gray-800 hover:text-green-700">
-          {item.productName}
-        </Link>
-        <p className="text-sm text-gray-500">{item.unitPrice?.toLocaleString('vi-VN')}đ/đơn vị</p>
-        <p className="text-xs text-gray-400">Còn: {item.availableStock}</p>
-      </div>
-      <div className="flex items-center gap-2">
-        <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-          <button
-            onClick={() => { if (item.quantity > 1) onUpdate(item.cartItemId, item.quantity - 1); }}
-            className="px-2 py-1 bg-gray-100 hover:bg-gray-200 font-bold"
-          >-</button>
-          <span className="px-3 py-1 font-semibold">{item.quantity}</span>
-          <button
-            onClick={() => { if (item.quantity < item.availableStock) onUpdate(item.cartItemId, item.quantity + 1); }}
-            className="px-2 py-1 bg-gray-100 hover:bg-gray-200 font-bold"
-          >+</button>
+    return (
+        <div className="card flex items-center gap-4">
+            <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+                {item.productImageUrl ? (
+                    <img src={item.productImageUrl} alt={item.productName} className="h-full w-full object-cover" />
+                ) : (
+                    <span className="text-3xl">🥦</span>
+                )}
+            </div>
+            <div className="flex-1">
+                <Link to={`/products/${item.productId}`} className="font-semibold text-gray-800 hover:text-green-700">
+                    {item.productName}
+                </Link>
+                <p className="text-sm text-gray-500">{item.unitPrice?.toLocaleString('vi-VN')}đ/đơn vị</p>
+                <p className="text-xs text-gray-400">Còn: {item.availableStock}</p>
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                    <button
+                        onClick={() => { if (item.quantity > 1) onUpdate(item.cartItemId, item.quantity - 1); }}
+                        className="px-2 py-1 bg-gray-100 hover:bg-gray-200 font-bold"
+                    >-</button>
+                    <span className="px-3 py-1 font-semibold">{item.quantity}</span>
+                    <button
+                        onClick={() => { if (item.quantity < item.availableStock) onUpdate(item.cartItemId, item.quantity + 1); }}
+                        className="px-2 py-1 bg-gray-100 hover:bg-gray-200 font-bold"
+                    >+</button>
+                </div>
+                <span className="font-bold text-green-700 w-28 text-right">
+                    {item.subtotal?.toLocaleString('vi-VN')}đ
+                </span>
+                <button
+                    onClick={() => onRemove(item.cartItemId)}
+                    className="text-red-500 hover:text-red-700 transition-colors ml-2"
+                    title="Xóa"
+                >✕</button>
+            </div>
         </div>
-        <span className="font-bold text-green-700 w-28 text-right">
-          {item.subtotal?.toLocaleString('vi-VN')}đ
-        </span>
-        <button
-          onClick={() => onRemove(item.cartItemId)}
-          className="text-red-500 hover:text-red-700 transition-colors ml-2"
-          title="Xóa"
-        >✕</button>
-      </div>
-    </div>
-  );
+    );
 }
