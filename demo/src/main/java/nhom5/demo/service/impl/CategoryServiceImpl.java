@@ -62,11 +62,13 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CategoryResponse getCategoryById(Long id) {
         return toResponse(findById(id));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CategoryResponse> getActiveCategories() {
         return categoryRepository.findByIsActiveTrue().stream()
                 .map(this::toResponse).toList();

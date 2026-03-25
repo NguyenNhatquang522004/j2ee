@@ -148,6 +148,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long id, String username) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
@@ -164,6 +165,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<OrderResponse> getOrdersByUser(String username, Pageable pageable) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
@@ -172,6 +174,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<OrderResponse> getAllOrders(Pageable pageable) {
         return orderRepository.findAllByOrderByCreatedAtDesc(pageable).map(this::toResponse);
     }
