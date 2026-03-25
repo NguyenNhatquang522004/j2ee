@@ -23,7 +23,7 @@ public class AiServiceImpl implements AiService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${ai.freshness-api-url}")
+    @Value("${app.ai.api.url}")
     private String aiApiUrl;
 
     @Override
@@ -50,13 +50,25 @@ public class AiServiceImpl implements AiService {
                 double confidence = result.containsKey("confidence")
                         ? Double.parseDouble(String.valueOf(result.get("confidence")))
                         : 0.0;
-                boolean isFresh = "FRESH".equalsIgnoreCase(label);
+                boolean isFresh = "FRESH".equalsIgnoreCase(label) || "GOOD".equalsIgnoreCase(label);
+
+                String description = result.containsKey("description")
+                        ? String.valueOf(result.get("description"))
+                        : (isFresh ? "Thực phẩm có màu sắc, hình dạng bình thường, không có dấu hiệu hư hỏng."
+                                : "Thực phẩm có dấu hiệu biến đổi màu sắc hoặc kết cấu bất thường.");
+                String suggestion = result.containsKey("suggestion")
+                        ? String.valueOf(result.get("suggestion"))
+                        : (isFresh ? "Có thể sử dụng bình thường. Nên bảo quản đúng cách để giữ độ tươi."
+                                : "Không nên sử dụng. Vui lòng kiểm tra lại hoặc liên hệ cửa hàng.");
 
                 return AiFreshnessResponse.builder()
                         .result(label)
                         .label(label)
+                        .freshness(label)
                         .confidence(confidence)
                         .isFresh(isFresh)
+                        .description(description)
+                        .suggestion(suggestion)
                         .message(isFresh
                                 ? "Sản phẩm còn tươi và an toàn để sử dụng"
                                 : "Sản phẩm có dấu hiệu không còn tươi. Không nên sử dụng.")
@@ -78,9 +90,12 @@ public class AiServiceImpl implements AiService {
         return AiFreshnessResponse.builder()
                 .result("ERROR")
                 .label("UNKNOWN")
+                .freshness("ERROR")
                 .confidence(0.0)
                 .isFresh(false)
                 .message(message)
+                .description("Không thể phân tích hình ảnh.")
+                .suggestion("Vui lòng thử lại hoặc liên hệ hỗ trợ.")
                 .build();
     }
 }

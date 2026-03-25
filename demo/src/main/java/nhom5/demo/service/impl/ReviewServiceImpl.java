@@ -6,6 +6,7 @@ import nhom5.demo.dto.response.ReviewResponse;
 import nhom5.demo.entity.Product;
 import nhom5.demo.entity.Review;
 import nhom5.demo.entity.User;
+import nhom5.demo.enums.RoleEnum;
 import nhom5.demo.exception.BusinessException;
 import nhom5.demo.exception.ResourceNotFoundException;
 import nhom5.demo.repository.OrderItemRepository;
@@ -68,7 +69,8 @@ public class ReviewServiceImpl implements ReviewService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
 
-        if (!review.getUser().getId().equals(user.getId())) {
+        if (!review.getUser().getId().equals(user.getId())
+                && user.getRole() != RoleEnum.ROLE_ADMIN) {
             throw new BusinessException("Bạn không có quyền xóa đánh giá này");
         }
 

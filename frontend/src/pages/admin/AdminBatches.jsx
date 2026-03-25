@@ -3,7 +3,7 @@ import { batchService, productService } from '../../api/services';
 import Layout from '../../components/Layout';
 import toast from 'react-hot-toast';
 
-const EMPTY = { productId: '', quantity: '', productionDate: '', expiryDate: '', note: '' };
+const EMPTY = { batchCode: '', productId: '', quantity: '', importDate: '', productionDate: '', expiryDate: '', note: '' };
 
 export default function AdminBatches() {
     const [batches, setBatches] = useState([]);
@@ -39,8 +39,10 @@ export default function AdminBatches() {
     const openEdit = (b) => {
         setEditing(b);
         setForm({
+            batchCode: b.batchCode || '',
             productId: b.productId ?? '',
             quantity: b.quantity ?? '',
+            importDate: b.importDate ? b.importDate.substring(0, 10) : '',
             productionDate: b.productionDate ? b.productionDate.substring(0, 10) : '',
             expiryDate: b.expiryDate ? b.expiryDate.substring(0, 10) : '',
             note: b.note || '',
@@ -139,6 +141,10 @@ export default function AdminBatches() {
                         </div>
                         <form onSubmit={handleSave} className="p-6 space-y-4">
                             <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Mã lô hàng *</label>
+                                <input required type="text" placeholder="VD: LOT-2024-001" value={form.batchCode} onChange={(e) => setForm({ ...form, batchCode: e.target.value })} className="input-field" />
+                            </div>
+                            <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Sản phẩm *</label>
                                 <select required value={form.productId} onChange={(e) => setForm({ ...form, productId: e.target.value })} className="input-field">
                                     <option value="">-- Chọn sản phẩm --</option>
@@ -151,13 +157,17 @@ export default function AdminBatches() {
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ngày nhập kho *</label>
+                                    <input required type="date" value={form.importDate} onChange={(e) => setForm({ ...form, importDate: e.target.value })} className="input-field" />
+                                </div>
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Ngày sản xuất *</label>
                                     <input required type="date" value={form.productionDate} onChange={(e) => setForm({ ...form, productionDate: e.target.value })} className="input-field" />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Hạn sử dụng *</label>
-                                    <input required type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} className="input-field" />
-                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Hạn sử dụng *</label>
+                                <input required type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} className="input-field" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>

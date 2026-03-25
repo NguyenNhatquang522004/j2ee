@@ -12,6 +12,12 @@ public interface BatchService {
 
     BatchResponse getBatchById(Long id);
 
+    BatchResponse updateBatch(Long id, BatchRequest request);
+
+    void deleteBatch(Long id);
+
+    Page<BatchResponse> getAllBatches(Pageable pageable);
+
     Page<BatchResponse> getBatchesByProduct(Long productId, Pageable pageable);
 
     List<BatchResponse> getNearExpiryBatches(int days);

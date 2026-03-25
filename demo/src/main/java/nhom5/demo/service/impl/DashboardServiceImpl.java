@@ -3,14 +3,12 @@ package nhom5.demo.service.impl;
 import lombok.RequiredArgsConstructor;
 import nhom5.demo.dto.response.BatchResponse;
 import nhom5.demo.dto.response.DashboardResponse;
-import nhom5.demo.dto.response.ProductResponse;
+import nhom5.demo.dto.response.TopSellingProductResponse;
 import nhom5.demo.enums.RoleEnum;
 import nhom5.demo.repository.*;
 import nhom5.demo.service.BatchService;
 import nhom5.demo.service.DashboardService;
-import nhom5.demo.service.ProductService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,9 +28,9 @@ public class DashboardServiceImpl implements DashboardService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
     private final FarmRepository farmRepository;
     private final BatchService batchService;
-    private final ProductService productService;
 
     @Value("${app.batch.expiry-warning-days:3}")
     private int expiryWarningDays;
@@ -65,10 +63,18 @@ public class DashboardServiceImpl implements DashboardService {
         // Near expiry batches
         List<BatchResponse> nearExpiryBatches = batchService.getNearExpiryBatches(expiryWarningDays);
 
-        // Top selling products
-        List<ProductResponse> topSellingProducts = productService
-                .getTopSellingProducts(PageRequest.of(0, 5))
-                .getContent();
+        // Top selling products (with actual sales data)
+        List<Object[]> topRows = orderItemRepository.findTopSellingProductsWithStats();
+        List<TopSellingProductResponse> topSellingProducts = new ArrayList<>();
+        for (Object[] row : topRows) {
+            topSellingProducts.add(TopSellingProductResponse.builder()
+                    .productId(((Number) row[0]).longValue())
+                    .productName((String) row[1])
+                    .imageUrl((String) row[2])
+                    .soldQuantity(((Number) row[3]).longValue())
+                    .revenue(new BigDecimal(row[4].toString()))
+                    .build());
+        }
 
         // Revenue chart for last 7 days
         List<DashboardResponse.RevenueChartData> revenueChart = new ArrayList<>();

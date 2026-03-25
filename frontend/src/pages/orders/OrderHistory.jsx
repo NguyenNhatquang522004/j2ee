@@ -88,8 +88,8 @@ export default function OrderHistory() {
 
                                 {isExpanded && (
                                     <div className="mt-4 border-t pt-4 space-y-2">
-                                        {order.items?.map((item) => (
-                                            <div key={item.id} className="flex items-center justify-between text-sm">
+                                        {order.orderItems?.map((item) => (
+                                            <div key={item.orderItemId} className="flex items-center justify-between text-sm">
                                                 <span className="text-gray-700">{item.productName}</span>
                                                 <span className="text-gray-500">x{item.quantity}</span>
                                                 <span className="font-medium">{item.subtotal?.toLocaleString('vi-VN')}đ</span>

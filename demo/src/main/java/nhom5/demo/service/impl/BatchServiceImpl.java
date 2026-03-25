@@ -62,6 +62,43 @@ public class BatchServiceImpl implements BatchService {
     }
 
     @Override
+    @Transactional
+    public BatchResponse updateBatch(Long id, BatchRequest request) {
+        ProductBatch batch = findById(id);
+
+        if (!batch.getBatchCode().equals(request.getBatchCode())
+                && batchRepository.existsByBatchCode(request.getBatchCode())) {
+            throw new BusinessException("Mã lô '" + request.getBatchCode() + "' đã tồn tại");
+        }
+        if (request.getExpiryDate().isBefore(LocalDate.now())) {
+            throw new BusinessException("Ngày hết hạn phải sau ngày hôm nay");
+        }
+
+        int quantityDelta = request.getQuantity() - batch.getQuantity();
+        batch.setBatchCode(request.getBatchCode());
+        batch.setImportDate(request.getImportDate());
+        batch.setProductionDate(request.getProductionDate());
+        batch.setExpiryDate(request.getExpiryDate());
+        batch.setQuantity(request.getQuantity());
+        batch.setRemainingQuantity(Math.max(0, batch.getRemainingQuantity() + quantityDelta));
+        batch.setNote(request.getNote());
+
+        return toResponse(batchRepository.save(batch));
+    }
+
+    @Override
+    @Transactional
+    public void deleteBatch(Long id) {
+        ProductBatch batch = findById(id);
+        batchRepository.delete(batch);
+    }
+
+    @Override
+    public Page<BatchResponse> getAllBatches(Pageable pageable) {
+        return batchRepository.findAll(pageable).map(this::toResponse);
+    }
+
+    @Override
     public Page<BatchResponse> getBatchesByProduct(Long productId, Pageable pageable) {
         return batchRepository.findByProductId(productId, pageable).map(this::toResponse);
     }

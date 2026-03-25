@@ -40,10 +40,10 @@ export const orderService = {
     create: (data) => api.post('/orders', data),
     myOrders: (params) => api.get('/orders/my-orders', { params }),
     getById: (id) => api.get(`/orders/${id}`),
-    cancel: (id) => api.post(`/orders/${id}/cancel`),
+    cancel: (id) => api.delete(`/orders/${id}/cancel`),
     // Admin
-    getAll: (params) => api.get('/orders/admin/all', { params }),
-    updateStatus: (id, data) => api.put(`/orders/${id}/status`, data),
+    getAll: (params) => api.get('/orders', { params }),
+    updateStatus: (id, status) => api.patch(`/orders/${id}/status?status=${status}`),
 };
 
 // Reviews
@@ -82,8 +82,8 @@ export const dashboardService = {
 export const userService = {
     me: () => api.get('/users/me'),
     updateMe: (data) => api.put('/users/me', data),
-    getAll: (params) => api.get('/users/admin', { params }),
-    toggleActive: (id) => api.put(`/users/admin/${id}/toggle-active`),
+    getAll: (params) => api.get('/users', { params }),
+    toggleActive: (id) => api.patch(`/users/${id}/toggle-status`),
 };
 
 // AI

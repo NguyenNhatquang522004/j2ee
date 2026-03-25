@@ -101,7 +101,7 @@ export default function AdminOrders() {
                                             </button>
                                         </td>
                                     </tr>
-                                    {expanded === o.id && o.items?.length > 0 && (
+                                    {expanded === o.id && o.orderItems?.length > 0 && (
                                         <tr key={`${o.id}-detail`} className="bg-gray-50 border-b">
                                             <td colSpan={6} className="px-4 py-3">
                                                 <div className="text-xs text-gray-500 mb-2 font-semibold">Chi tiết đơn hàng #{o.id}</div>
@@ -118,12 +118,12 @@ export default function AdminOrders() {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {o.items.map((item, idx) => (
+                                                        {o.orderItems.map((item, idx) => (
                                                             <tr key={idx} className="border-t border-gray-200">
                                                                 <td className="py-1">{item.productName}</td>
-                                                                <td className="py-1 text-right">{fmt(item.price)}₫</td>
+                                                                <td className="py-1 text-right">{fmt(item.unitPrice)}₫</td>
                                                                 <td className="py-1 text-center">{item.quantity}</td>
-                                                                <td className="py-1 text-right font-medium">{fmt(item.price * item.quantity)}₫</td>
+                                                                <td className="py-1 text-right font-medium">{fmt(item.subtotal)}₫</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>

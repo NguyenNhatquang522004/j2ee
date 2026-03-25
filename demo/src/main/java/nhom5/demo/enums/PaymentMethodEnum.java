@@ -6,7 +6,9 @@ package nhom5.demo.enums;
 public enum PaymentMethodEnum {
     COD("Thanh toán khi nhận hàng"),
     ONLINE("Thanh toán trực tuyến (Giả lập)"),
-    BANK_TRANSFER("Chuyển khoản ngân hàng");
+    BANK_TRANSFER("Chuyển khoản ngân hàng"),
+    MOMO("Ví MoMo"),
+    VNPAY("Thanh toán qua VNPay");
 
     private final String displayName;
 

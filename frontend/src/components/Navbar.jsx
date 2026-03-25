@@ -34,6 +34,7 @@ export default function Navbar() {
                                 )}
                             </Link>
                             <Link to="/orders" className="hover:text-green-200 transition-colors">Đơn hàng</Link>
+                            <Link to="/ai-scan" className="hover:text-green-200 transition-colors">🔬 Kiểm tra AI</Link>
                             {isAdmin && (
                                 <Link to="/admin" className="bg-yellow-500 text-gray-900 font-semibold px-3 py-1 rounded-lg hover:bg-yellow-400 transition-colors">
                                     Admin

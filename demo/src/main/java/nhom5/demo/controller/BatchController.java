@@ -36,6 +36,18 @@ public class BatchController {
         return ResponseEntity.status(201).body(ApiResponse.created(data));
     }
 
+    @Operation(summary = "Danh sách tất cả lô hàng (Admin)")
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<BatchResponse>>> getAllBatches(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "expiryDate") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(ApiResponse.success(batchService.getAllBatches(pageable)));
+    }
+
     @Operation(summary = "Chi tiết lô hàng theo ID")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BatchResponse>> getById(@PathVariable Long id) {
@@ -62,6 +74,22 @@ public class BatchController {
             @RequestParam(defaultValue = "3") int days) {
         List<BatchResponse> data = batchService.getNearExpiryBatches(days);
         return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "Cập nhật lô hàng")
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<BatchResponse>> updateBatch(
+            @PathVariable Long id,
+            @Valid @RequestBody BatchRequest request) {
+        BatchResponse data = batchService.updateBatch(id, request);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "Xóa lô hàng")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteBatch(@PathVariable Long id) {
+        batchService.deleteBatch(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "Tổng tồn kho của sản phẩm")

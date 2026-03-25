@@ -27,8 +27,8 @@ public class DashboardResponse {
     // Sản phẩm sắp hết hạn
     private List<BatchResponse> nearExpiryBatches;
 
-    // Sản phẩm bán chạy nhất
-    private List<ProductResponse> topSellingProducts;
+    // Sản phẩm bán chạy nhất (kèm số lượng đã bán và doanh thu)
+    private List<TopSellingProductResponse> topSellingProducts;
 
     // Doanh thu 7 ngày gần nhất (cho biểu đồ)
     private List<RevenueChartData> revenueChart;

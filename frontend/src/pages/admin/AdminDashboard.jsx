@@ -51,7 +51,7 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <StatCard title="Tổng đơn hàng" value={fmt(stats?.totalOrders || 0)} icon="🛒" color="bg-blue-50" />
-                <StatCard title="Doanh thu (VNĐ)" value={fmt(stats?.totalRevenue || 0)} icon="💰" color="bg-green-50" />
+                <StatCard title="Doanh thu tháng (VNĐ)" value={fmt(stats?.revenueThisMonth || 0)} icon="💰" color="bg-green-50" />
                 <StatCard title="Người dùng" value={fmt(stats?.totalUsers || 0)} icon="👤" color="bg-purple-50" />
                 <StatCard title="Sản phẩm" value={fmt(stats?.totalProducts || 0)} icon="📦" color="bg-orange-50" />
             </div>
@@ -72,8 +72,8 @@ export default function AdminDashboard() {
                                 {stats.topSellingProducts.map((p, i) => (
                                     <tr key={i} className="border-b last:border-0">
                                         <td className="py-2 font-medium text-gray-800">{p.productName}</td>
-                                        <td className="py-2 text-right">{fmt(p.totalQuantity)}</td>
-                                        <td className="py-2 text-right text-green-700">{fmt(p.totalRevenue)}₫</td>
+                                        <td className="py-2 text-right">{fmt(p.soldQuantity)}</td>
+                                        <td className="py-2 text-right text-green-700">{fmt(p.revenue)}₫</td>
                                     </tr>
                                 ))}
                             </tbody>

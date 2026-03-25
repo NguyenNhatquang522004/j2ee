@@ -73,6 +73,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/categories/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/categories/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/categories/**").hasAuthority("ROLE_ADMIN")
+                        // Users: /users/me accessible by any authenticated user; rest is admin-only
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/users/me").authenticated()
                         .requestMatchers("/api/v1/users/**").hasAuthority("ROLE_ADMIN")
                         // All other requests require authentication
                         .anyRequest().authenticated())

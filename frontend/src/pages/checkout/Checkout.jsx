@@ -6,7 +6,7 @@ import Layout from '../../components/Layout';
 import toast from 'react-hot-toast';
 
 const PAYMENT_METHODS = [
-    { value: 'CASH_ON_DELIVERY', label: 'Thanh toán khi nhận hàng (COD)' },
+    { value: 'COD', label: 'Thanh toán khi nhận hàng (COD)' },
     { value: 'BANK_TRANSFER', label: 'Chuyển khoản ngân hàng' },
     { value: 'MOMO', label: 'Ví MoMo' },
     { value: 'VNPAY', label: 'VNPay' },
@@ -17,7 +17,7 @@ export default function Checkout() {
     const navigate = useNavigate();
     const [form, setForm] = useState({
         shippingAddress: '',
-        paymentMethod: 'CASH_ON_DELIVERY',
+        paymentMethod: 'COD',
         couponCode: '',
         note: '',
     });
