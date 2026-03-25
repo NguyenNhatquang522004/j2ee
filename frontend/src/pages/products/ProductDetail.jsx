@@ -1,10 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { productService, reviewService } from '../../api/services';
+import { productService, reviewService, wishlistService } from '../../api/services';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout';
 import toast from 'react-hot-toast';
+import { 
+    CheckBadgeIcon, 
+    StarIcon as StarIconOutline, 
+    ShoppingCartIcon, 
+    HeartIcon as HeartIconOutline,
+    MapPinIcon,
+    InformationCircleIcon,
+    CubeIcon,
+    MinusIcon,
+    PlusIcon
+} from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
 export default function ProductDetail() {
     const { id } = useParams();
@@ -18,6 +30,30 @@ export default function ProductDetail() {
     const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
     const [loading, setLoading] = useState(true);
     const [submittingReview, setSubmittingReview] = useState(false);
+    const [isLiked, setIsLiked] = useState(false);
+
+    useEffect(() => {
+        if (user && id) {
+            wishlistService.check(id).then(res => setIsLiked(res.data)).catch(() => {});
+        }
+    }, [user, id]);
+
+    const toggleWishlist = async () => {
+        if (!user) { toast.error('Vui lòng đăng nhập để yêu thích'); return; }
+        try {
+            if (isLiked) {
+                await wishlistService.remove(product.id);
+                toast.success('Đã xoá khỏi yêu thích');
+            } else {
+                await wishlistService.add(product.id);
+                toast.success('Đã chọn yêu thích');
+            }
+            setIsLiked(!isLiked);
+            window.dispatchEvent(new Event('wishlist-updated'));
+        } catch (err) {
+            toast.error('Lỗi khi cập nhật yêu thích');
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -72,11 +108,11 @@ export default function ProductDetail() {
         <Layout>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                 {/* Image */}
-                <div className="rounded-xl overflow-hidden bg-gray-100 h-96 flex items-center justify-center">
+                <div className="rounded-2xl overflow-hidden bg-green-50 h-[450px] flex items-center justify-center border border-green-100 shadow-inner">
                     {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+                        <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover hover:scale-105 transition-transform duration-700" />
                     ) : (
-                        <span className="text-8xl">🥦</span>
+                        <CubeIcon className="w-32 h-32 text-green-200 animate-pulse" />
                     )}
                 </div>
 
@@ -84,8 +120,9 @@ export default function ProductDetail() {
                 <div>
                     <div className="flex items-center gap-2 mb-2">
                         {product.certification && (
-                            <span className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
-                                ✓ {product.certification}
+                            <span className="flex items-center gap-1.5 bg-green-100 text-green-800 text-xs font-bold px-4 py-1.5 rounded-full shadow-sm">
+                                <CheckBadgeIcon className="w-4 h-4" />
+                                {product.certification}
                             </span>
                         )}
                         {!product.isActive && (
@@ -93,8 +130,15 @@ export default function ProductDetail() {
                         )}
                     </div>
                     <h1 className="text-3xl font-bold text-gray-800 mb-2">{product.name}</h1>
-                    <p className="text-gray-500 text-sm mb-4">
-                        {product.farmName && <span>🌱 {product.farmName} · {product.farmProvince}</span>}
+                    <p className="text-gray-500 text-sm mb-6 flex items-center gap-1.5 bg-gray-50 w-fit px-3 py-1.5 rounded-lg border border-gray-100">
+                        {product.farmName && (
+                            <>
+                                <MapPinIcon className="w-4 h-4 text-green-600" />
+                                <span className="font-medium text-gray-700">{product.farmName}</span>
+                                <span className="text-gray-300 mx-1">|</span>
+                                <span>{product.farmProvince}</span>
+                            </>
+                        )}
                     </p>
 
                     <div className="text-3xl font-bold text-green-700 mb-2">
@@ -103,9 +147,15 @@ export default function ProductDetail() {
                     </div>
 
                     {product.averageRating > 0 && (
-                        <div className="flex items-center gap-2 mb-4">
-                            <span className="text-yellow-400 text-lg">{'⭐'.repeat(Math.round(product.averageRating))}</span>
-                            <span className="text-gray-500 text-sm">{product.averageRating.toFixed(1)} / 5</span>
+                        <div className="flex items-center gap-3 mb-6 bg-yellow-50 w-fit px-4 py-2 rounded-xl border border-yellow-100">
+                            <div className="flex items-center gap-0.5">
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                    s <= Math.round(product.averageRating) 
+                                    ? <StarIconSolid key={s} className="w-5 h-5 text-yellow-400" /> 
+                                    : <StarIconOutline key={s} className="w-5 h-5 text-gray-200" />
+                                ))}
+                            </div>
+                            <span className="text-yellow-800 font-black text-sm">{product.averageRating.toFixed(1)} / 5.0</span>
                         </div>
                     )}
 
@@ -119,14 +169,32 @@ export default function ProductDetail() {
                     </div>
 
                     {product.totalStock > 0 && product.isActive && (
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 font-bold">-</button>
-                                <span className="px-4 py-2 font-semibold">{quantity}</span>
-                                <button onClick={() => setQuantity(q => Math.min(product.totalStock, q + 1))} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 font-bold">+</button>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center border border-gray-200 bg-white rounded-2xl overflow-hidden shadow-sm">
+                                <button 
+                                    onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+                                    className="p-4 hover:bg-gray-50 text-gray-500 transition-colors"
+                                >
+                                    <MinusIcon className="w-5 h-5" />
+                                </button>
+                                <span className="px-6 py-2 font-black text-gray-800 text-xl min-w-[60px] text-center">{quantity}</span>
+                                <button 
+                                    onClick={() => setQuantity(q => Math.min(product.totalStock, q + 1))} 
+                                    className="p-4 hover:bg-gray-50 text-gray-500 transition-colors"
+                                >
+                                    <PlusIcon className="w-5 h-5" />
+                                </button>
                             </div>
-                            <button onClick={handleAddToCart} className="btn-primary flex-1">
-                                🛒 Thêm vào giỏ
+                            <button onClick={handleAddToCart} className="btn-primary flex-1 py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-green-100 shadow-xl">
+                                <ShoppingCartIcon className="w-6 h-6 text-white/90" />
+                                Thêm vào giỏ
+                            </button>
+                            <button 
+                                onClick={toggleWishlist}
+                                className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-center ${isLiked ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-100 text-gray-300 hover:text-red-500 hover:border-red-100 hover:bg-red-50/30 shadow-sm'}`}
+                                title={isLiked ? "Xoá khỏi yêu thích" : "Thêm vào yêu thích"}
+                            >
+                                {isLiked ? <HeartIconSolid className="w-7 h-7" /> : <HeartIconOutline className="w-7 h-7" />}
                             </button>
                         </div>
                     )}
@@ -146,15 +214,18 @@ export default function ProductDetail() {
                 {user && (
                     <form onSubmit={handleReviewSubmit} className="card mb-6">
                         <h3 className="font-semibold mb-3">Viết đánh giá của bạn</h3>
-                        <div className="flex items-center gap-2 mb-3">
-                            <span className="text-sm text-gray-600">Số sao:</span>
+                        <div className="flex items-center gap-1 mb-4">
+                            <span className="text-sm font-bold text-gray-600 mr-2 uppercase tracking-wider">Đánh giá của bạn:</span>
                             {[1, 2, 3, 4, 5].map((s) => (
                                 <button
                                     key={s} type="button"
                                     onClick={() => setReviewForm({ ...reviewForm, rating: s })}
-                                    className={`text-2xl ${s <= reviewForm.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                    className="transition-transform active:scale-90"
                                 >
-                                    ⭐
+                                    {s <= reviewForm.rating 
+                                        ? <StarIconSolid className="w-8 h-8 text-yellow-400" /> 
+                                        : <StarIconOutline className="w-8 h-8 text-gray-200" />
+                                    }
                                 </button>
                             ))}
                         </div>
@@ -177,10 +248,18 @@ export default function ProductDetail() {
                     <div className="space-y-4">
                         {reviews.map((r) => (
                             <div key={r.id} className="card">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-semibold text-gray-800">{r.fullName || r.username}</span>
-                                    <span className="text-yellow-400">{'⭐'.repeat(r.rating)}</span>
-                                    <span className="text-gray-400 text-xs ml-auto">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
+                                <div className="flex items-center gap-4 mb-3">
+                                    <div className="flex-1">
+                                        <p className="font-black text-gray-800 text-base">{r.fullName || r.username}</p>
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                            {[1, 2, 3, 4, 5].map(s => (
+                                                s <= r.rating 
+                                                ? <StarIconSolid key={s} className="w-4 h-4 text-yellow-400" /> 
+                                                : <StarIconOutline key={s} className="w-4 h-4 text-gray-200" />
+                                            ))}
+                                            <span className="text-[10px] text-gray-400 ml-2 font-bold uppercase tracking-widest">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <p className="text-gray-600 text-sm">{r.comment}</p>
                             </div>

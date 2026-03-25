@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { farmService } from '../../api/services';
 import Layout from '../../components/Layout';
+import { MapPinIcon, UserIcon, ArrowRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export default function FarmList() {
     const [farms, setFarms] = useState([]);
@@ -41,14 +42,17 @@ export default function FarmList() {
         <Layout>
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-800 mb-4">Trang trại đối tác</h1>
-                <form onSubmit={handleSearch} className="flex gap-2 max-w-lg">
+                <form onSubmit={handleSearch} className="flex gap-2 max-w-lg relative">
+                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                        <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                         value={keyword}
                         onChange={(e) => setKeyword(e.target.value)}
                         placeholder="Tìm kiếm trang trại..."
-                        className="input-field"
+                        className="input-field pl-10"
                     />
-                    <button type="submit" className="btn-primary whitespace-nowrap">Tìm kiếm</button>
+                    <button type="submit" className="btn-primary px-6">Tìm kiếm</button>
                 </form>
             </div>
 
@@ -77,14 +81,25 @@ export default function FarmList() {
                                     </span>
                                 )}
                             </div>
-                            <p className="text-sm text-gray-500 mb-2">📍 {farm.province}</p>
-                            {farm.ownerName && <p className="text-sm text-gray-600 mb-1">👤 {farm.ownerName}</p>}
+                            <p className="text-sm text-gray-500 mb-2 flex items-center gap-1">
+                                <MapPinIcon className="w-4 h-4 text-green-600" />
+                                {farm.province}
+                            </p>
+                            {farm.ownerName && (
+                                <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
+                                    <UserIcon className="w-4 h-4 text-gray-400" />
+                                    {farm.ownerName}
+                                </p>
+                            )}
                             {farm.description && (
                                 <p className="text-sm text-gray-500 line-clamp-2 mb-3">{farm.description}</p>
                             )}
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-green-700 font-semibold">{farm.productCount} sản phẩm</span>
-                                <span className="text-blue-600 hover:underline">Xem sản phẩm →</span>
+                                <span className="text-blue-600 font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
+                                    Xem sản phẩm
+                                    <ArrowRightIcon className="w-4 h-4" />
+                                </span>
                             </div>
                         </div>
                     ))}

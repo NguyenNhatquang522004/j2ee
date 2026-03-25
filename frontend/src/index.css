@@ -85,6 +85,51 @@
     border: 1px solid #f3f4f6;
     padding: 1.5rem;
   }
+
+  /* Premium Utilities */
+  .glass-header {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(22, 163, 74, 0.1);
+  }
+
+  .nav-link {
+    position: relative;
+    padding: 0.5rem 0;
+    color: #374151;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    transition: color 0.3s;
+  }
+
+  .nav-link:hover {
+    color: #166534;
+  }
+
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #16a34a;
+    transition: width 0.3s ease-in-out;
+  }
+
+  .nav-link:hover::after {
+    width: 100%;
+  }
+
+  .footer-title {
+    color: white;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
 }
 
 

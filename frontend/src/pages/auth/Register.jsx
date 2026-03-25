@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import { UserPlusIcon } from '@heroicons/react/24/outline';
 
 export default function Register() {
     const { register } = useAuth();
@@ -29,8 +30,8 @@ export default function Register() {
         <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#f0fdf4' }}>
             <div className="card w-full max-w-lg shadow-xl border-0">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-3">
-                        <span className="text-4xl">🌿</span>
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6 border-4 border-white shadow-sm">
+                        <UserPlusIcon className="w-12 h-12 text-green-600" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Tạo tài khoản</h1>
                     <p className="text-gray-500">Tham gia cộng đồng thực phẩm sạch</p>

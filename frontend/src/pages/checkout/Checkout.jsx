@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { orderService } from '../../api/services';
+import { addressService, orderService } from '../../api/services';
 import { useCart } from '../../context/CartContext';
 import Layout from '../../components/Layout';
 import toast from 'react-hot-toast';
+import { CheckCircleIcon, MapPinIcon, DevicePhoneMobileIcon, CreditCardIcon, TicketIcon, ChatBubbleBottomCenterTextIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 const PAYMENT_METHODS = [
     { value: 'COD', label: 'Thanh toán khi nhận hàng (COD)' },
@@ -15,19 +16,55 @@ const PAYMENT_METHODS = [
 export default function Checkout() {
     const { cart, fetchCart } = useCart();
     const navigate = useNavigate();
+    const [savedAddresses, setSavedAddresses] = useState([]);
+    const [selectedAddressId, setSelectedAddressId] = useState('new');
     const [form, setForm] = useState({
         shippingAddress: '',
+        phone: '',
         paymentMethod: 'COD',
         couponCode: '',
         note: '',
     });
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        loadAddresses();
+    }, []);
+
+    const loadAddresses = async () => {
+        try {
+            const { data } = await addressService.getAll();
+            setSavedAddresses(data || []);
+            const def = (data || []).find(a => a.isDefault);
+            if (def) {
+                setSelectedAddressId(def.id);
+                setForm(prev => ({ 
+                    ...prev, 
+                    shippingAddress: def.details,
+                    phone: def.phone || ''
+                }));
+            }
+        } catch (err) {
+            console.error("Failed to load addresses", err);
+        }
+    };
+
+    const handleAddressSelect = (addr) => {
+        if (addr === 'new') {
+            setSelectedAddressId('new');
+            setForm({ ...form, shippingAddress: '', phone: '' });
+        } else {
+            setSelectedAddressId(addr.id);
+            setForm({ ...form, shippingAddress: addr.details, phone: addr.phone || '' });
+        }
+    };
+
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.shippingAddress.trim()) { toast.error('Vui lòng nhập địa chỉ giao hàng'); return; }
+        if (!form.phone.trim()) { toast.error('Vui lòng nhập số điện thoại'); return; }
         setLoading(true);
         try {
             const orderItems = cart.items.map((item) => ({
@@ -37,6 +74,7 @@ export default function Checkout() {
             await orderService.create({
                 items: orderItems,
                 shippingAddress: form.shippingAddress,
+                phone: form.phone,
                 paymentMethod: form.paymentMethod,
                 couponCode: form.couponCode || undefined,
                 note: form.note || undefined,
@@ -62,16 +100,66 @@ export default function Checkout() {
                     <div className="card">
                         <h2 className="font-bold text-gray-700 mb-4">Thông tin giao hàng</h2>
                         <div className="space-y-4">
+                            {/* Saved Addresses */}
+                            {savedAddresses.length > 0 && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                                    {savedAddresses.map((addr) => (
+                                        <div
+                                            key={addr.id}
+                                            onClick={() => handleAddressSelect(addr)}
+                                            className={`cursor-pointer p-3 border-2 rounded-xl transition-all ${
+                                                selectedAddressId === addr.id 
+                                                ? 'border-green-600 bg-green-50 shadow-sm' 
+                                                : 'border-gray-200 hover:border-green-300'
+                                            }`}
+                                        >
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="font-bold text-sm text-green-800 uppercase tracking-wider">{addr.label}</span>
+                                                {addr.isDefault && <span className="text-[10px] bg-green-200 text-green-800 px-1.5 py-0.5 rounded">Mặc định</span>}
+                                            </div>
+                                            <p className="text-xs text-gray-600 line-clamp-2">{addr.details}</p>
+                                        </div>
+                                    ))}
+                                        <div
+                                            onClick={() => handleAddressSelect('new')}
+                                            className={`cursor-pointer p-3 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center gap-1 ${
+                                                selectedAddressId === 'new' 
+                                                ? 'border-green-600 bg-green-50' 
+                                                : 'border-gray-300 hover:border-green-300 text-gray-500'
+                                            }`}
+                                        >
+                                            <PlusIcon className="w-5 h-5 text-green-600" />
+                                            <span className="text-sm font-medium">Địa chỉ khác</span>
+                                        </div>
+                                </div>
+                            )}
+
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ giao hàng *</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    {selectedAddressId === 'new' ? 'Địa chỉ giao hàng mới *' : 'Chi tiết địa chỉ'}
+                                </label>
                                 <textarea
                                     name="shippingAddress"
                                     value={form.shippingAddress}
                                     onChange={handleChange}
                                     rows={3}
                                     required
-                                    className="input-field"
+                                    disabled={selectedAddressId !== 'new'}
+                                    className={`input-field ${selectedAddressId !== 'new' ? 'bg-gray-50 text-gray-600' : ''}`}
                                     placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại giao hàng *</label>
+                                <input
+                                    type="text"
+                                    name="phone"
+                                    value={form.phone}
+                                    onChange={handleChange}
+                                    required
+                                    className="input-field"
+                                    placeholder="Nhập số điện thoại liên hệ"
                                 />
                             </div>
                             <div>
@@ -92,8 +180,13 @@ export default function Checkout() {
                             </div>
                         </div>
                     </div>
-                    <button type="submit" disabled={loading || items.length === 0} className="btn-primary w-full text-base py-3">
-                        {loading ? 'Đang xử lý...' : '✅ Xác nhận đặt hàng'}
+                    <button type="submit" disabled={loading || items.length === 0} className="btn-primary w-full text-lg py-4 flex justify-center items-center gap-2">
+                        {loading ? 'Đang xử lý...' : (
+                            <>
+                                <CheckCircleIcon className="w-6 h-6" />
+                                Xác nhận đặt hàng
+                            </>
+                        )}
                     </button>
                 </form>
 

@@ -14,6 +14,8 @@ import Checkout from './pages/checkout/Checkout';
 import OrderHistory from './pages/orders/OrderHistory';
 import FarmList from './pages/farms/FarmList';
 import AiScan from './pages/ai/AiScan';
+import Profile from './pages/profile/Profile';
+import Wishlist from './pages/wishlist/Wishlist';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -50,6 +52,8 @@ export default function App() {
             <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
             <Route path="/orders" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
             <Route path="/ai-scan" element={<PrivateRoute><AiScan /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+            <Route path="/wishlist" element={<PrivateRoute><Wishlist /></PrivateRoute>} />
 
             {/* Admin routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

@@ -46,8 +46,8 @@ public class CartController {
     public ResponseEntity<ApiResponse<CartResponse>> updateItem(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long cartItemId,
-            @RequestParam int quantity) {
-        CartResponse data = cartService.updateCartItem(userDetails.getUsername(), cartItemId, quantity);
+            @Valid @RequestBody nhom5.demo.dto.request.CartItemUpdateRequest request) {
+        CartResponse data = cartService.updateCartItem(userDetails.getUsername(), cartItemId, request.getQuantity());
         return ResponseEntity.ok(ApiResponse.success("Đã cập nhật giỏ hàng", data));
     }
 
