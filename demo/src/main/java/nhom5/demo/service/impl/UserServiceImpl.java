@@ -29,7 +29,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse updateProfile(String username, RegisterRequest request) {
+    public UserResponse updateProfile(String username, nhom5.demo.dto.request.UserUpdateRequest request) {
         User user = findByUsername(username);
 
         if (!user.getEmail().equals(request.getEmail()) &&
@@ -40,7 +40,6 @@ public class UserServiceImpl implements UserService {
         user.setEmail(request.getEmail());
         user.setFullName(request.getFullName());
         user.setPhone(request.getPhone());
-        user.setAddress(request.getAddress());
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));

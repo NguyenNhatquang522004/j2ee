@@ -41,7 +41,7 @@ public class UserController {
     @PutMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> updateProfile(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody RegisterRequest request) {
+            @Valid @RequestBody nhom5.demo.dto.request.UserUpdateRequest request) {
         UserResponse data = userService.updateProfile(userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin thành công", data));
     }

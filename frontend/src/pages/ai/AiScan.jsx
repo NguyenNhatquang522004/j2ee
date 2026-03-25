@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { aiService } from '../../api/services';
 import Layout from '../../components/Layout';
 import toast from 'react-hot-toast';
+import { CameraIcon, LightBulbIcon, SparklesIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 
 export default function AiScan() {
     const [image, setImage] = useState(null);
@@ -57,9 +58,9 @@ export default function AiScan() {
                             <img src={preview} alt="Preview" className="max-h-64 mx-auto rounded-lg object-contain" />
                         ) : (
                             <div className="text-gray-400">
-                                <div className="text-5xl mb-3">📷</div>
-                                <p className="font-medium">Nhấn để chọn ảnh hoặc kéo thả vào đây</p>
-                                <p className="text-sm mt-1">JPG, PNG, WEBP — tối đa 10MB</p>
+                                <CameraIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                                <p className="font-bold text-gray-600">Nhấn để chọn ảnh hoặc kéo thả vào đây</p>
+                                <p className="text-xs mt-1 font-medium italic">Hỗ trợ: JPG, PNG, WEBP — tối đa 10MB</p>
                             </div>
                         )}
                         <input
@@ -114,8 +115,11 @@ export default function AiScan() {
                             </div>
                         )}
                         {result.suggestion && (
-                            <div className="p-3 bg-gray-50 rounded-lg">
-                                <p className="text-sm font-semibold text-gray-600 mb-1">💡 Gợi ý</p>
+                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-inner">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <LightBulbIcon className="w-5 h-5 text-yellow-500" />
+                                    <span className="text-sm font-black text-gray-700 uppercase tracking-tighter">Gợi ý từ AI 💡</span>
+                                </div>
                                 <p className="text-gray-700 text-sm">{result.suggestion}</p>
                             </div>
                         )}

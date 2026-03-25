@@ -32,9 +32,11 @@ public class CartServiceImpl implements CartService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public CartResponse getCart(String username) {
         Cart cart = getOrCreateCart(username);
-        return toResponse(cart);
+        List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+        return toResponse(cart, items);
     }
 
     @Override
@@ -73,7 +75,8 @@ public class CartServiceImpl implements CartService {
             cartItemRepository.save(cartItem);
         }
 
-        return toResponse(cartRepository.findById(cart.getId()).orElseThrow());
+        List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+        return toResponse(cart, items);
     }
 
     @Override
@@ -98,7 +101,8 @@ public class CartServiceImpl implements CartService {
             cartItemRepository.save(item);
         }
 
-        return toResponse(cartRepository.findById(cart.getId()).orElseThrow());
+        List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+        return toResponse(cart, items);
     }
 
     @Override
@@ -131,8 +135,8 @@ public class CartServiceImpl implements CartService {
         });
     }
 
-    private CartResponse toResponse(Cart cart) {
-        List<CartResponse.CartItemResponse> items = cart.getCartItems().stream()
+    private CartResponse toResponse(Cart cart, List<CartItem> cartItems) {
+        List<CartResponse.CartItemResponse> items = cartItems.stream()
                 .map(item -> {
                     long stock = batchRepository.sumRemainingQuantityByProductId(item.getProduct().getId());
                     BigDecimal subtotal = item.getProduct().getPrice()

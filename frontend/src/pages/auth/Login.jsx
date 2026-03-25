@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import { SparklesIcon } from '@heroicons/react/24/outline';
 
 export default function Login() {
     const { login } = useAuth();
@@ -29,8 +30,8 @@ export default function Login() {
         <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#f0fdf4' }}>
             <div className="card w-full max-w-md shadow-xl border-0 animate-fade-in translate-y-0 transition-all">
                 <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
-                        <span className="text-5xl">🌿</span>
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6 border-4 border-white shadow-sm">
+                        <SparklesIcon className="w-12 h-12 text-green-600" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Đăng nhập</h1>
                     <p className="text-gray-500 font-medium">Thực Phẩm Sạch - Nhóm 5</p>

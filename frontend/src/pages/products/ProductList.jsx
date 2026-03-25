@@ -1,10 +1,17 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { productService, categoryService } from '../../api/services';
+import { productService, categoryService, wishlistService } from '../../api/services';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout';
 import toast from 'react-hot-toast';
+import { 
+    HeartIcon, 
+    ShoppingBagIcon, 
+    CakeIcon, 
+    Square3Stack3DIcon 
+} from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
 export default function ProductList() {
     const [products, setProducts] = useState([]);
@@ -120,6 +127,31 @@ export default function ProductList() {
 function ProductCard({ product }) {
     const { addToCart } = useCart();
     const { user } = useAuth();
+    const [isLiked, setIsLiked] = useState(false);
+
+    useEffect(() => {
+        if (user && product.id) {
+            wishlistService.check(product.id).then(res => setIsLiked(res.data)).catch(() => {});
+        }
+    }, [user, product.id]);
+
+    const toggleWishlist = async (e) => {
+        e.preventDefault();
+        if (!user) { toast.error('Vui lòng đăng nhập để yêu thích'); return; }
+        try {
+            if (isLiked) {
+                await wishlistService.remove(product.id);
+                toast.success('Đã xoá khỏi danh sách yêu thích');
+            } else {
+                await wishlistService.add(product.id);
+                toast.success('Đã thêm vào danh sách yêu thích');
+            }
+            setIsLiked(!isLiked);
+            window.dispatchEvent(new Event('wishlist-updated'));
+        } catch (err) {
+            toast.error('Lỗi khi cập nhật yêu thích');
+        }
+    };
 
     const handleAdd = async (e) => {
         e.preventDefault();
@@ -134,35 +166,52 @@ function ProductCard({ product }) {
 
     return (
         <div className="card p-0 overflow-hidden hover:shadow-md transition-shadow">
-            <Link to={`/products/${product.id}`}>
-                <div className="h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
+            <Link to={`/products/${product.id}`} className="relative block">
+                <div className="h-40 bg-gray-50 flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
                         <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover hover:scale-105 transition-transform duration-300" />
                     ) : (
-                        <span className="text-5xl">🥦</span>
+                        <Square3Stack3DIcon className="w-16 h-16 text-gray-200" />
                     )}
                 </div>
+                <button 
+                    onClick={toggleWishlist}
+                    className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all ${isLiked ? 'bg-red-50 text-red-500' : 'bg-white/80 text-gray-400 hover:text-red-500'}`}
+                >
+                    {isLiked ? <HeartIconSolid className="w-5 h-5" /> : <HeartIcon className="w-5 h-5" />}
+                </button>
             </Link>
             <div className="p-4">
-                <Link to={`/products/${product.id}`} className="font-semibold text-gray-800 hover:text-green-700 block truncate mb-1">
+                <Link to={`/products/${product.id}`} className="font-bold text-gray-800 hover:text-green-700 block truncate mb-1">
                     {product.name}
                 </Link>
-                <p className="text-xs text-gray-400 mb-1 truncate">{product.farmName}</p>
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-400 mb-2 truncate">
+                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                    {product.farmName}
+                </div>
                 {product.certification && (
-                    <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full mb-2">
+                    <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-full mb-3 uppercase tracking-wider border border-green-100">
+                        <StarIconSolid className="w-3 h-3" />
                         {product.certification}
                     </span>
                 )}
-                <div className="flex items-center justify-between mt-2">
-                    <span className="text-green-700 font-bold text-sm">
-                        {product.price?.toLocaleString('vi-VN')}đ/{product.unit}
-                    </span>
-                    <button onClick={handleAdd} className="bg-green-600 text-white text-xs px-3 py-1 rounded-lg hover:bg-green-700 transition-colors">
-                        + Giỏ
+                <div className="flex items-center justify-between mt-auto">
+                    <div>
+                        <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">Giá/ {product.unit}</p>
+                        <span className="text-green-700 font-black text-base">
+                            {product.price?.toLocaleString('vi-VN')}đ
+                        </span>
+                    </div>
+                    <button 
+                        onClick={handleAdd} 
+                        className="w-10 h-10 bg-green-600 text-white rounded-xl flex items-center justify-center hover:bg-green-700 transition-all shadow-sm hover:shadow-lg active:scale-95"
+                        title="Thêm vào giỏ"
+                    >
+                        <ShoppingBagIcon className="w-5 h-5" />
                     </button>
                 </div>
                 {product.totalStock === 0 && (
-                    <p className="text-red-500 text-xs mt-1">Hết hàng</p>
+                    <p className="text-red-500 text-[10px] font-bold mt-2 uppercase tracking-widest">Hết hàng</p>
                 )}
             </div>
         </div>

@@ -86,9 +86,26 @@ export const userService = {
     toggleActive: (id) => api.patch(`/users/${id}/toggle-status`),
 };
 
+// Addresses
+export const addressService = {
+    getAll: () => api.get('/addresses'),
+    create: (data) => api.post('/addresses', data),
+    update: (id, data) => api.put(`/addresses/${id}`, data),
+    setDefault: (id) => api.patch(`/addresses/${id}/default`),
+    delete: (id) => api.delete(`/addresses/${id}`),
+};
+
 // AI
 export const aiService = {
     analyze: (formData) => api.post('/ai/analyze', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),
+};
+
+export const wishlistService = {
+    getAll: () => api.get('/wishlist'),
+    add: (productId) => api.post(`/wishlist/${productId}`),
+    remove: (productId) => api.delete(`/wishlist/${productId}`),
+    check: (productId) => api.get(`/wishlist/check/${productId}`),
+    count: () => api.get('/wishlist/count'),
 };

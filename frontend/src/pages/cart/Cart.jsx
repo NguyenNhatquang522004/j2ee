@@ -3,6 +3,8 @@ import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout';
 import toast from 'react-hot-toast';
+import { ShoppingCartIcon, TrashIcon, MinusIcon, PlusIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+
 
 export default function Cart() {
     const { cart, loading, updateItem, removeItem, clearCart } = useCart();
@@ -27,10 +29,14 @@ export default function Cart() {
             <h1 className="text-2xl font-bold text-gray-800 mb-6">Giỏ hàng của bạn</h1>
 
             {items.length === 0 ? (
-                <div className="text-center py-20">
-                    <div className="text-6xl mb-4">🛒</div>
-                    <p className="text-gray-500 mb-4">Giỏ hàng trống</p>
-                    <Link to="/products" className="btn-primary">Mua sắm ngay</Link>
+                <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
+                    <div className="flex justify-center mb-4">
+                        <div className="p-6 bg-green-50 rounded-full">
+                            <ShoppingCartIcon className="w-16 h-16 text-green-600" />
+                        </div>
+                    </div>
+                    <p className="text-gray-500 mb-6 text-lg">Giỏ hàng của bạn đang trống</p>
+                    <Link to="/products" className="btn-primary px-8">Mua sắm ngay</Link>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -41,12 +47,13 @@ export default function Cart() {
                         ))}
                         <button
                             onClick={async () => {
-                                if (!confirm('Xóa tất cả sản phẩm?')) return;
+                                if (!confirm('Xóa tất cả sản phẩm khỏi giỏ hàng?')) return;
                                 await clearCart();
-                                toast.success('Đã xóa giỏ hàng');
+                                toast.success('Đã xóa sạch giỏ hàng');
                             }}
-                            className="btn-danger text-sm"
+                            className="flex items-center gap-2 text-red-500 hover:text-red-700 font-semibold transition-colors bg-red-50 px-4 py-2 rounded-xl"
                         >
+                            <TrashIcon className="w-4 h-4" />
                             Xóa tất cả
                         </button>
                     </div>
@@ -64,8 +71,9 @@ export default function Cart() {
                                 <span className="text-green-700">{cart?.totalAmount?.toLocaleString('vi-VN')}đ</span>
                             </div>
                         </div>
-                        <button onClick={() => navigate('/checkout')} className="btn-primary w-full">
-                            Đặt hàng →
+                        <button onClick={() => navigate('/checkout')} className="btn-primary w-full flex items-center justify-center gap-2 py-3">
+                            Tiến hành đặt hàng
+                            <ArrowRightIcon className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
@@ -77,11 +85,11 @@ export default function Cart() {
 function CartItem({ item, onUpdate, onRemove }) {
     return (
         <div className="card flex items-center gap-4">
-            <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+            <div className="w-20 h-20 bg-green-50 rounded-xl flex items-center justify-center shrink-0 overflow-hidden border border-green-100">
                 {item.productImageUrl ? (
                     <img src={item.productImageUrl} alt={item.productName} className="h-full w-full object-cover" />
                 ) : (
-                    <span className="text-3xl">🥦</span>
+                    <ShoppingCartIcon className="w-10 h-10 text-green-200" />
                 )}
             </div>
             <div className="flex-1">
@@ -92,25 +100,31 @@ function CartItem({ item, onUpdate, onRemove }) {
                 <p className="text-xs text-gray-400">Còn: {item.availableStock}</p>
             </div>
             <div className="flex items-center gap-2">
-                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
                     <button
                         onClick={() => { if (item.quantity > 1) onUpdate(item.cartItemId, item.quantity - 1); }}
-                        className="px-2 py-1 bg-gray-100 hover:bg-gray-200 font-bold"
-                    >-</button>
-                    <span className="px-3 py-1 font-semibold">{item.quantity}</span>
+                        className="p-2 hover:bg-gray-50 text-gray-500"
+                    >
+                        <MinusIcon className="w-4 h-4" />
+                    </button>
+                    <span className="px-3 py-1 font-bold text-gray-800 min-w-[40px] text-center">{item.quantity}</span>
                     <button
                         onClick={() => { if (item.quantity < item.availableStock) onUpdate(item.cartItemId, item.quantity + 1); }}
-                        className="px-2 py-1 bg-gray-100 hover:bg-gray-200 font-bold"
-                    >+</button>
+                        className="p-2 hover:bg-gray-50 text-gray-500"
+                    >
+                        <PlusIcon className="w-4 h-4" />
+                    </button>
                 </div>
                 <span className="font-bold text-green-700 w-28 text-right">
                     {item.subtotal?.toLocaleString('vi-VN')}đ
                 </span>
                 <button
                     onClick={() => onRemove(item.cartItemId)}
-                    className="text-red-500 hover:text-red-700 transition-colors ml-2"
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                     title="Xóa"
-                >✕</button>
+                >
+                    <TrashIcon className="w-5 h-5" />
+                </button>
             </div>
         </div>
     );
