@@ -1,0 +1,120 @@
+package nhom5.demo.service.impl;
+
+import lombok.RequiredArgsConstructor;
+import nhom5.demo.dto.request.FarmRequest;
+import nhom5.demo.dto.response.FarmResponse;
+import nhom5.demo.entity.Farm;
+import nhom5.demo.exception.ResourceNotFoundException;
+import nhom5.demo.repository.FarmRepository;
+import nhom5.demo.repository.ProductRepository;
+import nhom5.demo.service.FarmService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class FarmServiceImpl implements FarmService {
+
+    private final FarmRepository farmRepository;
+    private final ProductRepository productRepository;
+
+    @Override
+    @Transactional
+    public FarmResponse createFarm(FarmRequest request) {
+        Farm farm = Farm.builder()
+                .name(request.getName())
+                .address(request.getAddress())
+                .province(request.getProvince())
+                .ownerName(request.getOwnerName())
+                .contactPhone(request.getContactPhone())
+                .contactEmail(request.getContactEmail())
+                .description(request.getDescription())
+                .certification(request.getCertification())
+                .certificationCode(request.getCertificationCode())
+                .certificationExpiryDate(request.getCertificationExpiryDate())
+                .imageUrl(request.getImageUrl())
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
+                .isActive(true)
+                .build();
+        return toResponse(farmRepository.save(farm));
+    }
+
+    @Override
+    @Transactional
+    public FarmResponse updateFarm(Long id, FarmRequest request) {
+        Farm farm = findById(id);
+        farm.setName(request.getName());
+        farm.setAddress(request.getAddress());
+        farm.setProvince(request.getProvince());
+        farm.setOwnerName(request.getOwnerName());
+        farm.setContactPhone(request.getContactPhone());
+        farm.setContactEmail(request.getContactEmail());
+        farm.setDescription(request.getDescription());
+        farm.setCertification(request.getCertification());
+        farm.setCertificationCode(request.getCertificationCode());
+        farm.setCertificationExpiryDate(request.getCertificationExpiryDate());
+        farm.setImageUrl(request.getImageUrl());
+        farm.setLatitude(request.getLatitude());
+        farm.setLongitude(request.getLongitude());
+        if (request.getIsActive() != null)
+            farm.setIsActive(request.getIsActive());
+        return toResponse(farmRepository.save(farm));
+    }
+
+    @Override
+    @Transactional
+    public void deleteFarm(Long id) {
+        if (!farmRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Farm", "id", id);
+        }
+        farmRepository.deleteById(id);
+    }
+
+    @Override
+    public FarmResponse getFarmById(Long id) {
+        return toResponse(findById(id));
+    }
+
+    @Override
+    public Page<FarmResponse> getActiveFarms(Pageable pageable) {
+        return farmRepository.findByIsActiveTrue(pageable).map(this::toResponse);
+    }
+
+    @Override
+    public Page<FarmResponse> searchFarms(String name, Pageable pageable) {
+        return farmRepository.findByNameContainingIgnoreCase(name, pageable).map(this::toResponse);
+    }
+
+    private Farm findById(Long id) {
+        return farmRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Farm", "id", id));
+    }
+
+    private FarmResponse toResponse(Farm farm) {
+        long productCount = productRepository.countByFarmId(farm.getId());
+        return FarmResponse.builder()
+                .id(farm.getId())
+                .name(farm.getName())
+                .address(farm.getAddress())
+                .province(farm.getProvince())
+                .ownerName(farm.getOwnerName())
+                .contactPhone(farm.getContactPhone())
+                .contactEmail(farm.getContactEmail())
+                .description(farm.getDescription())
+                .certification(farm.getCertification())
+                .certificationDescription(farm.getCertification() != null
+                        ? farm.getCertification().getDescription()
+                        : null)
+                .certificationCode(farm.getCertificationCode())
+                .certificationExpiryDate(farm.getCertificationExpiryDate())
+                .imageUrl(farm.getImageUrl())
+                .latitude(farm.getLatitude())
+                .longitude(farm.getLongitude())
+                .isActive(farm.getIsActive())
+                .productCount((int) productCount)
+                .build();
+    }
+}

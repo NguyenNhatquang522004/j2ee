@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ưu đãi đặc biệt từ Clean Food</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #fff8f0;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .wrapper {
+            max-width: 600px;
+            margin: 30px auto;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #e65100, #ff7043);
+            padding: 32px 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #fff;
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            color: #ffe0cc;
+            margin: 6px 0 0;
+            font-size: 14px;
+        }
+
+        .body {
+            padding: 28px 32px;
+        }
+
+        .greeting {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 24px;
+        }
+
+        .coupon-box {
+            border: 2px dashed #ff7043;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            margin: 24px 0;
+            background: #fff8f5;
+        }
+
+        .coupon-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #e65100;
+            letter-spacing: 4px;
+            margin: 8px 0;
+        }
+
+        .coupon-desc {
+            font-size: 15px;
+            color: #777;
+        }
+
+        .coupon-detail {
+            margin: 20px 0;
+        }
+
+        .coupon-detail table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .coupon-detail td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f5e6e0;
+            font-size: 14px;
+        }
+
+        .coupon-detail td:first-child {
+            color: #888;
+            width: 55%;
+        }
+
+        .coupon-detail td:last-child {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .highlight {
+            color: #e65100;
+        }
+
+        .cta {
+            text-align: center;
+            margin: 28px 0 16px;
+        }
+
+        .cta a {
+            background: #ff7043;
+            color: #fff;
+            padding: 13px 32px;
+            border-radius: 24px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .note {
+            font-size: 12px;
+            color: #aaa;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .footer {
+            background: #f9f9f9;
+            padding: 18px 32px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #eee;
+        }
+
+        .footer a {
+            color: #ff7043;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <h1>🎁 Ưu đãi đặc biệt!</h1>
+            <p>Clean Food - Thực phẩm sạch cho sức khoẻ của bạn</p>
+        </div>
+        <div class="body">
+            <p class="greeting">
+                Xin chào <strong th:text="${customerName}">Khách hàng thân mến</strong>,<br />
+                <strong>Clean Food</strong> gửi đến bạn một ưu đãi đặc biệt. Đừng bỏ lỡ cơ hội tiết kiệm!
+            </p>
+
+            <div class="coupon-box">
+                <p class="coupon-desc">Sử dụng mã coupon sau để được giảm giá:</p>
+                <div class="coupon-code" th:text="${couponCode}">CLEAN20</div>
+                <p class="coupon-desc" style="margin-top:8px;">
+                    Giảm <strong class="highlight" th:text="${discountPercent + '%'}">20%</strong>
+                    cho đơn hàng từ <strong class="highlight"
+                        th:text="${#numbers.formatDecimal(minOrderAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">200.000
+                        đ</strong>
+                </p>
+            </div>
+
+            <div class="coupon-detail">
+                <table>
+                    <tr>
+                        <td>Mã giảm giá:</td>
+                        <td th:text="${couponCode}">CLEAN20</td>
+                    </tr>
+                    <tr>
+                        <td>Mức giảm:</td>
+                        <td th:text="${discountPercent + '%'}">20%</td>
+                    </tr>
+                    <tr>
+                        <td>Giảm tối đa:</td>
+                        <td th:text="${#numbers.formatDecimal(maxDiscountAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                            100.000 đ</td>
+                    </tr>
+                    <tr>
+                        <td>Đơn hàng tối thiểu:</td>
+                        <td th:text="${#numbers.formatDecimal(minOrderAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">200.000 đ
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Hạn sử dụng:</td>
+                        <td style="color:#e65100;" th:text="${expiryDate}">31/12/2024</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="cta">
+                <a href="http://localhost:3000/products">Mua sắm ngay &rarr;</a>
+            </div>
+            <p class="note">Mã coupon chỉ sử dụng được một lần và không thể kết hợp với ưu đãi khác.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2024 Clean Food - Nhóm 5 | <a href="http://localhost:3000">cleanfood.vn</a></p>
+            <p>Nếu bạn không muốn nhận email này, hãy <a href="#">huỷ đăng ký</a>.</p>
+        </div>
+    </div>
+</body>
+
+</html>
