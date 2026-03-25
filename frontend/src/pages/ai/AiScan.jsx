@@ -25,7 +25,8 @@ export default function AiScan() {
             const formData = new FormData();
             formData.append('image', image);
             const res = await aiService.analyze(formData);
-            setResult(res.data);
+            // res.data is the ApiResponse, we want the AiFreshnessResponse inside it
+            setResult(res.data.data || res.data); 
         } catch (err) {
             toast.error(err.response?.data?.message || 'Kiểm tra thất bại');
         } finally {

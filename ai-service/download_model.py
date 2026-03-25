@@ -35,10 +35,11 @@ def download_model(api_key: str):
     print("=" * 60)
 
     rf = Roboflow(api_key=api_key)
-    project = rf.workspace("college-74jj5").project("freshness-fruits-and-vegetables")
+    project = rf.workspace("roboflow-gw7nd").project("fruits-freshness-hcl7p")
 
-    # Tải version mới nhất (version 7 - pre-trained YOLOv8)
-    model = project.version(7).download("yolov8", location=str(models_dir / "freshness_model"))
+    # Tải version mới nhất có model (version 1) - Tải WEIGHTS chứ không phải DATASET
+    version = project.version(1)
+    model = version.model.download("yolov8", location=str(models_dir / "freshness_model"))
 
     # Tìm file weights .pt đã tải
     pt_files = list((models_dir / "freshness_model").glob("**/*.pt"))

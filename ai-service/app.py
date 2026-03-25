@@ -27,42 +27,40 @@ from pathlib import Path
 
 from flask import Flask, request, jsonify
 from PIL import Image
+from dotenv import load_dotenv
+
+# Load .env at the beginning to set PORT and other vars
+load_dotenv()
 
 # ── Cấu hình ────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).parent
-MODEL_DIR = BASE_DIR / "models" / "freshness_model"
 
-# Tìm file weights (.pt) trong thư mục model đã tải
-def _find_weights() -> Path | None:
-    for pattern in ["**/*.pt", "**/*.onnx"]:
-        candidates = sorted(MODEL_DIR.glob(pattern))
-        if candidates:
-            return candidates[0]
-    return None
+# ── Cấu hình Roboflow ────────────────────────────────────────────────────────
+from roboflow import Roboflow
+ROBOFLOW_API_KEY = os.getenv("ROBOFLOW_API_KEY")
+ROBOFLOW_WORKSPACE = "college-74jj5"
+ROBOFLOW_PROJECT = "freshness-fruits-and-vegetables"
+ROBOFLOW_VERSION = 7
 
-# ── Load model ───────────────────────────────────────────────────────────────
+# ── Load model (Hosted) ───────────────────────────────────────────────────────
 model = None
 
 def load_model():
     global model
-    weights_path = _find_weights()
-    if weights_path is None:
-        logger.warning(
-            "Không tìm thấy file weights trong '%s'. "
-            "Hãy chạy: python download_model.py --api-key <YOUR_KEY>",
-            MODEL_DIR,
-        )
-        return
-
     try:
-        from ultralytics import YOLO
-        model = YOLO(str(weights_path))
-        logger.info("Đã load model từ: %s", weights_path)
+        if not ROBOFLOW_API_KEY:
+            logger.error("ROBOFLOW_API_KEY missing in .env")
+            return
+
+        rf = Roboflow(api_key=ROBOFLOW_API_KEY)
+        project = rf.workspace(ROBOFLOW_WORKSPACE).project(ROBOFLOW_PROJECT)
+        model = project.version(ROBOFLOW_VERSION).model
+        logger.info("Đã kết nối Hosted AI Model (Roboflow Universe: %s/%s/v%d)", ROBOFLOW_WORKSPACE, ROBOFLOW_PROJECT, ROBOFLOW_VERSION)
     except Exception as exc:
-        logger.error("Lỗi load model: %s", exc)
+        logger.error("Lỗi kết nối AI model: %s", exc)
 
 
 # ── Flask app ─────────────────────────────────────────────────────────────────
@@ -71,119 +69,113 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max upload
 
 
 def _label_to_freshness(class_name: str) -> str:
-    """Chuyển class name (fresh-apple, stale-banana…) sang FRESH hoặc ROTTEN."""
+    """Chuyển class name sang FRESH hoặc ROTTEN."""
     name_lower = class_name.lower()
-    if name_lower.startswith("fresh") or "fresh" in name_lower:
+    # Các từ khóa cho FRESH
+    if any(k in name_lower for k in ["fresh", "good", "new", "tươi"]):
         return "FRESH"
-    if name_lower.startswith("stale") or name_lower.startswith("rotten") or "rotten" in name_lower:
-        return "ROTTEN"
-    # Fallback: dùng keyword matching
-    fresh_keywords = ["good", "new", "ok", "unripe", "ripe"]
-    rotten_keywords = ["bad", "spoiled", "decayed", "old", "damaged"]
-    for kw in fresh_keywords:
-        if kw in name_lower:
-            return "FRESH"
-    for kw in rotten_keywords:
-        if kw in name_lower:
-            return "ROTTEN"
+    # Các từ khóa cho ROTTEN
+    if any(k in name_lower for k in ["stale", "rotten", "bad", "hư", "hỏng", "old"]):
+        return "SPOILED"
     return "UNKNOWN"
 
-
 def _build_response(freshness: str, confidence: float, detected_class: str) -> dict:
-    is_fresh = freshness == "FRESH"
-    return {
-        "label": freshness,
-        "freshness": freshness,
-        "confidence": round(confidence, 4),
-        "isFresh": is_fresh,
-        "detectedClass": detected_class,
-        "message": (
-            "Sản phẩm còn tươi và an toàn để sử dụng."
-            if is_fresh
-            else "Sản phẩm có dấu hiệu không còn tươi. Không nên sử dụng."
-        ),
-        "description": (
-            "Thực phẩm có màu sắc và kết cấu bình thường, không có dấu hiệu hư hỏng."
-            if is_fresh
-            else "Thực phẩm có dấu hiệu biến đổi màu sắc, bề mặt hoặc kết cấu bất thường."
-        ),
-        "suggestion": (
-            "Có thể sử dụng bình thường. Nên bảo quản trong ngăn mát tủ lạnh để giữ độ tươi lâu hơn."
-            if is_fresh
-            else "Không nên sử dụng thực phẩm này. Vui lòng kiểm tra lại hoặc liên hệ cửa hàng để được hỗ trợ."
-        ),
-    }
-
-
+    """Tạo object response chuẩn cho frontend."""
+    if freshness == "FRESH":
+        return {
+            "freshness": "FRESH",
+            "confidence": confidence,
+            "detectedClass": detected_class,
+            "label": "Tươi sạch",
+            "isFresh": True,
+            "message": "Sản phẩm còn rất tươi và an toàn để sử dụng.",
+            "description": f"AI nhận diện đây là '{detected_class}' với độ tươi cao.",
+            "suggestion": "Có thể sử dụng ngay hoặc bảo quản trong tủ lạnh để giữ độ tươi lâu hơn."
+        }
+    elif freshness == "SPOILED":
+        return {
+            "freshness": "SPOILED",
+            "confidence": confidence,
+            "detectedClass": detected_class,
+            "label": "Hư hỏng / Không tươi",
+            "isFresh": False,
+            "message": "Sản phẩm có dấu hiệu hư hỏng hoặc không còn tươi.",
+            "description": f"AI nhận diện '{detected_class}' có dấu hiệu biến đổi màu sắc hoặc kết cấu.",
+            "suggestion": "Không nên sử dụng sản phẩm này để đảm bảo sức khỏe."
+        }
+    else:
+        return {
+            "freshness": "UNKNOWN",
+            "confidence": confidence,
+            "detectedClass": detected_class,
+            "label": "Không xác định",
+            "isFresh": False,
+            "message": "AI không thể xác định chính xác độ tươi của sản phẩm.",
+            "description": "Ảnh có thể bị mờ, thiếu sáng hoặc sản phẩm không nằm trong danh mục nhận diện.",
+            "suggestion": "Hãy thử chụp ảnh rõ nét hơn, đủ ánh sáng và đặt sản phẩm ở chính giữa khung hình."
+        }
+    
 @app.route("/api/predict-freshness", methods=["POST"])
 def predict_freshness():
-    # Validate input
     if "image" not in request.files:
-        return jsonify({"error": "Thiếu file ảnh. Gửi field 'image' dạng multipart/form-data."}), 400
+        return jsonify({"error": "Thiếu file ảnh."}), 400
 
     file = request.files["image"]
     if file.filename == "":
         return jsonify({"error": "File ảnh rỗng."}), 400
 
-    allowed_exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
-    ext = Path(file.filename).suffix.lower()
-    if ext not in allowed_exts:
-        return jsonify({"error": f"Định dạng không hỗ trợ: {ext}"}), 400
+    if ROBOFLOW_API_KEY is None:
+        return jsonify({"error": "AI model chưa sẵn sàng. Hãy kiểm tra API key trong .env"}), 503
 
-    # Kiểm tra model đã load chưa
-    if model is None:
-        return jsonify({
-            "error": "Model chưa được tải. Chạy: python download_model.py --api-key <KEY>"
-        }), 503
-
+    global model
     try:
-        # Đọc ảnh từ request
-        image_bytes = file.read()
-        pil_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        # Save image to temp file
+        temp_path = os.path.join(os.getcwd(), "temp_inference.jpg")
+        file.save(temp_path)
 
-        # Chạy inference
-        results = model.predict(pil_image, conf=0.25, verbose=False)
+        # Nếu model chưa load thì load khẩn cấp (hoặc dùng SDK trực tiếp)
+        if model is None:
+            logger.info("Model chưa load, đang khởi tạo kết nối...")
+            rf = Roboflow(api_key=ROBOFLOW_API_KEY)
+            project = rf.workspace(ROBOFLOW_WORKSPACE).project(ROBOFLOW_PROJECT)
+            model = project.version(ROBOFLOW_VERSION).model
+        
+        prediction = model.predict(temp_path).json()
+        logger.info("Raw Roboflow Response: %s", prediction)
+        print(f">>> DEBUG RAW: {prediction}")
+        
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
-        if not results or len(results) == 0:
-            return jsonify(_build_response("UNKNOWN", 0.0, "unknown")), 200
+        predictions = prediction.get("predictions", [])
+        if not predictions:
+            # Fallback if no detection
+            return jsonify(_build_response("UNKNOWN", 0, "no_detection")), 200
 
-        detections = results[0].boxes
-        if detections is None or len(detections) == 0:
-            # Không phát hiện object nào — trả về UNKNOWN
-            logger.info("Không phát hiện object nào trong ảnh.")
-            return jsonify({
-                **_build_response("UNKNOWN", 0.0, "no_detection"),
-                "message": "Không nhận diện được thực phẩm trong ảnh. Vui lòng chụp rõ hơn.",
-                "description": "Hệ thống không phát hiện được đối tượng thực phẩm.",
-                "suggestion": "Hãy chụp ảnh gần hơn, đủ sáng và tập trung vào thực phẩm cần kiểm tra.",
-            }), 200
+        best_pred = max(predictions, key=lambda x: x["confidence"])
+        best_class = best_pred["class"]
+        best_conf = best_pred["confidence"]
 
-        # Lấy detection có confidence cao nhất
-        class_names = model.names  # dict: {0: 'fresh-apple', 1: 'stale-apple', ...}
-        best_idx = detections.conf.argmax().item()
-        best_conf = float(detections.conf[best_idx].item())
-        best_class_id = int(detections.cls[best_idx].item())
-        best_class_name = class_names.get(best_class_id, "unknown")
+        # Nếu độ tin cậy quá thấp
+        if best_conf < 0.25:
+            return jsonify(_build_response("UNKNOWN", best_conf, best_class)), 200
+        
+        freshness = _label_to_freshness(best_class)
+        logger.info("Detected: %s (conf=%.2f)", best_class, best_conf)
+        print(f">>> DEBUG AI: Detected='{best_class}', Confidence={best_conf:.2f}, Freshness='{freshness}'")
 
-        freshness = _label_to_freshness(best_class_name)
-        logger.info(
-            "Detected: class='%s' freshness='%s' confidence=%.2f",
-            best_class_name, freshness, best_conf,
-        )
-
-        return jsonify(_build_response(freshness, best_conf, best_class_name)), 200
+        return jsonify(_build_response(freshness, best_conf, best_class)), 200
 
     except Exception as exc:
-        logger.error("Lỗi inference: %s", exc, exc_info=True)
-        return jsonify({"error": f"Lỗi xử lý ảnh: {str(exc)}"}), 500
-
+        logger.error("Lỗi AI: %s", exc, exc_info=True)
+        return jsonify({"error": f"LỗI AI Server: {str(exc)}"}), 500
 
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
         "status": "ok",
         "model_loaded": model is not None,
-        "model_path": str(_find_weights()) if _find_weights() else None,
+        "mode": "hosted"
     })
 
 

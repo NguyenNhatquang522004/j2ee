@@ -52,8 +52,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Auth endpoints — public
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        // Auth & AI endpoints — public
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/ai/**").permitAll()
                         // Swagger UI — public
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         // Public read endpoints

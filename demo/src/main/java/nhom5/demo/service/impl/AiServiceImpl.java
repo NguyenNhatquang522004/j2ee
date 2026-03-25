@@ -41,9 +41,12 @@ public class AiServiceImpl implements AiService {
             });
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            log.info("Calling AI service at: {}", aiApiUrl);
             ResponseEntity<Map> response = restTemplate.postForEntity(aiApiUrl, requestEntity, Map.class);
+            log.info("AI service response status: {}", response.getStatusCode());
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                log.info("AI service response body: {}", response.getBody());
                 @SuppressWarnings("unchecked")
                 Map<String, Object> result = (Map<String, Object>) response.getBody();
                 String label = String.valueOf(result.getOrDefault("label", "UNKNOWN"));
@@ -61,6 +64,11 @@ public class AiServiceImpl implements AiService {
                         : (isFresh ? "Có thể sử dụng bình thường. Nên bảo quản đúng cách để giữ độ tươi."
                                 : "Không nên sử dụng. Vui lòng kiểm tra lại hoặc liên hệ cửa hàng.");
 
+                String message = result.containsKey("message")
+                        ? String.valueOf(result.get("message"))
+                        : (isFresh ? "Sản phẩm còn tươi và an toàn để sử dụng"
+                                 : "Sản phẩm có dấu hiệu không còn tươi. Không nên sử dụng.");
+
                 return AiFreshnessResponse.builder()
                         .result(label)
                         .label(label)
@@ -69,9 +77,7 @@ public class AiServiceImpl implements AiService {
                         .isFresh(isFresh)
                         .description(description)
                         .suggestion(suggestion)
-                        .message(isFresh
-                                ? "Sản phẩm còn tươi và an toàn để sử dụng"
-                                : "Sản phẩm có dấu hiệu không còn tươi. Không nên sử dụng.")
+                        .message(message)
                         .build();
             }
 
