@@ -63,6 +63,12 @@ export default function Navbar() {
                                 <BeakerIcon className="w-4 h-4" />
                                 <span>AI Scan</span>
                             </Link>
+                            {isAdmin && (
+                                <Link to="/admin" className="nav-link text-green-700 font-bold bg-green-50 px-3 py-1 rounded-full border border-green-100 hover:bg-green-100 transition-all flex items-center gap-1.5">
+                                    <AcademicCapIcon className="w-4 h-4" />
+                                    <span>Quản trị</span>
+                                </Link>
+                            )}
                         </nav>
                     </div>
 
@@ -144,6 +150,7 @@ export default function Navbar() {
                     <Link to="/farms" className="block font-bold text-gray-800 hover:text-green-600">Trang trại</Link>
                     <Link to="/ai-scan" className="block font-bold text-gray-800 hover:text-green-600">AI Scan</Link>
                     {user && <Link to="/orders" className="block font-bold text-gray-800 hover:text-green-600">Đơn hàng của tôi</Link>}
+                    {isAdmin && <Link to="/admin" className="block font-bold text-green-700 bg-green-50 px-3 py-2 rounded-xl">Quản trị Hệ thống</Link>}
                 </div>
             )}
         </header>

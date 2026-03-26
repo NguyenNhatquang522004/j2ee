@@ -18,7 +18,7 @@ export default function Login() {
         try {
             const data = await login(form);
             toast.success(`Chào mừng, ${data.fullName || data.username}!`);
-            navigate(data.role === 'ADMIN' ? '/admin' : '/');
+            navigate(data.role === 'ROLE_ADMIN' || data.role === 'ADMIN' ? '/admin' : '/');
         } catch (err) {
             toast.error(err.response?.data?.message || 'Đăng nhập thất bại');
         } finally {
@@ -50,7 +50,12 @@ export default function Login() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Mật khẩu</label>
+                        <div className="flex justify-between mb-2">
+                            <label className="block text-sm font-semibold text-gray-700">Mật khẩu</label>
+                            <Link to="/forgot-password" style={{ color: '#16a34a' }} className="text-xs font-bold hover:underline">
+                                Quên mật khẩu?
+                            </Link>
+                        </div>
                         <input
                             type="password"
                             name="password"
@@ -84,8 +89,25 @@ export default function Login() {
                         <div className="w-full border-t border-gray-200"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                        <span className="px-2 bg-white text-gray-500">Hoặc</span>
+                        <span className="px-2 bg-white text-gray-400 uppercase tracking-widest text-xs font-bold">Hoặc đăng nhập bằng</span>
                     </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                    <button
+                        onClick={() => toast.success('Đang kết nối tới Google...')}
+                        className="flex items-center justify-center py-2.5 border border-gray-100 rounded-xl hover:bg-gray-50 transition-all font-semibold text-gray-700 shadow-sm"
+                    >
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 mr-2" alt="Google" />
+                        Google
+                    </button>
+                    <button
+                        onClick={() => toast.success('Đang kết nối tới GitHub...')}
+                        className="flex items-center justify-center py-2.5 border border-gray-100 rounded-xl hover:bg-gray-50 transition-all font-semibold text-gray-700 shadow-sm"
+                    >
+                        <img src="https://www.svgrepo.com/show/512317/github-142.svg" className="w-5 h-5 mr-2" alt="GitHub" />
+                        GitHub
+                    </button>
                 </div>
 
                 <p className="text-center text-base text-gray-600">

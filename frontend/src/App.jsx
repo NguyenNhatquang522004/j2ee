@@ -7,6 +7,8 @@ import { PrivateRoute, AdminRoute } from './components/ProtectedRoute';
 import Home from './pages/home/Home';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
 import ProductList from './pages/products/ProductList';
 import ProductDetail from './pages/products/ProductDetail';
 import Cart from './pages/cart/Cart';
@@ -19,6 +21,7 @@ import Wishlist from './pages/wishlist/Wishlist';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
+import AdminCategories from './pages/admin/AdminCategories';
 import AdminBatches from './pages/admin/AdminBatches';
 import AdminFarms from './pages/admin/AdminFarms';
 import AdminOrders from './pages/admin/AdminOrders';
@@ -43,6 +46,8 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/products" element={<ProductList />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/farms" element={<FarmList />} />
@@ -58,6 +63,7 @@ export default function App() {
             {/* Admin routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
+            <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
             <Route path="/admin/batches" element={<AdminRoute><AdminBatches /></AdminRoute>} />
             <Route path="/admin/farms" element={<AdminRoute><AdminFarms /></AdminRoute>} />
             <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
