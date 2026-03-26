@@ -118,7 +118,10 @@ export default function AdminOrders() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-5">
-                                                <p className="text-lg font-black text-green-700 leading-none">{fmt(o.totalAmount)}₫</p>
+                                                <p className="text-lg font-black text-green-700 leading-none">{fmt(o.finalAmount)}₫</p>
+                                                {o.discountAmount > 0 && (
+                                                    <p className="text-[10px] text-red-500 font-bold mt-1 uppercase leading-none italic">Giảm -{fmt(o.discountAmount)}</p>
+                                                )}
                                             </td>
                                             <td className="px-6 py-5 text-center">
                                                 <div className="inline-block relative">
@@ -168,8 +171,13 @@ export default function AdminOrders() {
                                                             ) : <p className="text-sm text-gray-400 italic">Không có địa chỉ</p>}
                                                             <div className="flex gap-4">
                                                                 <div className="bg-gray-50 rounded-2xl p-4 flex-1">
-                                                                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Phương thức</p>
-                                                                    <p className="text-sm text-gray-800 font-black">Thanh toán khi nhận hàng</p>
+                                                                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Thanh toán {o.isPaid ? '✅' : '❌'}</p>
+                                                                    <p className={`text-sm font-black ${o.isPaid ? 'text-green-600' : 'text-red-600'}`}>
+                                                                        {o.paymentMethod === 'COD' ? 'Khi nhận hàng (COD)' : 
+                                                                         o.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' :
+                                                                         o.paymentMethod === 'MOMO' ? 'Ví MoMo' : 'VNPay'}
+                                                                        {o.isPaid ? ' (Đã trả)' : ' (Chưa trả)'}
+                                                                    </p>
                                                                 </div>
                                                                 <div className="bg-gray-50 rounded-2xl p-4 flex-1">
                                                                     <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Liên hệ</p>

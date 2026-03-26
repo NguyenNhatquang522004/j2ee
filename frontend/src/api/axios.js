@@ -19,6 +19,9 @@ api.interceptors.response.use(
             localStorage.removeItem('user');
             window.location.href = '/login';
         }
+        if (err.response?.status === 503 && !window.location.pathname.startsWith('/admin')) {
+            window.location.href = '/maintenance';
+        }
         return Promise.reject(err);
     }
 );

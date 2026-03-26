@@ -1,4 +1,6 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 import { 
     HomeIcon, 
     UserGroupIcon, 
@@ -8,7 +10,10 @@ import {
     PuzzlePieceIcon,
     ArrowLeftOnRectangleIcon,
     ChartBarIcon,
-    TagIcon
+    TagIcon,
+    UserIcon,
+    ShieldCheckIcon,
+    Cog8ToothIcon
 } from '@heroicons/react/24/outline';
 
 const MENU_ITEMS = [
@@ -19,10 +24,20 @@ const MENU_ITEMS = [
     { name: 'Lô hàng', path: '/admin/batches', icon: PuzzlePieceIcon },
     { name: 'Trang trại', path: '/admin/farms', icon: HomeIcon },
     { name: 'Đơn hàng', path: '/admin/orders', icon: ClipboardDocumentListIcon },
+    { name: 'Mã giảm giá', path: '/admin/coupons', icon: TagIcon },
+    { name: 'Cài đặt', path: '/admin/settings', icon: Cog8ToothIcon },
 ];
 
 export default function AdminSidebar() {
     const { pathname } = useLocation();
+    const { logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        toast.success('Đã đăng xuất thành công');
+        navigate('/login');
+    };
 
     return (
         <aside className="w-64 bg-white border-r h-screen sticky top-0 flex flex-col shadow-[rgba(0,0,0,0.05)_5px_0px_15px]">
@@ -60,13 +75,13 @@ export default function AdminSidebar() {
             </nav>
 
             <div className="p-4 border-t">
-                <Link 
-                    to="/" 
-                    className="flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all rounded-xl cursor-pointer"
+                <button 
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all rounded-xl cursor-pointer"
                 >
                     <ArrowLeftOnRectangleIcon className="w-5 h-5" />
-                    <span className="font-semibold text-sm">Thoát Admin</span>
-                </Link>
+                    <span className="font-semibold text-sm">Đăng xuất</span>
+                </button>
             </div>
         </aside>
     );

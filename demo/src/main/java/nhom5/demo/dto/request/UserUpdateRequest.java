@@ -17,4 +17,9 @@ public class UserUpdateRequest {
     
     /** Mật khẩu mới (nếu muốn đổi) */
     private String password;
+    
+    private java.time.LocalDate dateOfBirth;
+    private String gender;
+    private Boolean emailNotifications;
+    private Boolean promoNotifications;
 }

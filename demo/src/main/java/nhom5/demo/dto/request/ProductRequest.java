@@ -31,4 +31,6 @@ public class ProductRequest {
     private Long farmId;
 
     private Boolean isActive = true;
+    private Boolean isNew = true;
+    private BigDecimal originalPrice;
 }

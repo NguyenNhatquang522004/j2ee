@@ -45,6 +45,8 @@ public class ProductServiceImpl implements ProductService {
                 .category(category)
                 .farm(farm)
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
+                .isNew(request.getIsNew() != null ? request.getIsNew() : true)
+                .originalPrice(request.getOriginalPrice())
                 .build();
 
         return toResponse(productRepository.save(product));
@@ -69,6 +71,9 @@ public class ProductServiceImpl implements ProductService {
         product.setFarm(farm);
         if (request.getIsActive() != null)
             product.setIsActive(request.getIsActive());
+        if (request.getIsNew() != null)
+            product.setIsNew(request.getIsNew());
+        product.setOriginalPrice(request.getOriginalPrice());
 
         return toResponse(productRepository.save(product));
     }
@@ -85,13 +90,25 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductResponse getProductById(Long id) {
-        return toResponse(findById(id));
+        Product product = findById(id);
+        
+        // Nếu sản phẩm đã ẩn, chỉ cho phép ADMIN xem
+        if (!product.getIsActive()) {
+            boolean isAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null &&
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            if (!isAdmin) {
+                throw new nhom5.demo.exception.ResourceNotFoundException("Product", "id", id);
+            }
+        }
+        
+        return toResponse(product);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductResponse> searchProducts(String name, Long categoryId, Long farmId, Pageable pageable) {
-        return productRepository.searchProducts(name, categoryId, farmId, pageable)
+    public Page<ProductResponse> searchProducts(String name, Long categoryId, Long farmId, Boolean isActive, Pageable pageable) {
+        return productRepository.searchProducts(name, categoryId, farmId, isActive, pageable)
                 .map(this::toResponse);
     }
 
@@ -99,6 +116,14 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public Page<ProductResponse> getTopSellingProducts(Pageable pageable) {
         return productRepository.findTopSellingProducts(pageable).map(this::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public void toggleProductStatus(Long id) {
+        Product product = findById(id);
+        product.setIsActive(!product.getIsActive());
+        productRepository.save(product);
     }
 
     private Product findById(Long id) {
@@ -118,6 +143,8 @@ public class ProductServiceImpl implements ProductService {
                 .unit(product.getUnit())
                 .imageUrl(product.getImageUrl())
                 .isActive(product.getIsActive())
+                .isNew(product.getIsNew())
+                .originalPrice(product.getOriginalPrice())
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .farmId(product.getFarm() != null ? product.getFarm().getId() : null)

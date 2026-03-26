@@ -33,4 +33,6 @@ public interface BatchService {
     void discountNearExpiryBatches(int warningDays);
 
     long getTotalStock(Long productId);
+
+    void returnStock(Long productId, int quantity);
 }

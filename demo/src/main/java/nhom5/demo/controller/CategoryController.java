@@ -23,11 +23,27 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    @Operation(summary = "Danh sách danh mục đang hoạt động (public)")
+    @Operation(summary = "Danh mục đang hoạt động (public)")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAll() {
-        List<CategoryResponse> data = categoryService.getActiveCategories();
-        return ResponseEntity.ok(ApiResponse.success(data));
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllActive() {
+        return ResponseEntity.ok(ApiResponse.success(categoryService.getActiveCategories()));
+    }
+
+    @Operation(summary = "Tất cả danh mục (Admin)")
+    @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllForAdmin() {
+        return ResponseEntity.ok(ApiResponse.success(categoryService.getAllCategories()));
+    }
+
+    @Operation(summary = "Bật/tắt trạng thái danh mục (Admin)")
+    @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}/toggle-status")
+    public ResponseEntity<ApiResponse<Void>> toggleStatus(@PathVariable Long id) {
+        categoryService.toggleCategoryStatus(id);
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật trạng thái danh mục", null));
     }
 
     @Operation(summary = "Chi tiết danh mục (public)")

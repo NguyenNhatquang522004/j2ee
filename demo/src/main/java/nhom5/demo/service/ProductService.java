@@ -14,7 +14,8 @@ public interface ProductService {
 
     ProductResponse getProductById(Long id);
 
-    Page<ProductResponse> searchProducts(String name, Long categoryId, Long farmId, Pageable pageable);
+    Page<ProductResponse> searchProducts(String name, Long categoryId, Long farmId, Boolean isActive, Pageable pageable);
 
     Page<ProductResponse> getTopSellingProducts(Pageable pageable);
+    void toggleProductStatus(Long id);
 }

@@ -58,6 +58,8 @@ public class OrderServiceImpl implements OrderService {
                     .quantity(itemReq.getQuantity())
                     .unitPrice(product.getPrice()) // snapshot current price
                     .subtotal(product.getPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity())))
+                    .productName(product.getName()) // snapshot current name
+                    .productImageUrl(product.getImageUrl()) // snapshot current image
                     .build();
         }).toList();
 
@@ -184,11 +186,47 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse updateOrderStatus(Long id, OrderStatusEnum status) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
-        order.setStatus(status);
-        if (status == OrderStatusEnum.DELIVERED) {
-            order.setIsPaid(true);
+
+        // Validation: Cannot go back to PENDING from SHIPPING/DELIVERED
+        if (status == OrderStatusEnum.PENDING && 
+           (order.getStatus() == OrderStatusEnum.SHIPPING || order.getStatus() == OrderStatusEnum.DELIVERED)) {
+            throw new BusinessException("Không thể chuyển từ trạng thái " + order.getStatus().name() + " về Chờ xác nhận");
         }
+
+        order.setStatus(status);
+        LocalDateTime now = LocalDateTime.now();
+        
+        switch (status) {
+            case CONFIRMED -> { if (order.getConfirmedAt() == null) order.setConfirmedAt(now); }
+            case SHIPPING -> { if (order.getShippedAt() == null) order.setShippedAt(now); }
+            case DELIVERED -> { 
+                if (order.getDeliveredAt() == null) order.setDeliveredAt(now);
+                order.setIsPaid(true);
+            }
+            case CANCELLED -> { 
+                if (order.getCancelledAt() == null) order.setCancelledAt(now); 
+                revertCouponUsage(order);
+                revertStock(order);
+            }
+        }
+        
         return toResponse(orderRepository.save(order));
+    }
+
+    private void revertCouponUsage(Order order) {
+        if (order.getCoupon() != null) {
+            Coupon coupon = order.getCoupon();
+            coupon.setUsedCount(Math.max(0, coupon.getUsedCount() - 1));
+            couponRepository.save(coupon);
+        }
+    }
+
+    private void revertStock(Order order) {
+        for (OrderItem item : order.getOrderItems()) {
+            if (item.getProduct() != null) {
+                batchService.returnStock(item.getProduct().getId(), item.getQuantity());
+            }
+        }
     }
 
     @Override
@@ -206,6 +244,9 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setStatus(OrderStatusEnum.CANCELLED);
+        order.setCancelledAt(LocalDateTime.now());
+        revertCouponUsage(order);
+        revertStock(order);
         orderRepository.save(order);
     }
 
@@ -213,9 +254,11 @@ public class OrderServiceImpl implements OrderService {
         List<OrderResponse.OrderItemResponse> items = order.getOrderItems().stream()
                 .map(item -> OrderResponse.OrderItemResponse.builder()
                         .orderItemId(item.getId())
-                        .productId(item.getProduct().getId())
-                        .productName(item.getProduct().getName())
-                        .productImageUrl(item.getProduct().getImageUrl())
+                        .productId(item.getProduct() != null ? item.getProduct().getId() : null)
+                        .productName(item.getProductName() != null ? item.getProductName() : 
+                                   (item.getProduct() != null ? item.getProduct().getName() : "Sản phẩm đã bị xóa"))
+                        .productImageUrl(item.getProductImageUrl() != null ? item.getProductImageUrl() : 
+                                       (item.getProduct() != null ? item.getProduct().getImageUrl() : null))
                         .quantity(item.getQuantity())
                         .unitPrice(item.getUnitPrice())
                         .subtotal(item.getSubtotal())
@@ -234,11 +277,17 @@ public class OrderServiceImpl implements OrderService {
                 .discountAmount(order.getDiscountAmount())
                 .finalAmount(order.getFinalAmount())
                 .status(order.getStatus())
+                .statusDisplayName(order.getStatus().getDisplayName())
                 .paymentMethod(order.getPaymentMethod())
                 .isPaid(order.getIsPaid())
                 .couponCode(order.getCoupon() != null ? order.getCoupon().getCode() : null)
                 .orderItems(items)
                 .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
+                .confirmedAt(order.getConfirmedAt())
+                .shippedAt(order.getShippedAt())
+                .deliveredAt(order.getDeliveredAt())
+                .cancelledAt(order.getCancelledAt())
                 .build();
     }
 }

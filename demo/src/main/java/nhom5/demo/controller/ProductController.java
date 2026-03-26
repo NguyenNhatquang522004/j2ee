@@ -25,19 +25,40 @@ public class ProductController {
 
     private final ProductService productService;
 
-    @Operation(summary = "Tìm kiếm & lọc sản phẩm (public)")
+    @Operation(summary = "Tìm kiếm & lọc sản phẩm (public/Admin)")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> searchProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long farmId,
+            @RequestParam(required = false) Boolean isActive,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction) {
-        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+            @RequestParam(defaultValue = "desc") String direction) {
+        
+        // Nếu không truyền isActive, mặc định khách thường chỉ xem sản phẩm ACTIVE
+        // Admin xem được tất cả (isActive = null)
+        Boolean finalIsActive = isActive;
+        if (isActive == null) {
+            boolean isAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null &&
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            if (!isAdmin) {
+                finalIsActive = true;
+            }
+        }
+
+        Sort sort;
+        if (sortBy.equals("id") || sortBy.equals("createdAt")) {
+            // Đối với 'Mới nhất', ưu tiên hàng có nhãn isNew=true rồi mới đến ID/Date
+            sort = Sort.by(Sort.Order.desc("isNew"), Sort.Order.desc(sortBy));
+        } else {
+            sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        }
+
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<ProductResponse> data = productService.searchProducts(name, categoryId, farmId, pageable);
+        Page<ProductResponse> data = productService.searchProducts(name, categoryId, farmId, finalIsActive, pageable);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
@@ -81,5 +102,14 @@ public class ProductController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok(ApiResponse.success("Xoá sản phẩm thành công", null));
+    }
+
+    @Operation(summary = "Bật/tắt trạng thái sản phẩm (Admin)")
+    @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}/toggle-status")
+    public ResponseEntity<ApiResponse<Void>> toggleStatus(@PathVariable Long id) {
+        productService.toggleProductStatus(id);
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật trạng thái sản phẩm", null));
     }
 }

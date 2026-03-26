@@ -118,32 +118,49 @@ export default function ProductDetail() {
 
                 {/* Info */}
                 <div>
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        {product.isNew && (
+                            <span className="bg-black text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm uppercase tracking-widest">
+                                Mới
+                            </span>
+                        )}
+                        {product.originalPrice > product.price && (
+                            <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm uppercase tracking-widest">
+                                Giảm {Math.round((product.originalPrice - product.price) / product.originalPrice * 100)}%
+                            </span>
+                        )}
                         {product.certification && (
-                            <span className="flex items-center gap-1.5 bg-green-100 text-green-800 text-xs font-bold px-4 py-1.5 rounded-full shadow-sm">
+                            <span className="flex items-center gap-1.5 bg-green-100 text-green-800 text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm uppercase tracking-widest">
                                 <CheckBadgeIcon className="w-4 h-4" />
                                 {product.certification}
                             </span>
                         )}
                         {!product.isActive && (
-                            <span className="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full">Ngừng bán</span>
+                            <span className="bg-red-100 text-red-700 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">Ngừng bán</span>
                         )}
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2">{product.name}</h1>
-                    <p className="text-gray-500 text-sm mb-6 flex items-center gap-1.5 bg-gray-50 w-fit px-3 py-1.5 rounded-lg border border-gray-100">
+                    <h1 className="text-4xl font-black text-gray-900 mb-2 tracking-tight uppercase">{product.name}</h1>
+                    <p className="text-gray-500 text-sm mb-6 flex items-center gap-1.5 bg-gray-50 w-fit px-3 py-1.5 rounded-lg border border-gray-100 font-bold uppercase tracking-wider">
                         {product.farmName && (
                             <>
                                 <MapPinIcon className="w-4 h-4 text-green-600" />
-                                <span className="font-medium text-gray-700">{product.farmName}</span>
+                                <span className="text-gray-700">{product.farmName}</span>
                                 <span className="text-gray-300 mx-1">|</span>
                                 <span>{product.farmProvince}</span>
                             </>
                         )}
                     </p>
 
-                    <div className="text-3xl font-bold text-green-700 mb-2">
-                        {product.price?.toLocaleString('vi-VN')}đ
-                        <span className="text-lg font-normal text-gray-400">/{product.unit}</span>
+                    <div className="flex items-baseline gap-4 mb-4">
+                        <div className="text-4xl font-black text-green-700">
+                            {product.price?.toLocaleString('vi-VN')}đ
+                            <span className="text-lg font-bold text-gray-400">/{product.unit}</span>
+                        </div>
+                        {product.originalPrice > product.price && (
+                            <div className="text-xl font-bold text-gray-300 line-through italic">
+                                {product.originalPrice.toLocaleString('vi-VN')}đ
+                            </div>
+                        )}
                     </div>
 
                     {product.averageRating > 0 && (

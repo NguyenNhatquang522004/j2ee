@@ -94,16 +94,19 @@ public class BatchServiceImpl implements BatchService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<BatchResponse> getAllBatches(Pageable pageable) {
         return batchRepository.findAll(pageable).map(this::toResponse);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<BatchResponse> getBatchesByProduct(Long productId, Pageable pageable) {
         return batchRepository.findByProductId(productId, pageable).map(this::toResponse);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BatchResponse> getNearExpiryBatches(int days) {
         LocalDate warningDate = LocalDate.now().plusDays(days);
         return batchRepository.findBatchesNearExpiry(LocalDate.now(), warningDate)
@@ -176,13 +179,42 @@ public class BatchServiceImpl implements BatchService {
         return total != null ? total : 0L;
     }
 
+    @Override
+    @Transactional
+    public void returnStock(Long productId, int quantity) {
+        // Find the latest active/discount batch to return stock to
+        // We prefer returning to batches that are not about to expire soon (higher expiry date)
+        List<ProductBatch> batches = batchRepository.findAvailableBatchesFEFO(productId, LocalDate.now());
+        
+        if (batches.isEmpty()) {
+            // If no active batches, just find the most recent one created
+            Page<ProductBatch> recent = batchRepository.findByProductId(productId, Pageable.ofSize(1));
+            if (!recent.isEmpty()) {
+                ProductBatch batch = recent.getContent().get(0);
+                batch.setRemainingQuantity(batch.getRemainingQuantity() + quantity);
+                if (batch.getStatus() == BatchStatusEnum.DISCONTINUED && batch.getRemainingQuantity() > 0) {
+                    batch.setStatus(BatchStatusEnum.ACTIVE);
+                }
+                batchRepository.save(batch);
+            }
+            return;
+        }
+
+        // Return to the LAST batch in the FEFO list (the one expiring LATEST)
+        ProductBatch target = batches.get(batches.size() - 1);
+        target.setRemainingQuantity(target.getRemainingQuantity() + quantity);
+        batchRepository.save(target);
+    }
+
     private ProductBatch findById(Long id) {
         return batchRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ProductBatch", "id", id));
     }
 
     private BatchResponse toResponse(ProductBatch batch) {
-        int daysUntilExpiry = (int) ChronoUnit.DAYS.between(LocalDate.now(), batch.getExpiryDate());
+        int daysUntilExpiry = batch.getExpiryDate() != null ? 
+            (int) ChronoUnit.DAYS.between(LocalDate.now(), batch.getExpiryDate()) : 0;
+        
         return BatchResponse.builder()
                 .id(batch.getId())
                 .batchCode(batch.getBatchCode())
@@ -191,11 +223,11 @@ public class BatchServiceImpl implements BatchService {
                 .expiryDate(batch.getExpiryDate())
                 .quantity(batch.getQuantity())
                 .remainingQuantity(batch.getRemainingQuantity())
-                .status(batch.getStatus())
-                .statusDisplayName(batch.getStatus().getDisplayName())
+                .status(batch.getStatus() != null ? batch.getStatus() : BatchStatusEnum.ACTIVE)
+                .statusDisplayName(batch.getStatus() != null ? batch.getStatus().getDisplayName() : "Đang hoạt động")
                 .note(batch.getNote())
-                .productId(batch.getProduct().getId())
-                .productName(batch.getProduct().getName())
+                .productId(batch.getProduct() != null ? batch.getProduct().getId() : null)
+                .productName(batch.getProduct() != null ? batch.getProduct().getName() : "Sản phẩm không xác định")
                 .daysUntilExpiry(daysUntilExpiry)
                 .build();
     }

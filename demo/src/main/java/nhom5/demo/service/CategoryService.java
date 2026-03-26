@@ -15,4 +15,6 @@ public interface CategoryService {
     CategoryResponse getCategoryById(Long id);
 
     List<CategoryResponse> getActiveCategories();
+    List<CategoryResponse> getAllCategories();
+    void toggleCategoryStatus(Long id);
 }

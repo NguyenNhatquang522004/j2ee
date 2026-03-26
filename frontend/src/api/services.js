@@ -7,6 +7,21 @@ export const authService = {
     forgotPassword: (data) => api.post('/auth/forgot-password', data),
     resetPassword: (data) => api.post('/auth/reset-password', data),
     socialLogin: (data) => api.post('/auth/social-login', data),
+    verify2fa: (data) => api.post('/auth/verify-2fa', data),
+};
+
+// Settings (admin)
+export const settingsService = {
+    getAll: () => api.get('/settings'),
+    update: (key, value) => api.put(`/settings/${key}`, { value }),
+    updateBatch: (settings) => api.put('/settings/batch', settings),
+};
+
+// 2FA Management (user)
+export const twoFactorService = {
+    setup: () => api.post('/2fa/setup'),
+    enable: (data) => api.post('/2fa/enable', data),
+    disable: (data) => api.post('/2fa/disable', data),
 };
 
 // Products
@@ -106,6 +121,16 @@ export const aiService = {
     analyze: (formData) => api.post('/ai/analyze', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),
+};
+
+// Coupons
+export const couponService = {
+    getAll: () => api.get('/coupons'),
+    getById: (id) => api.get(`/coupons/${id}`),
+    create: (data) => api.post('/coupons', data),
+    update: (id, data) => api.put(`/coupons/${id}`, data),
+    delete: (id) => api.delete(`/coupons/${id}`),
+    validate: (code, amount) => api.get(`/coupons/validate/${code}`, { params: { amount } }),
 };
 
 export const wishlistService = {

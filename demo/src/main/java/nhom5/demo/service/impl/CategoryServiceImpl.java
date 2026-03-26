@@ -55,10 +55,12 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public void deleteCategory(Long id) {
-        if (!categoryRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Category", "id", id);
+        Category category = findById(id);
+        // "Sản phẩm ở trong danh mục đó phải còn" - Set category to null for orphaned products
+        for (nhom5.demo.entity.Product product : category.getProducts()) {
+            product.setCategory(null);
         }
-        categoryRepository.deleteById(id);
+        categoryRepository.delete(category);
     }
 
     @Override
@@ -72,6 +74,21 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryResponse> getActiveCategories() {
         return categoryRepository.findByIsActiveTrue().stream()
                 .map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CategoryResponse> getAllCategories() {
+        return categoryRepository.findAll().stream()
+                .map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional
+    public void toggleCategoryStatus(Long id) {
+        Category category = findById(id);
+        category.setIsActive(!category.getIsActive());
+        categoryRepository.save(category);
     }
 
     private Category findById(Long id) {

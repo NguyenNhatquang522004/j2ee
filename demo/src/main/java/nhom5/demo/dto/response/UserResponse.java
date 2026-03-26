@@ -17,7 +17,14 @@ public class UserResponse {
     private String fullName;
     private String phone;
     private String address;
+    private java.time.LocalDate dateOfBirth;
+    private String gender;
+    private String membershipTier;
+    private Long points;
+    private Boolean emailNotifications;
+    private Boolean promoNotifications;
     private RoleEnum role;
     private Boolean isActive;
-    private LocalDateTime createdAt;
+    private Boolean isTwoFactorEnabled;
+    private java.time.LocalDateTime createdAt;
 }

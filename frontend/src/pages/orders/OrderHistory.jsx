@@ -120,12 +120,16 @@ export default function OrderHistory() {
                                         </p>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-xs text-gray-500 flex items-center gap-2">
-                                            <div className={`w-2 h-2 rounded-full ${order.isPaid ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                        <div className="text-xs text-gray-500 flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${order.isPaid ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'}`}></div>
                                             <span>
-                                                <span className="font-bold text-gray-700">Thanh toán:</span> {order.paymentMethod} ({order.isPaid ? 'Đã trả' : 'Chưa trả'})
+                                                <span className="font-bold text-gray-700">Thanh toán:</span> {
+                                                    order.paymentMethod === 'COD' ? 'Khi nhận hàng (COD)' : 
+                                                    order.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' :
+                                                    order.paymentMethod === 'MOMO' ? 'Ví MoMo' : 'VNPay'
+                                                } ({order.isPaid ? 'Đã trả' : 'Chưa trả'})
                                             </span>
-                                        </p>
+                                        </div>
                                         {order.note && (
                                             <p className="text-xs text-gray-500 italic">
                                                 <span className="font-bold text-gray-700 not-italic">Ghi chú:</span> "{order.note}"

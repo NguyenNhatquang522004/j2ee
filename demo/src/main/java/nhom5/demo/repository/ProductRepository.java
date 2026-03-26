@@ -13,6 +13,8 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
+    boolean existsByName(String name);
+    
     Page<Product> findByIsActiveTrue(Pageable pageable);
 
     Page<Product> findByNameContainingIgnoreCaseAndIsActiveTrue(String name, Pageable pageable);
@@ -21,7 +23,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Page<Product> findByFarmIdAndIsActiveTrue(Long farmId, Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.isActive = true " +
+    @Query("SELECT p FROM Product p WHERE (:isActive IS NULL OR p.isActive = :isActive) " +
             "AND (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
             "AND (:categoryId IS NULL OR p.category.id = :categoryId) " +
             "AND (:farmId IS NULL OR p.farm.id = :farmId)")
@@ -29,6 +31,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("name") String name,
             @Param("categoryId") Long categoryId,
             @Param("farmId") Long farmId,
+            @Param("isActive") Boolean isActive,
             Pageable pageable);
 
     List<Product> findByIsActiveTrue();
@@ -37,7 +40,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     long countByFarmId(Long farmId);
 
-    @Query("SELECT p FROM Product p WHERE p.id IN " +
+    @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.id IN " +
             "(SELECT oi.product.id FROM OrderItem oi GROUP BY oi.product.id ORDER BY SUM(oi.quantity) DESC)")
     Page<Product> findTopSellingProducts(Pageable pageable);
 }

@@ -26,6 +26,10 @@ import AdminBatches from './pages/admin/AdminBatches';
 import AdminFarms from './pages/admin/AdminFarms';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminCoupons from './pages/admin/AdminCoupons';
+import AdminTwoFactor from './pages/admin/AdminTwoFactor';
+import Maintenance from './pages/other/Maintenance';
 
 export default function App() {
   return (
@@ -51,6 +55,7 @@ export default function App() {
             <Route path="/products" element={<ProductList />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/farms" element={<FarmList />} />
+            <Route path="/maintenance" element={<Maintenance />} />
 
             {/* Protected user routes */}
             <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
@@ -68,6 +73,10 @@ export default function App() {
             <Route path="/admin/farms" element={<AdminRoute><AdminFarms /></AdminRoute>} />
             <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+            <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+            <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
+            <Route path="/admin/2fa" element={<AdminRoute><Navigate to="/admin/settings?tab=security" replace /></AdminRoute>} />
+            <Route path="/admin/profile" element={<AdminRoute><Navigate to="/admin/settings?tab=profile" replace /></AdminRoute>} />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
