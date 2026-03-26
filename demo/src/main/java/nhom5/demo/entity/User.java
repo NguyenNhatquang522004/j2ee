@@ -1,5 +1,6 @@
 package nhom5.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -54,6 +55,28 @@ public class User {
     @Column(name = "address", length = 255)
     private String address;
 
+    @Column(name = "date_of_birth")
+    private java.time.LocalDate dateOfBirth;
+
+    @Column(name = "gender", length = 10)
+    private String gender; // "male", "female", "other"
+
+    @Column(name = "membership_tier", length = 20)
+    @Builder.Default
+    private String membershipTier = "bronze";
+
+    @Column(name = "points")
+    @Builder.Default
+    private Long points = 0L;
+
+    @Column(name = "email_notifications")
+    @Builder.Default
+    private Boolean emailNotifications = true;
+
+    @Column(name = "promo_notifications")
+    @Builder.Default
+    private Boolean promoNotifications = false;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private RoleEnum role;
@@ -61,6 +84,20 @@ public class User {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    // fields for forgot password
+    @Column(name = "reset_token", length = 100)
+    private String resetToken;
+
+    @Column(name = "reset_token_expiry")
+    private LocalDateTime resetTokenExpiry;
+
+    // fields for social login
+    @Column(name = "provider", length = 20)
+    private String provider; // "LOCAL", "GOOGLE", "GITHUB"
+
+    @Column(name = "provider_id", length = 100)
+    private String providerId;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -70,19 +107,29 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // ====== Relationships ======
+    @Column(name = "two_factor_secret", length = 32)
+    private String twoFactorSecret;
 
+    @Column(name = "is_two_factor_enabled", nullable = false)
+    @Builder.Default
+    private Boolean isTwoFactorEnabled = false;
+
+    // ====== Relationships ======
+    @JsonIgnore
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Cart cart;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Order> orders = new ArrayList<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Review> reviews = new ArrayList<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Address> addresses = new ArrayList<>();

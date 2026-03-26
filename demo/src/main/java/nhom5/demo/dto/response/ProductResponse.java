@@ -18,6 +18,8 @@ public class ProductResponse {
     private String unit;
     private String imageUrl;
     private Boolean isActive;
+    private Boolean isNew;
+    private BigDecimal originalPrice;
     private int totalStock;
 
     // Category info

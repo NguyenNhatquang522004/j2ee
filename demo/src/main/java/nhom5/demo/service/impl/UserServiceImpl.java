@@ -32,18 +32,24 @@ public class UserServiceImpl implements UserService {
     public UserResponse updateProfile(String username, nhom5.demo.dto.request.UserUpdateRequest request) {
         User user = findByUsername(username);
 
-        if (!user.getEmail().equals(request.getEmail()) &&
-                userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException("Email '" + request.getEmail() + "' đã được sử dụng");
+        String newEmail = request.getEmail().toLowerCase();
+        if (!user.getEmail().equalsIgnoreCase(newEmail) &&
+                userRepository.existsByEmail(newEmail)) {
+            throw new BusinessException("Email '" + newEmail + "' đã được sử dụng");
         }
 
-        user.setEmail(request.getEmail());
+        user.setEmail(newEmail);
         user.setFullName(request.getFullName());
         user.setPhone(request.getPhone());
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
+
+        if (request.getDateOfBirth() != null) user.setDateOfBirth(request.getDateOfBirth());
+        if (request.getGender() != null) user.setGender(request.getGender());
+        if (request.getEmailNotifications() != null) user.setEmailNotifications(request.getEmailNotifications());
+        if (request.getPromoNotifications() != null) user.setPromoNotifications(request.getPromoNotifications());
 
         return toResponse(userRepository.save(user));
     }
@@ -93,8 +99,16 @@ public class UserServiceImpl implements UserService {
                 .fullName(user.getFullName())
                 .phone(user.getPhone())
                 .address(user.getAddress())
+                .dateOfBirth(user.getDateOfBirth())
+                .gender(user.getGender())
+                .membershipTier(user.getMembershipTier())
+                .points(user.getPoints())
+                .emailNotifications(user.getEmailNotifications())
+                .promoNotifications(user.getPromoNotifications())
                 .role(user.getRole())
                 .isActive(user.getIsActive())
+                .isTwoFactorEnabled(user.getIsTwoFactorEnabled())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 }

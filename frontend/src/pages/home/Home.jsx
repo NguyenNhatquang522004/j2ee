@@ -155,12 +155,24 @@ function ProductCard({ product }) {
 
     return (
         <Link to={`/products/${product.id}`} className="group bg-white rounded-[2rem] border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
-            <div className="h-56 bg-gray-50 flex items-center justify-center overflow-hidden">
+            <div className="h-56 bg-gray-50 flex items-center justify-center overflow-hidden relative">
                 {product.imageUrl ? (
                     <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 ) : (
                     <CubeIcon className="w-16 h-16 text-gray-200" />
                 )}
+
+                {/* Badges */}
+                <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 transition-transform group-hover:translate-x-1 group-hover:translate-y-1 duration-500">
+                    {product.isNew && (
+                        <span className="bg-black text-white text-[10px] font-black px-3 py-1 rounded-xl shadow-xl uppercase tracking-widest border border-white/20 backdrop-blur-sm">Mới</span>
+                    )}
+                    {product.originalPrice > product.price && (
+                        <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-xl shadow-xl uppercase tracking-widest border border-white/20 backdrop-blur-sm">
+                            -{Math.round((product.originalPrice - product.price) / product.originalPrice * 100)}%
+                        </span>
+                    )}
+                </div>
             </div>
             
             <button 
@@ -172,14 +184,21 @@ function ProductCard({ product }) {
 
             <div className="p-6">
                 <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">{product.farmName || 'Trang trại'}</p>
-                <h3 className="font-bold text-gray-800 text-lg mb-4 line-clamp-1 group-hover:text-green-700 transition-colors">{product.name}</h3>
+                <h3 className="font-bold text-gray-800 text-lg mb-4 line-clamp-1 group-hover:text-green-700 transition-colors uppercase tracking-tight">{product.name}</h3>
                 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-50 mt-auto">
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
                     <div>
-                        <p className="text-[10px] text-gray-400 uppercase font-black tracking-tighter mb-0.5">Giá / {product.unit}</p>
-                        <span className="text-xl font-black text-green-700">
-                            {product.price?.toLocaleString('vi-VN')}đ
-                        </span>
+                        <p className="text-[10px] text-gray-400 uppercase font-black tracking-tighter mb-1">Giá / {product.unit}</p>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-xl font-black text-green-700">
+                                {product.price?.toLocaleString('vi-VN')}đ
+                            </span>
+                            {product.originalPrice > product.price && (
+                                <span className="text-gray-300 line-through text-xs font-bold italic">
+                                    {product.originalPrice.toLocaleString('vi-VN')}đ
+                                </span>
+                            )}
+                        </div>
                     </div>
                     {product.averageRating > 0 && (
                         <div className="flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-full border border-yellow-100 shadow-sm">

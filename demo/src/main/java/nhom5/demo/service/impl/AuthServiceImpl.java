@@ -1,8 +1,12 @@
 package nhom5.demo.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import nhom5.demo.dto.request.ForgotPasswordRequest;
 import nhom5.demo.dto.request.LoginRequest;
 import nhom5.demo.dto.request.RegisterRequest;
+import nhom5.demo.dto.request.ResetPasswordRequest;
+import nhom5.demo.dto.request.SocialLoginRequest;
+import nhom5.demo.dto.request.TwoFactorRequest;
 import nhom5.demo.dto.response.AuthResponse;
 import nhom5.demo.entity.Cart;
 import nhom5.demo.entity.User;
@@ -12,6 +16,9 @@ import nhom5.demo.repository.CartRepository;
 import nhom5.demo.repository.UserRepository;
 import nhom5.demo.security.JwtTokenProvider;
 import nhom5.demo.service.AuthService;
+import nhom5.demo.service.MailService;
+import nhom5.demo.service.SettingService;
+import nhom5.demo.service.TwoFactorService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -30,6 +37,9 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final MailService mailService;
+    private final TwoFactorService twoFactorService;
+    private final SettingService settingService;
 
     @Override
     @Transactional
@@ -50,6 +60,7 @@ public class AuthServiceImpl implements AuthService {
                 .address(request.getAddress())
                 .role(RoleEnum.ROLE_USER)
                 .isActive(true)
+                .provider("LOCAL")
                 .build();
 
         userRepository.save(user);
@@ -67,10 +78,128 @@ public class AuthServiceImpl implements AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
-        String token = jwtTokenProvider.generateToken(authentication);
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new BusinessException("Người dùng không tồn tại"));
 
+        if (!user.getIsActive()) {
+            throw new BusinessException("Tài khoản của bạn đã bị khoá");
+        }
+
+        // Check 2FA
+        boolean enfored2FA = "true".equalsIgnoreCase(settingService.getSettingValue("2FA_ENFORCED", "false"));
+        boolean isAdmin = user.getRole() == RoleEnum.ROLE_ADMIN;
+
+        if (Boolean.TRUE.equals(user.getIsTwoFactorEnabled())) {
+            return AuthResponse.builder()
+                    .userId(user.getId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .fullName(user.getFullName())
+                    .role(user.getRole())
+                    .requiresTwoFactor(true)
+                    .isTwoFactorEnabled(true)
+                    .isTwoFactorEnforced(enfored2FA)
+                    .build();
+        }
+
+        // We allow the login for admins even if 2FA_ENFORCED is true, but they haven't set it up.
+        // This is to avoid locking them out of the setup profile page.
+        // We will warn them in the UI instead.
+
+        String token = jwtTokenProvider.generateToken(authentication);
+        return buildAuthResponse(user, token);
+    }
+
+    @Override
+    public AuthResponse verifyTwoFactor(TwoFactorRequest request) {
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new BusinessException("Người dùng không tồn tại"));
+
+        if (!user.getIsActive()) {
+            throw new BusinessException("Tài khoản của bạn đã bị khoá");
+        }
+
+        if (twoFactorService.verifyCode(user.getTwoFactorSecret(), request.getCode())) {
+            String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername());
+            return buildAuthResponse(user, token);
+        } else {
+            throw new BusinessException("Mã xác thực không hợp lệ");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BusinessException("Email không được tìm thấy trong hệ thống"));
+
+        String token = java.util.UUID.randomUUID().toString();
+        user.setResetToken(token);
+        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        mailService.sendResetPasswordEmail(user.getEmail(), token);
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByResetToken(request.getToken())
+                .orElseThrow(() -> new BusinessException("Mã xác nhận không hợp lệ hoặc đã hết hạn"));
+
+        if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new BusinessException("Mã xác nhận đã hết hạn");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse socialLogin(SocialLoginRequest request) {
+        User user = userRepository.findByProviderAndProviderId(request.getProvider(), request.getProviderId())
+                .orElseGet(() -> {
+                    // Try to find by email
+                    User existingByEmail = userRepository.findByEmail(request.getEmail())
+                            .orElse(null);
+
+                    if (existingByEmail != null) {
+                        // Link social account to existing user
+                        existingByEmail.setProvider(request.getProvider());
+                        existingByEmail.setProviderId(request.getProviderId());
+                        if (existingByEmail.getFullName() == null || existingByEmail.getFullName().isBlank()) {
+                            existingByEmail.setFullName(request.getFullName());
+                        }
+                        return userRepository.save(existingByEmail);
+                    }
+
+                    // Create new user
+                    String username = request.getEmail().split("@")[0] + "_" + request.getProviderId().substring(0, 4);
+                    User newUser = User.builder()
+                            .username(username)
+                            .email(request.getEmail())
+                            .fullName(request.getFullName())
+                            .password(passwordEncoder.encode(java.util.UUID.randomUUID().toString()))
+                            .role(RoleEnum.ROLE_USER)
+                            .isActive(true)
+                            .provider(request.getProvider())
+                            .providerId(request.getProviderId())
+                            .build();
+
+                    User savedUser = userRepository.save(newUser);
+                    // Create cart
+                    cartRepository.save(Cart.builder().user(savedUser).build());
+                    return savedUser;
+                });
+
+        if (!user.getIsActive()) {
+            throw new BusinessException("Tài khoản của bạn đã bị khoá");
+        }
+
+        String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername());
         return buildAuthResponse(user, token);
     }
 
@@ -87,6 +216,9 @@ public class AuthServiceImpl implements AuthService {
                 .fullName(user.getFullName())
                 .role(user.getRole())
                 .expiresAt(expiresAt)
+                .requiresTwoFactor(false)
+                .isTwoFactorEnabled(user.getIsTwoFactorEnabled())
+                .isTwoFactorEnforced("true".equalsIgnoreCase(settingService.getSettingValue("2FA_ENFORCED", "false")))
                 .build();
     }
 }

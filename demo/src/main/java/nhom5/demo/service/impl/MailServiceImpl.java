@@ -68,6 +68,22 @@ public class MailServiceImpl implements MailService {
         }
     }
 
+    @Override
+    @Async
+    public void sendResetPasswordEmail(String toEmail, String token) {
+        try {
+            Context context = new Context();
+            // Assuming frontend URL is http://localhost:3000
+            String resetLink = "http://localhost:3000/reset-password?token=" + token;
+            context.setVariable("resetLink", resetLink);
+
+            String html = templateEngine.process("email-reset-password", context);
+            sendHtmlEmail(toEmail, "Yêu cầu đặt lại mật khẩu", html);
+        } catch (Exception e) {
+            log.error("Failed to send reset password email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
     private void sendHtmlEmail(String to, String subject, String html) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");

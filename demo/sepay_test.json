@@ -1,0 +1,13 @@
+{
+  "id": "123456789",
+  "bank_brand_name": "TPBank",
+  "account_number": "96924888888",
+  "transaction_date": "2026-03-26 22:30:00",
+  "amount_in": 100000,
+  "amount_out": 0,
+  "accumulated_balance": 500000,
+  "content": "FF1",
+  "reference_number": "REF987654321",
+  "code": "PAY123",
+  "sub_account": null
+}

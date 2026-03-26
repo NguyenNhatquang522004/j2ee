@@ -36,8 +36,15 @@ export default function Navbar() {
 
     const handleLogout = () => {
         logout();
-        navigate('/');
+        navigate('/login');
     };
+
+    // Redirect admin to dashboard if they accidentally hit the home page
+    useEffect(() => {
+        if (isAdmin && window.location.pathname === '/') {
+            navigate('/admin');
+        }
+    }, [isAdmin, navigate]);
 
     return (
         <header className="sticky top-0 z-50 glass-header">
@@ -57,16 +64,19 @@ export default function Navbar() {
                         </Link>
 
                         <nav className="hidden md:flex items-center gap-6">
-                            <Link to="/products" className="nav-link">Sản phẩm</Link>
-                            <Link to="/farms" className="nav-link">Trang trại</Link>
-                            <Link to="/ai-scan" className="nav-link flex items-center gap-1.5">
-                                <BeakerIcon className="w-4 h-4" />
-                                <span>AI Scan</span>
-                            </Link>
-                            {isAdmin && (
+                            {!isAdmin ? (
+                                <>
+                                    <Link to="/products" className="nav-link">Sản phẩm</Link>
+                                    <Link to="/farms" className="nav-link">Trang trại</Link>
+                                    <Link to="/ai-scan" className="nav-link flex items-center gap-1.5">
+                                        <BeakerIcon className="w-4 h-4" />
+                                        <span>AI Scan</span>
+                                    </Link>
+                                </>
+                            ) : (
                                 <Link to="/admin" className="nav-link text-green-700 font-bold bg-green-50 px-3 py-1 rounded-full border border-green-100 hover:bg-green-100 transition-all flex items-center gap-1.5">
                                     <AcademicCapIcon className="w-4 h-4" />
-                                    <span>Quản trị</span>
+                                    <span>Bảng điều khiển Quản trị</span>
                                 </Link>
                             )}
                         </nav>
@@ -76,34 +86,40 @@ export default function Navbar() {
                     <div className="flex items-center gap-4">
                         {user ? (
                             <div className="flex items-center gap-4">
-                                <Link to="/wishlist" className="relative p-2 text-gray-600 hover:text-red-500 transition-colors group">
-                                    {wishlistCount > 0 ? (
-                                        <HeartIconSolid className="w-6 h-6 text-red-500 transition-transform group-hover:scale-110" />
-                                    ) : (
-                                        <HeartIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
-                                    )}
-                                    {wishlistCount > 0 && (
-                                        <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-white">
-                                            {wishlistCount}
-                                        </span>
-                                    )}
-                                </Link>
+                                {!isAdmin && (
+                                    <>
+                                        <Link to="/wishlist" className="relative p-2 text-gray-600 hover:text-red-500 transition-colors group">
+                                            {wishlistCount > 0 ? (
+                                                <HeartIconSolid className="w-6 h-6 text-red-500 transition-transform group-hover:scale-110" />
+                                            ) : (
+                                                <HeartIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
+                                            )}
+                                            {wishlistCount > 0 && (
+                                                <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-white">
+                                                    {wishlistCount}
+                                                </span>
+                                            )}
+                                        </Link>
 
-                                <Link to="/cart" className="relative p-2 text-gray-600 hover:text-green-600 transition-colors group">
-                                    <ShoppingBagIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
-                                    {itemCount > 0 && (
-                                        <span className="absolute top-1 right-1 bg-green-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-white shadow-sm animate-pulse">
-                                            {itemCount}
-                                        </span>
-                                    )}
-                                </Link>
+                                        <Link to="/cart" className="relative p-2 text-gray-600 hover:text-green-600 transition-colors group">
+                                            <ShoppingBagIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
+                                            {itemCount > 0 && (
+                                                <span className="absolute top-1 right-1 bg-green-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-white shadow-sm animate-pulse">
+                                                    {itemCount}
+                                                </span>
+                                            )}
+                                        </Link>
+                                    </>
+                                )}
 
                                 <div className="h-8 w-px bg-gray-200"></div>
 
                                 <div className="flex items-center gap-3">
-                                    <Link to="/orders" className="relative p-2 text-gray-600 hover:text-green-600 transition-colors group" title="Đơn hàng của tôi">
-                                        <ArchiveBoxIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
-                                    </Link>
+                                    {!isAdmin && (
+                                        <Link to="/orders" className="relative p-2 text-gray-600 hover:text-green-600 transition-colors group" title="Đơn hàng của tôi">
+                                            <ArchiveBoxIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
+                                        </Link>
+                                    )}
 
                                     <Link to="/profile" className="flex items-center gap-2 group">
                                         <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 group-hover:bg-green-200 transition-colors">
@@ -146,11 +162,16 @@ export default function Navbar() {
             {/* Mobile Nav */}
             {isMenuOpen && (
                 <div className="md:hidden bg-white border-b border-gray-100 px-4 py-4 space-y-3 shadow-xl">
-                    <Link to="/products" className="block font-bold text-gray-800 hover:text-green-600">Sản phẩm</Link>
-                    <Link to="/farms" className="block font-bold text-gray-800 hover:text-green-600">Trang trại</Link>
-                    <Link to="/ai-scan" className="block font-bold text-gray-800 hover:text-green-600">AI Scan</Link>
-                    {user && <Link to="/orders" className="block font-bold text-gray-800 hover:text-green-600">Đơn hàng của tôi</Link>}
-                    {isAdmin && <Link to="/admin" className="block font-bold text-green-700 bg-green-50 px-3 py-2 rounded-xl">Quản trị Hệ thống</Link>}
+                    {!isAdmin ? (
+                        <>
+                            <Link to="/products" className="block font-bold text-gray-800 hover:text-green-600">Sản phẩm</Link>
+                            <Link to="/farms" className="block font-bold text-gray-800 hover:text-green-600">Trang trại</Link>
+                            <Link to="/ai-scan" className="block font-bold text-gray-800 hover:text-green-600">AI Scan</Link>
+                            {user && <Link to="/orders" className="block font-bold text-gray-800 hover:text-green-600">Đơn hàng của tôi</Link>}
+                        </>
+                    ) : (
+                        <Link to="/admin" className="block font-bold text-green-700 bg-green-50 px-3 py-2 rounded-xl">Bảng điều khiển Quản trị</Link>
+                    )}
                 </div>
             )}
         </header>

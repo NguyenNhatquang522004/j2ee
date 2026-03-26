@@ -14,6 +14,17 @@ export function AuthProvider({ children }) {
 
     const login = async (credentials) => {
         const { data } = await authService.login(credentials);
+        if (data.requiresTwoFactor) {
+            return data; // Return data so Login.jsx knows it needs 2FA
+        }
+        localStorage.setItem('token', data.accessToken);
+        localStorage.setItem('user', JSON.stringify(data));
+        setUser(data);
+        return data;
+    };
+
+    const verify2fa = async (username, code) => {
+        const { data } = await authService.verify2fa({ username, code });
         localStorage.setItem('token', data.accessToken);
         localStorage.setItem('user', JSON.stringify(data));
         setUser(data);
@@ -34,7 +45,7 @@ export function AuthProvider({ children }) {
     const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, isAdmin }}>
+        <AuthContext.Provider value={{ user, setUser, login, register, logout, verify2fa, isAdmin }}>
             {children}
         </AuthContext.Provider>
     );

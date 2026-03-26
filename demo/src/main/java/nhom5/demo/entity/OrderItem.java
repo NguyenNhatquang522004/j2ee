@@ -1,9 +1,13 @@
 package nhom5.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 
@@ -41,13 +45,20 @@ public class OrderItem {
     @Column(name = "subtotal", nullable = false, precision = 15, scale = 2)
     private BigDecimal subtotal;
 
-    // ====== Relationships ======
+    @Column(name = "product_name")
+    private String productName; // Snapshot at order time
 
+    @Column(name = "product_image_url")
+    private String productImageUrl; // Snapshot at order time
+
+    // ====== Relationships ======
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
+    @JoinColumn(name = "product_id", nullable = true)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private Product product;
 }

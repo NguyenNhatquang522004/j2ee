@@ -13,12 +13,14 @@ import {
     TagIcon,
     HomeModernIcon,
     EyeIcon,
-    EyeSlashIcon
+    EyeSlashIcon,
+    XMarkIcon
 } from '@heroicons/react/24/outline';
 
 const EMPTY = {
     name: '', description: '', price: '', unit: '', imageUrl: '',
     categoryId: '', farmId: '', stockQuantity: '', isActive: true,
+    isNew: true, originalPrice: ''
 };
 
 export default function AdminProducts() {
@@ -72,6 +74,8 @@ export default function AdminProducts() {
             farmId: p.farmId ?? '',
             stockQuantity: p.stockQuantity ?? '',
             isActive: p.isActive ?? true,
+            isNew: p.isNew ?? true,
+            originalPrice: p.originalPrice ?? '',
         });
         setShowModal(true);
     };
@@ -83,6 +87,7 @@ export default function AdminProducts() {
             const payload = {
                 ...form,
                 price: Number(form.price),
+                originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
                 categoryId: Number(form.categoryId),
                 farmId: Number(form.farmId),
                 stockQuantity: Number(form.stockQuantity),
@@ -199,8 +204,19 @@ export default function AdminProducts() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <p className="font-black text-green-700 text-lg leading-none">{fmt(p.price)}₫</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-black text-green-700 text-lg leading-none">{fmt(p.price)}₫</p>
+                                            {p.originalPrice > p.price && (
+                                                <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-lg font-black">
+                                                    -{Math.round((p.originalPrice - p.price) / p.originalPrice * 100)}%
+                                                </span>
+                                            )}
+                                        </div>
+                                        {p.originalPrice > p.price && (
+                                            <p className="text-xs text-gray-300 line-through mt-1">{fmt(p.originalPrice)}₫</p>
+                                        )}
                                         <p className="text-xs text-gray-400 font-bold mt-1 uppercase italic">mỗi {p.unit}</p>
+                                        {p.isNew && <span className="inline-block mt-2 bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black uppercase">Mới</span>}
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <span className={`inline-flex items-center px-3 py-1 rounded-xl text-sm font-black border ${
@@ -299,7 +315,7 @@ export default function AdminProducts() {
 
                                 <div className="space-y-4">
                                     <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">
-                                        <CurrencyDollarIcon className="w-4 h-4" /> Giá bán (₫)
+                                        <CurrencyDollarIcon className="w-4 h-4" /> Giá khuyến mãi (₫)
                                     </label>
                                     <input 
                                         required 
@@ -309,6 +325,19 @@ export default function AdminProducts() {
                                         onChange={(e) => setForm({ ...form, price: e.target.value })} 
                                         className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500"
                                         placeholder="0"
+                                    />
+                                </div>
+                                <div className="space-y-4">
+                                    <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">
+                                        <CurrencyDollarIcon className="w-4 h-4" /> Giá gốc (nếu có giảm giá)
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        min="0" 
+                                        value={form.originalPrice} 
+                                        onChange={(e) => setForm({ ...form, originalPrice: e.target.value })} 
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500"
+                                        placeholder="Để trống nếu không giảm giá"
                                     />
                                 </div>
                                 <div className="space-y-4">
@@ -379,15 +408,27 @@ export default function AdminProducts() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 p-4 bg-green-50/50 rounded-2xl border border-green-100">
-                                <input 
-                                    type="checkbox" 
-                                    id="isActive" 
-                                    checked={form.isActive} 
-                                    onChange={(e) => setForm({ ...form, isActive: e.target.checked })} 
-                                    className="w-6 h-6 rounded-lg text-green-600 focus:ring-green-500 border-none" 
-                                />
-                                <label htmlFor="isActive" className="text-sm font-bold text-green-800">Hiển thị sản phẩm này trên cửa hàng</label>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="flex items-center gap-3 p-4 bg-green-50/50 rounded-2xl border border-green-100">
+                                    <input 
+                                        type="checkbox" 
+                                        id="isActive" 
+                                        checked={form.isActive} 
+                                        onChange={(e) => setForm({ ...form, isActive: e.target.checked })} 
+                                        className="w-6 h-6 rounded-lg text-green-600 focus:ring-green-500 border-none" 
+                                    />
+                                    <label htmlFor="isActive" className="text-sm font-bold text-green-800">Hiển thị trên cửa hàng</label>
+                                </div>
+                                <div className="flex items-center gap-3 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                                    <input 
+                                        type="checkbox" 
+                                        id="isNew" 
+                                        checked={form.isNew} 
+                                        onChange={(e) => setForm({ ...form, isNew: e.target.checked })} 
+                                        className="w-6 h-6 rounded-lg text-blue-600 focus:ring-blue-500 border-none" 
+                                    />
+                                    <label htmlFor="isNew" className="text-sm font-bold text-blue-800">Sản phẩm mới (Gắn nhãn New)</label>
+                                </div>
                             </div>
                         </form>
 

@@ -36,6 +36,7 @@ public final class AppConstants {
     public static final String AI_PATH = API_BASE + "/ai";
     public static final String DASHBOARD_PATH = API_BASE + "/dashboard";
     public static final String USER_PATH = API_BASE + "/users";
+    public static final String COUPON_PATH = API_BASE + "/coupons";
 
     // ====== BATCH MANAGEMENT ======
     public static final int DEFAULT_EXPIRY_WARNING_DAYS = 3;

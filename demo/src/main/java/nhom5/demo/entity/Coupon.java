@@ -1,5 +1,6 @@
 package nhom5.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -71,6 +72,7 @@ public class Coupon {
     private LocalDateTime createdAt;
 
     // ====== Relationships ======
+    @JsonIgnore
     @OneToMany(mappedBy = "coupon", fetch = FetchType.LAZY)
     @Builder.Default
     private List<Order> orders = new ArrayList<>();

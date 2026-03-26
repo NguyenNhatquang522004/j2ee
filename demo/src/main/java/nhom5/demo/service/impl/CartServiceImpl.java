@@ -32,7 +32,7 @@ public class CartServiceImpl implements CartService {
     private final UserRepository userRepository;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public CartResponse getCart(String username) {
         Cart cart = getOrCreateCart(username);
         List<CartItem> items = cartItemRepository.findByCartId(cart.getId());

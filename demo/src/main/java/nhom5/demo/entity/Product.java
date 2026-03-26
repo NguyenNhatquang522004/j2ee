@@ -60,6 +60,14 @@ public class Product {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "is_new", nullable = false)
+    @Builder.Default
+    private Boolean isNew = true;
+
+    @DecimalMin(value = "0.0")
+    @Column(name = "original_price", precision = 15, scale = 2)
+    private BigDecimal originalPrice;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -71,7 +79,7 @@ public class Product {
     // ====== Relationships ======
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "category_id", nullable = true)
     private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -86,7 +94,7 @@ public class Product {
     @Builder.Default
     private List<Review> reviews = new ArrayList<>();
 
-    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<CartItem> cartItems = new ArrayList<>();
 

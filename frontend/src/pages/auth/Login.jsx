@@ -5,10 +5,12 @@ import toast from 'react-hot-toast';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 
 export default function Login() {
-    const { login } = useAuth();
+    const { login, verify2fa } = useAuth();
     const navigate = useNavigate();
     const [form, setForm] = useState({ username: '', password: '' });
     const [loading, setLoading] = useState(false);
+    const [twoFactorNeeded, setTwoFactorNeeded] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -16,9 +18,20 @@ export default function Login() {
         e.preventDefault();
         setLoading(true);
         try {
-            const data = await login(form);
-            toast.success(`Chào mừng, ${data.fullName || data.username}!`);
-            navigate(data.role === 'ROLE_ADMIN' || data.role === 'ADMIN' ? '/admin' : '/');
+            if (twoFactorNeeded) {
+                const data = await verify2fa(form.username, otpCode);
+                toast.success(`Chào mừng trở lại, ${data.fullName || data.username}!`);
+                navigate(data.role === 'ROLE_ADMIN' || data.role === 'ADMIN' ? '/admin' : '/');
+            } else {
+                const data = await login(form);
+                if (data.requiresTwoFactor) {
+                    setTwoFactorNeeded(true);
+                    toast.success('Vui lòng nhập mã xác thực 2 bước');
+                } else {
+                    toast.success(`Chào mừng, ${data.fullName || data.username}!`);
+                    navigate(data.role === 'ROLE_ADMIN' || data.role === 'ADMIN' ? '/admin' : '/');
+                }
+            }
         } catch (err) {
             toast.error(err.response?.data?.message || 'Đăng nhập thất bại');
         } finally {
@@ -38,34 +51,62 @@ export default function Login() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Tên đăng nhập</label>
-                        <input
-                            name="username"
-                            value={form.username}
-                            onChange={handleChange}
-                            required
-                            className="input-field py-3 px-4 focus:ring-2 focus:ring-green-500 transition-all"
-                            placeholder="Nhập tên đăng nhập"
-                        />
-                    </div>
-                    <div>
-                        <div className="flex justify-between mb-2">
-                            <label className="block text-sm font-semibold text-gray-700">Mật khẩu</label>
-                            <Link to="/forgot-password" style={{ color: '#16a34a' }} className="text-xs font-bold hover:underline">
-                                Quên mật khẩu?
-                            </Link>
+                    {!twoFactorNeeded ? (
+                        <>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Tên đăng nhập</label>
+                                <input
+                                    name="username"
+                                    value={form.username}
+                                    onChange={handleChange}
+                                    required
+                                    className="input-field py-3 px-4"
+                                    placeholder="Nhập tên đăng nhập"
+                                />
+                            </div>
+                            <div>
+                                <div className="flex justify-between mb-2">
+                                    <label className="block text-sm font-semibold text-gray-700">Mật khẩu</label>
+                                    <Link to="/forgot-password" style={{ color: '#16a34a' }} className="text-xs font-bold hover:underline">
+                                        Quên mật khẩu?
+                                    </Link>
+                                </div>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    value={form.password}
+                                    onChange={handleChange}
+                                    required
+                                    className="input-field py-3 px-4"
+                                    placeholder="Nhập mật khẩu"
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <div className="animate-fade-in">
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Mã xác thực 2 bước (TOTP)</label>
+                            <input
+                                type="text"
+                                maxLength="6"
+                                value={otpCode}
+                                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                                required
+                                autoFocus
+                                className="input-field text-center text-3xl tracking-[1rem] font-bold py-4 text-green-600"
+                                placeholder="000000"
+                            />
+                            <p className="mt-4 text-xs text-gray-500 text-center">
+                                Mở ứng dụng <b>Google Authenticator</b> trên điện thoại để lấy mã.
+                            </p>
+                            <button 
+                                type="button" 
+                                onClick={() => setTwoFactorNeeded(false)}
+                                className="mt-4 w-full text-sm font-bold text-gray-400 hover:text-gray-600 transition-all"
+                            >
+                                Quay lại đăng nhập
+                            </button>
                         </div>
-                        <input
-                            type="password"
-                            name="password"
-                            value={form.password}
-                            onChange={handleChange}
-                            required
-                            className="input-field py-3 px-4 focus:ring-2 focus:ring-green-500 transition-all"
-                            placeholder="Nhập mật khẩu"
-                        />
-                    </div>
+                    )}
 
                     <button
                         type="submit"
@@ -80,7 +121,7 @@ export default function Login() {
                                 </svg>
                                 Đang xử lý...
                             </span>
-                        ) : 'Đăng nhập'}
+                        ) : twoFactorNeeded ? 'Xác thực' : 'Đăng nhập'}
                     </button>
                 </form>
 

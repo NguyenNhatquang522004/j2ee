@@ -18,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import nhom5.demo.security.MaintenanceFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -26,7 +27,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final MaintenanceFilter maintenanceFilter;
     private final UserDetailsService userDetailsService;
+
+    @Bean
+    public org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring()
+                .requestMatchers("/api/v1/payment/**");
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -50,9 +58,11 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(org.springframework.security.config.Customizer.withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/payment/**"))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
+                        .requestMatchers("/api/v1/payment/**", "/error").permitAll()
                         // Auth & AI endpoints — public
                         .requestMatchers("/api/v1/auth/**", "/api/v1/ai/**").permitAll()
                         // Swagger UI — public
@@ -78,9 +88,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/users/me").authenticated()
                         .requestMatchers("/api/v1/users/**").hasAuthority("ROLE_ADMIN")
+                        // Coupons
+                        .requestMatchers(HttpMethod.GET, "/api/v1/coupons/validate/**").authenticated()
+                        .requestMatchers("/api/v1/coupons/**").hasAuthority("ROLE_ADMIN")
                         // All other requests require authentication
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
+                .addFilterBefore(maintenanceFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

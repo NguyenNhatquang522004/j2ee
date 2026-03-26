@@ -19,4 +19,7 @@ public class AuthResponse {
     private String fullName;
     private RoleEnum role;
     private LocalDateTime expiresAt;
+    private boolean requiresTwoFactor;
+    private boolean isTwoFactorEnabled;
+    private boolean isTwoFactorEnforced;
 }
