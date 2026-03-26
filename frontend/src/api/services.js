@@ -4,26 +4,32 @@ import api from './axios';
 export const authService = {
     login: (data) => api.post('/auth/login', data),
     register: (data) => api.post('/auth/register', data),
+    forgotPassword: (data) => api.post('/auth/forgot-password', data),
+    resetPassword: (data) => api.post('/auth/reset-password', data),
+    socialLogin: (data) => api.post('/auth/social-login', data),
 };
 
 // Products
 export const productService = {
     getAll: (params) => api.get('/products', { params }),
     getById: (id) => api.get(`/products/${id}`),
-    search: (keyword, params) => api.get('/products/search', { params: { keyword, ...params } }),
+    search: (name, params) => api.get('/products', { params: { name, ...params } }),
     topSelling: () => api.get('/products/top-selling'),
     create: (data) => api.post('/products', data),
     update: (id, data) => api.put(`/products/${id}`, data),
     delete: (id) => api.delete(`/products/${id}`),
+    toggleStatus: (id) => api.patch(`/products/${id}/toggle-status`),
 };
 
 // Categories
 export const categoryService = {
     getAll: () => api.get('/categories'),
+    getAllAdmin: () => api.get('/categories/all'),
     getById: (id) => api.get(`/categories/${id}`),
     create: (data) => api.post('/categories', data),
     update: (id, data) => api.put(`/categories/${id}`, data),
     delete: (id) => api.delete(`/categories/${id}`),
+    toggleStatus: (id) => api.patch(`/categories/${id}/toggle-status`),
 };
 
 // Cart

@@ -1,7 +1,20 @@
 import { useEffect, useState, useCallback } from 'react';
 import { farmService } from '../../api/services';
-import Layout from '../../components/Layout';
+import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
+import { 
+    PlusIcon, 
+    PencilSquareIcon, 
+    TrashIcon, 
+    MapPinIcon,
+    UserCircleIcon,
+    ShieldCheckIcon,
+    PhotoIcon,
+    PhoneIcon,
+    EnvelopeIcon,
+    XMarkIcon,
+    HomeModernIcon
+} from '@heroicons/react/24/outline';
 
 const CERTS = ['VIETGAP', 'GLOBALGAP', 'ORGANIC', 'HACCP'];
 
@@ -73,127 +86,167 @@ export default function AdminFarms() {
         } catch { toast.error('Không thể xoá'); }
     };
 
-    const CERT_COLORS = {
-        VIETGAP: 'bg-green-100 text-green-800',
-        GLOBALGAP: 'bg-blue-100 text-blue-800',
-        ORGANIC: 'bg-emerald-100 text-emerald-800',
-        HACCP: 'bg-orange-100 text-orange-800',
+    const CERT_STYLES = {
+        VIETGAP: 'bg-green-100 text-green-700 border-green-200',
+        GLOBALGAP: 'bg-blue-100 text-blue-700 border-blue-200',
+        ORGANIC: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        HACCP: 'bg-orange-100 text-orange-700 border-orange-200',
     };
 
     const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
     return (
-        <Layout>
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Quản lý trang trại</h1>
-                <button onClick={openCreate} className="btn-primary">+ Thêm trang trại</button>
+        <AdminLayout>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                <div>
+                    <h1 className="text-4xl font-black text-gray-900 tracking-tight">Trang trại</h1>
+                    <p className="text-gray-500 font-medium">Quản lý mạng lưới các đối tác cung ứng nông sản.</p>
+                </div>
+                <button 
+                    onClick={openCreate} 
+                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black px-6 py-4 rounded-2xl shadow-lg shadow-green-100 transition-all active:scale-95"
+                >
+                    <PlusIcon className="w-5 h-5 stroke-[3]" />
+                    <span>Thêm trang trại</span>
+                </button>
             </div>
 
-            <div className="card overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="border-b text-gray-500">
-                            <th className="pb-3 text-left">Trang trại</th>
-                            <th className="pb-3 text-left">Tỉnh/Thành</th>
-                            <th className="pb-3 text-left">Chủ trang trại</th>
-                            <th className="pb-3 text-center">Chứng nhận</th>
-                            <th className="pb-3 text-center">Sản phẩm</th>
-                            <th className="pb-3 text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan={6} className="py-8 text-center text-gray-400">Đang tải...</td></tr>
-                        ) : farms.length === 0 ? (
-                            <tr><td colSpan={6} className="py-8 text-center text-gray-400">Chưa có trang trại</td></tr>
-                        ) : farms.map((f) => (
-                            <tr key={f.id} className="border-b last:border-0 hover:bg-gray-50">
-                                <td className="py-3 font-medium text-gray-800">{f.name}</td>
-                                <td className="py-3 text-gray-600">{f.province}</td>
-                                <td className="py-3 text-gray-600">{f.ownerName}</td>
-                                <td className="py-3 text-center">
-                                    {f.certification && (
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${CERT_COLORS[f.certification] || 'bg-gray-100 text-gray-600'}`}>
-                                            {f.certification}
-                                        </span>
-                                    )}
-                                </td>
-                                <td className="py-3 text-center">{f.productCount}</td>
-                                <td className="py-3 text-center">
-                                    <button onClick={() => openEdit(f)} className="text-blue-600 hover:underline mr-3">Sửa</button>
-                                    <button onClick={() => handleDelete(f.id)} className="text-red-600 hover:underline">Xoá</button>
-                                </td>
+            <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-gray-50/50">
+                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider">Trang trại & Vị trí</th>
+                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider">Chủ sở hữu</th>
+                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider text-center">Chứng nhận</th>
+                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider text-center">Sản phẩm</th>
+                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider text-center">Thao tác</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {loading ? (
+                                Array(3).fill(0).map((_, i) => (
+                                    <tr key={i} className="animate-pulse">
+                                        <td colSpan={5} className="px-6 py-6"><div className="h-10 bg-gray-100 rounded-xl w-full"></div></td>
+                                    </tr>
+                                ))
+                            ) : farms.length === 0 ? (
+                                <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400 font-medium">Chưa có dữ liệu trang trại</td></tr>
+                            ) : farms.map((f) => (
+                                <tr key={f.id} className="group hover:bg-green-50/30 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0 group-hover:scale-105 transition-transform duration-300">
+                                                {f.imageUrl ? (
+                                                    <img src={f.imageUrl} alt={f.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                        <HomeModernIcon className="w-6 h-6" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-gray-900 group-hover:text-green-600 transition-colors leading-tight">{f.name}</p>
+                                                <p className="flex items-center gap-1 text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">
+                                                    <MapPinIcon className="w-3 h-3" /> {f.province}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <p className="text-sm font-bold text-gray-700">{f.ownerName}</p>
+                                        <p className="text-[10px] text-gray-400 italic font-medium">{f.contactPhone || 'N/A'}</p>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        {f.certification ? (
+                                            <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black tracking-wider border ${CERT_STYLES[f.certification] || 'bg-gray-100 text-gray-600'}`}>
+                                                {f.certification}
+                                            </span>
+                                        ) : (
+                                            <span className="text-[10px] text-gray-300 italic font-black">CHƯA CÓ</span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 text-center font-black text-gray-900">
+                                        {f.productCount}
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <button onClick={() => openEdit(f)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><PencilSquareIcon className="w-5 h-5" /></button>
+                                            <button onClick={() => handleDelete(f.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all"><TrashIcon className="w-5 h-5" /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between p-6 border-b">
-                            <h2 className="text-lg font-bold">{editing ? 'Sửa trang trại' : 'Thêm trang trại'}</h2>
-                            <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+                        <div className="flex items-center justify-between p-8 border-b border-gray-50 bg-gray-50/30">
+                            <div>
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">{editing ? 'Chỉnh sửa trang trại' : 'Thêm trang trại'}</h2>
+                                <p className="text-sm text-gray-500 font-medium">Nhập thông tin chi tiết và chứng nhận liên quan.</p>
+                            </div>
+                            <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all">
+                                <XMarkIcon className="w-6 h-6 stroke-[3]" />
+                            </button>
                         </div>
-                        <form onSubmit={handleSave} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Tên trang trại *</label>
-                                <input required value={form.name} onChange={set('name')} className="input-field" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành *</label>
-                                    <input required value={form.province} onChange={set('province')} className="input-field" />
+                        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 space-y-6">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="md:col-span-2 space-y-3">
+                                    <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">Tên trang trại *</label>
+                                    <input required value={form.name} onChange={set('name')} className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500" />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Chủ trang trại</label>
-                                    <input value={form.ownerName} onChange={set('ownerName')} className="input-field" />
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">Tỉnh/Thành *</label>
+                                    <input required value={form.province} onChange={set('province')} className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500" />
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
-                                <input value={form.address} onChange={set('address')} className="input-field" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Điện thoại</label>
-                                    <input type="tel" value={form.contactPhone} onChange={set('contactPhone')} className="input-field" />
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">Chủ sở hữu</label>
+                                    <input value={form.ownerName} onChange={set('ownerName')} className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500" />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                    <input type="email" value={form.contactEmail} onChange={set('contactEmail')} className="input-field" />
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">Điện thoại</label>
+                                    <input type="tel" value={form.contactPhone} onChange={set('contactPhone')} className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500" />
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Chứng nhận</label>
-                                    <select value={form.certification} onChange={set('certification')} className="input-field">
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">Email</label>
+                                    <input type="email" value={form.contactEmail} onChange={set('contactEmail')} className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500" />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">Chứng nhận</label>
+                                    <select value={form.certification} onChange={set('certification')} className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500">
                                         <option value="">-- Không có --</option>
                                         {CERTS.map((c) => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Mã chứng nhận</label>
-                                    <input value={form.certificationCode} onChange={set('certificationCode')} className="input-field" />
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">Mã chứng nhận</label>
+                                    <input value={form.certificationCode} onChange={set('certificationCode')} className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500" />
+                                </div>
+                                <div className="md:col-span-2 space-y-3">
+                                    <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">URL hình ảnh</label>
+                                    <input value={form.imageUrl} onChange={set('imageUrl')} placeholder="https://..." className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500" />
+                                </div>
+                                <div className="md:col-span-2 space-y-3">
+                                    <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">Mô tả</label>
+                                    <textarea rows={3} value={form.description} onChange={set('description')} className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-medium text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 resize-none" />
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">URL hình ảnh</label>
-                                <input value={form.imageUrl} onChange={set('imageUrl')} placeholder="https://..." className="input-field" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
-                                <textarea rows={2} value={form.description} onChange={set('description')} className="input-field resize-none" />
-                            </div>
-                            <div className="flex gap-3 pt-2">
-                                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Huỷ</button>
-                                <button type="submit" disabled={saving} className="btn-primary flex-1">{saving ? 'Đang lưu...' : 'Lưu'}</button>
+                            <div className="flex gap-4 pt-4">
+                                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-8 py-4 bg-white border border-gray-100 rounded-2xl font-black text-gray-500 hover:bg-gray-100 transition-all">Hủy</button>
+                                <button type="submit" disabled={saving} className="flex-1 px-8 py-4 bg-green-600 text-white rounded-2xl font-black shadow-lg shadow-green-100 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50">
+                                    {saving ? '...' : 'Lưu trang trại'}
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
-        </Layout>
+        </AdminLayout>
     );
 }
+
