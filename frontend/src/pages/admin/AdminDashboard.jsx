@@ -8,7 +8,8 @@ import {
     ArchiveBoxIcon, 
     ChevronRightIcon,
     ArrowUpIcon,
-    ArrowDownIcon
+    ArrowDownIcon,
+    BellIcon
 } from '@heroicons/react/24/outline';
 
 const StatCard = ({ title, value, icon: Icon, color, trend, trendValue }) => (
@@ -75,11 +76,12 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                <StatCard title="Tổng đơn hàng" value={fmt(stats?.totalOrders || 0)} icon={ArchiveBoxIcon} color="bg-blue-100" trend="up" trendValue="12" />
-                <StatCard title="Doanh thu tháng (VNĐ)" value={fmt(stats?.revenueThisMonth || 0)} icon={CurrencyDollarIcon} color="bg-emerald-100" trend="up" trendValue="8" />
-                <StatCard title="Người dùng" value={fmt(stats?.totalUsers || 0)} icon={UserGroupIcon} color="bg-violet-100" trend="up" trendValue="15" />
-                <StatCard title="Sản phẩm" value={fmt(stats?.totalProducts || 0)} icon={ShoppingBagIcon} color="bg-amber-100" trend="down" trendValue="2" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+                <StatCard title="Tổng đơn hàng" value={fmt(stats?.totalOrders || 0)} icon={ArchiveBoxIcon} color="bg-emerald-100" trend="up" trendValue="12" />
+                <StatCard title="Doanh thu tháng (VNĐ)" value={fmt(stats?.revenueThisMonth || 0)} icon={CurrencyDollarIcon} color="bg-green-100" trend="up" trendValue="8" />
+                <StatCard title="Người dùng" value={fmt(stats?.totalUsers || 0)} icon={UserGroupIcon} color="bg-teal-100" trend="up" trendValue="15" />
+                <StatCard title="Sản phẩm" value={fmt(stats?.totalProducts || 0)} icon={ShoppingBagIcon} color="bg-lime-100" trend="down" trendValue="2" />
+                <StatCard title="Bản tin" value={fmt(stats?.totalSubscribers || 0)} icon={BellIcon} color="bg-orange-100" trend="up" trendValue="5" />
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">

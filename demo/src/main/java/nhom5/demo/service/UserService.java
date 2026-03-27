@@ -11,6 +11,8 @@ public interface UserService {
 
     UserResponse updateProfile(String username, UserUpdateRequest request);
 
+    UserResponse updateAvatar(String username, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
+
     Page<UserResponse> getAllUsers(Pageable pageable);
 
     UserResponse getUserById(Long id);

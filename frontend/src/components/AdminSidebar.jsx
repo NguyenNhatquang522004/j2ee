@@ -12,8 +12,10 @@ import {
     ChartBarIcon,
     TagIcon,
     UserIcon,
-    ShieldCheckIcon,
-    Cog8ToothIcon
+    ShieldCheckIcon, 
+    Cog8ToothIcon,
+    BellIcon,
+    PhotoIcon
 } from '@heroicons/react/24/outline';
 
 const MENU_ITEMS = [
@@ -25,6 +27,9 @@ const MENU_ITEMS = [
     { name: 'Trang trại', path: '/admin/farms', icon: HomeIcon },
     { name: 'Đơn hàng', path: '/admin/orders', icon: ClipboardDocumentListIcon },
     { name: 'Mã giảm giá', path: '/admin/coupons', icon: TagIcon },
+    { name: 'Đánh giá', path: '/admin/reviews', icon: UserIcon },
+    { name: 'Thư viện', path: '/admin/media', icon: PhotoIcon },
+    { name: 'Bản tin', path: '/admin/newsletters', icon: BellIcon },
     { name: 'Cài đặt', path: '/admin/settings', icon: Cog8ToothIcon },
 ];
 

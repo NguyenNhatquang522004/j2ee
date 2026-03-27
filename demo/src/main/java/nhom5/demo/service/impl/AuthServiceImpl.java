@@ -90,6 +90,13 @@ public class AuthServiceImpl implements AuthService {
         boolean isAdmin = user.getRole() == RoleEnum.ROLE_ADMIN;
 
         if (Boolean.TRUE.equals(user.getIsTwoFactorEnabled())) {
+            if ("EMAIL".equals(user.getTwoFactorMethod())) {
+                String code = String.format("%06d", new java.util.Random().nextInt(1000000));
+                user.setEmail2faCode(code);
+                user.setEmail2faCodeExpiry(LocalDateTime.now().plusMinutes(5));
+                userRepository.save(user);
+                mailService.send2faEmail(user.getEmail(), code);
+            }
             return AuthResponse.builder()
                     .userId(user.getId())
                     .username(user.getUsername())
@@ -99,6 +106,7 @@ public class AuthServiceImpl implements AuthService {
                     .requiresTwoFactor(true)
                     .isTwoFactorEnabled(true)
                     .isTwoFactorEnforced(enfored2FA)
+                    .twoFactorMethod(user.getTwoFactorMethod())
                     .build();
         }
 
@@ -119,11 +127,28 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("Tài khoản của bạn đã bị khoá");
         }
 
-        if (twoFactorService.verifyCode(user.getTwoFactorSecret(), request.getCode())) {
+        boolean verified = false;
+        if ("EMAIL".equals(user.getTwoFactorMethod())) {
+            if (user.getEmail2faCode() != null &&
+                    user.getEmail2faCode().equals(request.getCode()) &&
+                    user.getEmail2faCodeExpiry() != null &&
+                    user.getEmail2faCodeExpiry().isAfter(LocalDateTime.now())) {
+                verified = true;
+                // Clear code after use
+                user.setEmail2faCode(null);
+                user.setEmail2faCodeExpiry(null);
+                userRepository.save(user);
+            }
+        } else {
+            // Default to TOTP
+            verified = twoFactorService.verifyCode(user.getTwoFactorSecret(), request.getCode());
+        }
+
+        if (verified) {
             String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername());
             return buildAuthResponse(user, token);
         } else {
-            throw new BusinessException("Mã xác thực không hợp lệ");
+            throw new BusinessException("Mã xác thực không hợp lệ hoặc đã hết hạn");
         }
     }
 
@@ -219,6 +244,7 @@ public class AuthServiceImpl implements AuthService {
                 .requiresTwoFactor(false)
                 .isTwoFactorEnabled(user.getIsTwoFactorEnabled())
                 .isTwoFactorEnforced("true".equalsIgnoreCase(settingService.getSettingValue("2FA_ENFORCED", "false")))
+                .twoFactorMethod(user.getTwoFactorMethod())
                 .build();
     }
 }

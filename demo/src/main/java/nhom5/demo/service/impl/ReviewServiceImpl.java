@@ -6,7 +6,6 @@ import nhom5.demo.dto.response.ReviewResponse;
 import nhom5.demo.entity.Product;
 import nhom5.demo.entity.Review;
 import nhom5.demo.entity.User;
-import nhom5.demo.enums.RoleEnum;
 import nhom5.demo.exception.BusinessException;
 import nhom5.demo.exception.ResourceNotFoundException;
 import nhom5.demo.repository.OrderItemRepository;
@@ -27,10 +26,11 @@ public class ReviewServiceImpl implements ReviewService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final OrderItemRepository orderItemRepository;
+    private final com.cloudinary.Cloudinary cloudinary;
 
     @Override
     @Transactional
-    public ReviewResponse addReview(String username, ReviewRequest request) {
+    public ReviewResponse addReview(String username, ReviewRequest request, java.util.List<org.springframework.web.multipart.MultipartFile> files) throws java.io.IOException {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
         Product product = productRepository.findById(request.getProductId())
@@ -42,7 +42,7 @@ public class ReviewServiceImpl implements ReviewService {
             throw new BusinessException("Bạn chỉ có thể đánh giá sản phẩm sau khi đã nhận được hàng");
         }
 
-        if (reviewRepository.existsByProductIdAndUserId(product.getId(), user.getId())) {
+        if (reviewRepository.existsByProductIdAndUserIdAndStatusIsNot(product.getId(), user.getId(), nhom5.demo.enums.ReviewStatusEnum.REJECTED)) {
             throw new BusinessException("Bạn đã đánh giá sản phẩm này rồi");
         }
 
@@ -51,31 +51,56 @@ public class ReviewServiceImpl implements ReviewService {
                 .comment(request.getComment())
                 .product(product)
                 .user(user)
+                .status(nhom5.demo.enums.ReviewStatusEnum.PENDING)
                 .build();
 
-        return toResponse(reviewRepository.save(review));
+        Review savedReview = reviewRepository.save(review);
+
+        if (files != null && !files.isEmpty()) {
+            for (org.springframework.web.multipart.MultipartFile file : files) {
+                String resourceType = file.getContentType() != null && file.getContentType().startsWith("video") ? "video" : "image";
+                java.util.Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), 
+                        com.cloudinary.utils.ObjectUtils.asMap("resource_type", resourceType, "folder", "reviews"));
+                
+                nhom5.demo.entity.ReviewMedia media = nhom5.demo.entity.ReviewMedia.builder()
+                        .url(uploadResult.get("secure_url").toString())
+                        .fileType(resourceType)
+                        .review(savedReview)
+                        .build();
+                savedReview.getMedia().add(media);
+            }
+        }
+
+        return toResponse(reviewRepository.save(savedReview));
     }
 
     @Override
     public Page<ReviewResponse> getReviewsByProduct(Long productId, Pageable pageable) {
-        return reviewRepository.findByProductIdOrderByCreatedAtDesc(productId, pageable).map(this::toResponse);
+        return reviewRepository.findByProductIdAndStatusOrderByCreatedAtDesc(productId, nhom5.demo.enums.ReviewStatusEnum.APPROVED, pageable).map(this::toResponse);
+    }
+
+    @Override
+    public Page<ReviewResponse> getAllReviews(Pageable pageable) {
+        return reviewRepository.findAllByOrderByCreatedAtDesc(pageable).map(this::toResponse);
     }
 
     @Override
     @Transactional
-    public void deleteReview(Long reviewId, String username) {
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review", "id", reviewId));
+    public ReviewResponse moderateReview(Long id, nhom5.demo.enums.ReviewStatusEnum status, String adminReply) {
+        Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Review", "id", id));
+        review.setStatus(status);
+        review.setAdminReply(adminReply);
+        return toResponse(reviewRepository.save(review));
+    }
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
-
-        if (!review.getUser().getId().equals(user.getId())
-                && user.getRole() != RoleEnum.ROLE_ADMIN) {
-            throw new BusinessException("Bạn không có quyền xóa đánh giá này");
+    @Override
+    @Transactional
+    public void deleteReview(Long reviewId) {
+        if (!reviewRepository.existsById(reviewId)) {
+            throw new ResourceNotFoundException("Review", "id", reviewId);
         }
-
-        reviewRepository.delete(review);
+        reviewRepository.deleteById(reviewId);
     }
 
     private ReviewResponse toResponse(Review review) {
@@ -85,8 +110,13 @@ public class ReviewServiceImpl implements ReviewService {
                 .comment(review.getComment())
                 .userId(review.getUser().getId())
                 .username(review.getUser().getUsername())
+                .userFullName(review.getUser().getFullName())
+                .userAvatarUrl(review.getUser().getAvatarUrl())
                 .productId(review.getProduct().getId())
                 .productName(review.getProduct().getName())
+                .status(review.getStatus())
+                .adminReply(review.getAdminReply())
+                .mediaUrls(review.getMedia().stream().map(m -> m.getUrl()).collect(java.util.stream.Collectors.toList()))
                 .createdAt(review.getCreatedAt())
                 .build();
     }

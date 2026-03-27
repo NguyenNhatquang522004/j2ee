@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreshFood Notification</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f3f4f6; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f3f4f6; padding-bottom: 40px; }
+        .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; font-family: sans-serif; color: #4a4a4a; border-radius: 16px; overflow: hidden; margin-top: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .header { background-color: #1a3c31; padding: 40px; text-align: center; }
+        .logo { color: #ffffff; font-size: 28px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; text-decoration: none; }
+        .content { padding: 40px; background-color: #ffffff; }
+        .footer { padding: 30px; text-align: center; font-size: 12px; color: #9ca3af; background-color: #f9fafb; }
+        .btn { display: inline-block; padding: 14px 28px; background-color: #10b981; color: #ffffff !important; text-decoration: none; border-radius: 12px; font-weight: bold; margin-top: 25px; transition: background-color 0.2s; }
+        .divider { height: 1px; background-color: #e5e7eb; margin: 30px 0; }
+        h1, h2, h3 { color: #111827; }
+        .code-block { background-color: #f3f4f6; padding: 20px; border-radius: 12px; text-align: center; font-size: 32px; font-weight: 800; letter-spacing: 10px; color: #065f46; margin: 20px 0; border: 2px dashed #10b981; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <table class="main" width="100%">
+            <tr>
+                <td class="header" style="font-weight: 800;">
+                    <a href="http://localhost:3000" class="logo">FreshFood</a>
+                </td>
+            </tr>
+            <tr>
+                <td class="content">
+                    <!-- Fragment Placeholder -->
+                    <div th:replace="${template} :: content"></div>
+                </td>
+            </tr>
+            <tr>
+                <td class="footer">
+                    <p>&copy; 2026 <strong>FreshFood Ecosystem</strong>. Tất cả quyền được bảo lưu.</p>
+                    <p>Địa chỉ: 123 Đường Sáng Tạo, Thành phố Công nghệ.</p>
+                    <p>Bạn nhận được email này vì đã đăng ký hoặc sử dụng dịch vụ của chúng tôi. 
+                       <a href="#" style="color: #10b981; text-decoration: none;">Cài đặt thông báo</a></p>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

@@ -10,6 +10,7 @@ export default function Login() {
     const [form, setForm] = useState({ username: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [twoFactorNeeded, setTwoFactorNeeded] = useState(false);
+    const [twoFactorMethod, setTwoFactorMethod] = useState('TOTP'); // 'TOTP' or 'EMAIL'
     const [otpCode, setOtpCode] = useState('');
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -25,8 +26,13 @@ export default function Login() {
             } else {
                 const data = await login(form);
                 if (data.requiresTwoFactor) {
+                    setTwoFactorMethod(data.twoFactorMethod || 'TOTP');
                     setTwoFactorNeeded(true);
-                    toast.success('Vui lòng nhập mã xác thực 2 bước');
+                    if (data.twoFactorMethod === 'EMAIL') {
+                        toast.success('Mã xác thực đã được gửi tới Email của bạn');
+                    } else {
+                        toast.success('Vui lòng nhập mã xác thực từ ứng dụng');
+                    }
                 } else {
                     toast.success(`Chào mừng, ${data.fullName || data.username}!`);
                     navigate(data.role === 'ROLE_ADMIN' || data.role === 'ADMIN' ? '/admin' : '/');
@@ -47,7 +53,7 @@ export default function Login() {
                         <SparklesIcon className="w-12 h-12 text-green-600" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Đăng nhập</h1>
-                    <p className="text-gray-500 font-medium">Thực Phẩm Sạch - Nhóm 5</p>
+                    <p className="text-gray-500 font-medium">FreshFood - Nhóm 5</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -84,7 +90,9 @@ export default function Login() {
                         </>
                     ) : (
                         <div className="animate-fade-in">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Mã xác thực 2 bước (TOTP)</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Mã xác thực {twoFactorMethod === 'EMAIL' ? 'từ Email' : '2 bước (TOTP)'}
+                            </label>
                             <input
                                 type="text"
                                 maxLength="6"
@@ -96,7 +104,9 @@ export default function Login() {
                                 placeholder="000000"
                             />
                             <p className="mt-4 text-xs text-gray-500 text-center">
-                                Mở ứng dụng <b>Google Authenticator</b> trên điện thoại để lấy mã.
+                                {twoFactorMethod === 'EMAIL' 
+                                    ? 'Vui lòng kiểm tra hòm thư của bạn để lấy mã xác nhận.' 
+                                    : 'Mở ứng dụng Google Authenticator trên điện thoại để lấy mã.'}
                             </p>
                             <button 
                                 type="button" 

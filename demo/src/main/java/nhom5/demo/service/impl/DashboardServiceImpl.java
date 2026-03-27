@@ -30,6 +30,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final FarmRepository farmRepository;
+    private final NewsletterRepository newsletterRepository;
     private final BatchService batchService;
 
     @Value("${app.batch.expiry-warning-days:3}")
@@ -48,6 +49,7 @@ public class DashboardServiceImpl implements DashboardService {
         long totalProducts = productRepository.count();
         long totalOrders = orderRepository.count();
         long totalFarms = farmRepository.count();
+        long totalSubscribers = newsletterRepository.count();
 
         // Revenue
         BigDecimal revenueToday = orderRepository.sumRevenueByDateRange(startOfToday, endOfToday);
@@ -97,6 +99,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .totalProducts(totalProducts)
                 .totalOrders(totalOrders)
                 .totalFarms(totalFarms)
+                .totalSubscribers(totalSubscribers)
                 .revenueToday(revenueToday != null ? revenueToday : BigDecimal.ZERO)
                 .revenueThisMonth(revenueThisMonth != null ? revenueThisMonth : BigDecimal.ZERO)
                 .ordersByStatus(ordersByStatus)

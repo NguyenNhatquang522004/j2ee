@@ -46,6 +46,15 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin thành công", data));
     }
 
+    @Operation(summary = "Cập nhật ảnh đại diện")
+    @PostMapping("/me/avatar")
+    public ResponseEntity<ApiResponse<UserResponse>> updateAvatar(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
+        UserResponse data = userService.updateAvatar(userDetails.getUsername(), file);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật ảnh đại diện thành công", data));
+    }
+
     @Operation(summary = "Danh sách tất cả người dùng (Admin)")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
