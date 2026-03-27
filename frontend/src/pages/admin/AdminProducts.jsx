@@ -16,6 +16,7 @@ import {
     EyeSlashIcon,
     XMarkIcon
 } from '@heroicons/react/24/outline';
+import AdminMediaLibrary from './AdminMediaLibrary';
 
 const EMPTY = {
     name: '', description: '', price: '', unit: '', imageUrl: '',
@@ -35,6 +36,7 @@ export default function AdminProducts() {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [search, setSearch] = useState('');
+    const [showMediaLibrary, setShowMediaLibrary] = useState(false);
 
     const fetchProducts = useCallback(async (p = 0, q = '') => {
         setLoading(true);
@@ -384,14 +386,30 @@ export default function AdminProducts() {
 
                                 <div className="space-y-4 md:col-span-2">
                                     <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-1">
-                                        <PhotoIcon className="w-4 h-4" /> URL hình ảnh
+                                        <PhotoIcon className="w-4 h-4" /> Hình ảnh sản phẩm
                                     </label>
-                                    <input 
-                                        value={form.imageUrl} 
-                                        onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500"
-                                        placeholder="https://..." 
-                                    />
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <input 
+                                                value={form.imageUrl} 
+                                                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} 
+                                                className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500"
+                                                placeholder="Chọn từ thư viện hoặc dán URL..." 
+                                            />
+                                        </div>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setShowMediaLibrary(true)}
+                                            className="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-black rounded-2xl transition-all"
+                                        >
+                                            Thư viện
+                                        </button>
+                                    </div>
+                                    {form.imageUrl && (
+                                        <div className="mt-4 w-32 h-32 rounded-2xl overflow-hidden border">
+                                            <img src={form.imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-4 md:col-span-2">
@@ -454,6 +472,22 @@ export default function AdminProducts() {
                                 ) : 'Lưu sản phẩm'}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {showMediaLibrary && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-5xl h-[80vh] overflow-hidden flex flex-col">
+                        <AdminMediaLibrary 
+                            isModal 
+                            onClose={() => setShowMediaLibrary(false)} 
+                            onSelect={(m) => {
+                                setForm({ ...form, imageUrl: m.url });
+                                setShowMediaLibrary(false);
+                                toast.success('Đã chọn ảnh');
+                            }} 
+                        />
                     </div>
                 </div>
             )}

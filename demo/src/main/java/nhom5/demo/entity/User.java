@@ -65,6 +65,9 @@ public class User {
     @Builder.Default
     private String membershipTier = "bronze";
 
+    @Column(name = "avatar_url", length = 255)
+    private String avatarUrl;
+
     @Column(name = "points")
     @Builder.Default
     private Long points = 0L;
@@ -113,6 +116,16 @@ public class User {
     @Column(name = "is_two_factor_enabled", nullable = false)
     @Builder.Default
     private Boolean isTwoFactorEnabled = false;
+
+    @Column(name = "two_factor_method", length = 10)
+    @Builder.Default
+    private String twoFactorMethod = "TOTP"; // "TOTP", "EMAIL"
+
+    @Column(name = "email_2fa_code", length = 6)
+    private String email2faCode;
+
+    @Column(name = "email_2fa_code_expiry")
+    private LocalDateTime email2faCodeExpiry;
 
     // ====== Relationships ======
     @JsonIgnore

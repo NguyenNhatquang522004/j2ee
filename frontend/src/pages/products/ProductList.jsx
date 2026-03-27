@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, Fragment } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useCompare } from '../../context/CompareContext';
 import { productService, categoryService, wishlistService } from '../../api/services';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -10,7 +11,8 @@ import {
     HeartIcon, 
     ShoppingBagIcon, 
     CakeIcon, 
-    Square3Stack3DIcon 
+    Square3Stack3DIcon,
+    ArrowsRightLeftIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { 
@@ -248,6 +250,7 @@ export default function ProductList() {
 function ProductCard({ product }) {
     const { user } = useAuth();
     const { addToCart } = useCart();
+    const { compareItems, addToCompare, removeFromCompare } = useCompare();
     const [isLiked, setIsLiked] = useState(false);
 
     useEffect(() => {
@@ -301,6 +304,13 @@ function ProductCard({ product }) {
                     className={`absolute top-4 right-4 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 ${isLiked ? 'bg-white text-red-500' : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500'}`}
                 >
                     {isLiked ? <HeartIconSolid className="w-5 h-5 transition-transform active:scale-110" /> : <HeartIcon className="w-5 h-5 transition-transform active:scale-110" />}
+                </button>
+
+                <button 
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCompare(product); }}
+                    className={`absolute top-16 right-4 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 ${compareItems.some(i => i.id === product.id) ? 'bg-green-600 text-white' : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-green-600'}`}
+                >
+                    <ArrowsRightLeftIcon className="w-5 h-5 transition-transform active:rotate-180 duration-500" />
                 </button>
             </Link>
             

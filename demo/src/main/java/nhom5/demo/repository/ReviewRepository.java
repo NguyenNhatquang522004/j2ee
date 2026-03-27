@@ -13,9 +13,13 @@ import java.util.List;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    Page<Review> findByProductIdOrderByCreatedAtDesc(Long productId, Pageable pageable);
+    Page<Review> findByProductIdAndStatusOrderByCreatedAtDesc(Long productId, nhom5.demo.enums.ReviewStatusEnum status, Pageable pageable);
+
+    Page<Review> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     List<Review> findByUserId(Long userId);
+
+    boolean existsByProductIdAndUserIdAndStatusIsNot(Long productId, Long userId, nhom5.demo.enums.ReviewStatusEnum status);
 
     boolean existsByProductIdAndUserId(Long productId, Long userId);
 

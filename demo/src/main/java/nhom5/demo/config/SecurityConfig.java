@@ -58,13 +58,15 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(org.springframework.security.config.Customizer.withDefaults())
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/payment/**"))
+                .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/v1/payment/**", "/error").permitAll()
-                        // Auth & AI endpoints — public
+                        // Auth & AI & Newsletter endpoints — public
                         .requestMatchers("/api/v1/auth/**", "/api/v1/ai/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/newsletters/subscribe").permitAll()
+                        .requestMatchers("/api/v1/newsletters/**").hasAuthority("ROLE_ADMIN")
                         // Swagger UI — public
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         // Public read endpoints
@@ -73,11 +75,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/farms", "/api/v1/farms/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews", "/api/v1/reviews/**").permitAll()
                         // Admin-only endpoints
-                        .requestMatchers("/api/v1/dashboard/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/v1/dashboard/**", "/api/v1/dashboard").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/products/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/products/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/products/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/api/v1/batches/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/v1/batches/**", "/api/v1/batches").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/farms/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/farms/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/farms/**").hasAuthority("ROLE_ADMIN")
@@ -87,7 +89,8 @@ public class SecurityConfig {
                         // Users: /users/me accessible by any authenticated user; rest is admin-only
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/users/me").authenticated()
-                        .requestMatchers("/api/v1/users/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users/me/avatar").authenticated()
+                        .requestMatchers("/api/v1/users/**", "/api/v1/users").hasAuthority("ROLE_ADMIN")
                         // Coupons
                         .requestMatchers(HttpMethod.GET, "/api/v1/coupons/validate/**").authenticated()
                         .requestMatchers("/api/v1/coupons/**").hasAuthority("ROLE_ADMIN")

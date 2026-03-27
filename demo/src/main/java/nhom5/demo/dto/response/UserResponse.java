@@ -20,6 +20,7 @@ public class UserResponse {
     private java.time.LocalDate dateOfBirth;
     private String gender;
     private String membershipTier;
+    private String avatarUrl;
     private Long points;
     private Boolean emailNotifications;
     private Boolean promoNotifications;

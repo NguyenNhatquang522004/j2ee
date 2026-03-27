@@ -156,7 +156,7 @@ export default function Checkout() {
                 <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-4 font-vietnam">
                     <div className="card shadow-sm border border-gray-100 rounded-3xl p-8">
                         <h2 className="font-bold text-gray-700 mb-6 flex items-center gap-2">
-                            <MapPinIcon className="w-5 h-5 text-indigo-600" />
+                            <MapPinIcon className="w-5 h-5 text-emerald-600" />
                             Thông tin giao hàng
                         </h2>
                         <div className="space-y-6">
@@ -169,13 +169,13 @@ export default function Checkout() {
                                             onClick={() => handleAddressSelect(addr)}
                                             className={`cursor-pointer p-4 border-2 rounded-2xl transition-all duration-300 ${
                                                 selectedAddressId === addr.id 
-                                                ? 'border-indigo-600 bg-indigo-50/50 shadow-md translate-y-[-2px]' 
-                                                : 'border-gray-50 hover:border-indigo-200 bg-gray-50/30'
+                                                ? 'border-emerald-600 bg-emerald-50/50 shadow-md translate-y-[-2px]' 
+                                                : 'border-gray-50 hover:border-emerald-200 bg-gray-50/30'
                                             }`}
                                         >
                                             <div className="flex justify-between items-center mb-2">
-                                                <span className="font-black text-xs text-indigo-800 uppercase tracking-widest">{addr.label}</span>
-                                                {addr.isDefault && <span className="text-[10px] bg-indigo-200 text-indigo-800 px-2 py-0.5 rounded-full font-black uppercase">Mặc định</span>}
+                                                <span className="font-black text-xs text-emerald-800 uppercase tracking-widest">{addr.label}</span>
+                                                {addr.isDefault && <span className="text-[10px] bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full font-black uppercase">Mặc định</span>}
                                             </div>
                                             <p className="text-sm text-gray-600 font-medium line-clamp-2">{addr.details}</p>
                                         </div>
@@ -184,11 +184,11 @@ export default function Checkout() {
                                         onClick={() => handleAddressSelect('new')}
                                         className={`cursor-pointer p-4 border-2 border-dashed rounded-2xl transition-all flex flex-col items-center justify-center gap-2 h-full ${
                                             selectedAddressId === 'new' 
-                                            ? 'border-indigo-600 bg-indigo-50/50' 
-                                            : 'border-gray-200 hover:border-indigo-200 text-gray-400'
+                                            ? 'border-emerald-600 bg-emerald-50/50' 
+                                            : 'border-gray-200 hover:border-emerald-200 text-gray-400'
                                         }`}
                                     >
-                                        <PlusIcon className="w-6 h-6 text-indigo-600" />
+                                        <PlusIcon className="w-6 h-6 text-emerald-600" />
                                         <span className="text-xs font-black uppercase tracking-widest">Địa chỉ khác</span>
                                     </div>
                                 </div>
@@ -205,7 +205,7 @@ export default function Checkout() {
                                     rows={3}
                                     required
                                     disabled={selectedAddressId !== 'new'}
-                                    className={`w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-medium text-gray-900 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none ${selectedAddressId !== 'new' ? 'opacity-70 cursor-not-allowed' : 'focus:bg-white'}`}
+                                    className={`w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-medium text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none ${selectedAddressId !== 'new' ? 'opacity-70 cursor-not-allowed' : 'focus:bg-white'}`}
                                     placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"
                                 />
                             </div>
@@ -221,7 +221,7 @@ export default function Checkout() {
                                         value={form.phone}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none focus:bg-white"
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none focus:bg-white"
                                         placeholder="Nhập số điện thoại"
                                     />
                                 </div>
@@ -233,7 +233,7 @@ export default function Checkout() {
                                         name="paymentMethod" 
                                         value={form.paymentMethod} 
                                         onChange={handleChange} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none appearance-none cursor-pointer focus:bg-white"
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none appearance-none cursor-pointer focus:bg-white"
                                     >
                                         {PAYMENT_METHODS.map((m) => (
                                             <option key={m.value} value={m.value}>{m.label}</option>
@@ -252,7 +252,7 @@ export default function Checkout() {
                                         value={form.couponCode} 
                                         onChange={handleChange} 
                                         disabled={!!appliedCoupon}
-                                        className={`w-full px-6 py-4 pr-32 bg-gray-50 border-none rounded-2xl font-black tracking-widest uppercase focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none ${appliedCoupon ? 'bg-green-50 text-green-700' : 'focus:bg-white'}`} 
+                                        className={`w-full px-6 py-4 pr-32 bg-gray-50 border-none rounded-2xl font-black tracking-widest uppercase focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none ${appliedCoupon ? 'bg-green-50 text-green-700' : 'focus:bg-white'}`} 
                                         placeholder="NHẬP MÃ" 
                                     />
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -269,7 +269,7 @@ export default function Checkout() {
                                                 type="button" 
                                                 onClick={handleValidateCoupon}
                                                 disabled={validatingCoupon || !form.couponCode.trim()}
-                                                className="bg-indigo-600 text-white text-[10px] font-black px-4 py-2.5 rounded-xl hover:bg-indigo-700 uppercase tracking-wider disabled:opacity-50 shadow-md shadow-indigo-100 active:scale-95 transition-all"
+                                                className="bg-emerald-600 text-white text-[10px] font-black px-4 py-2.5 rounded-xl hover:bg-emerald-700 uppercase tracking-wider disabled:opacity-50 shadow-md shadow-emerald-100 active:scale-95 transition-all"
                                             >
                                                 {validatingCoupon ? 'Đang kiểm tra...' : 'Áp dụng'}
                                             </button>
@@ -292,7 +292,7 @@ export default function Checkout() {
                                     value={form.note} 
                                     onChange={handleChange} 
                                     rows={2} 
-                                    className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-medium text-gray-900 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none focus:bg-white" 
+                                    className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-medium text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none focus:bg-white" 
                                     placeholder="Ghi chú thêm về thời gian, địa điểm cụ thể..." 
                                 />
                             </div>
@@ -320,10 +320,10 @@ export default function Checkout() {
 
                 {/* Summary */}
                 <div className="lg:col-span-1">
-                    <div className="card shadow-2xl shadow-indigo-50/50 border border-indigo-50 rounded-[2.5rem] p-8 sticky top-24 bg-white/70 backdrop-blur-xl">
+                    <div className="card shadow-2xl shadow-emerald-50/50 border border-emerald-50 rounded-[2.5rem] p-8 sticky top-24 bg-white/70 backdrop-blur-xl">
                         <h2 className="font-black text-xl text-gray-900 mb-8 flex items-center gap-3">
-                            <div className="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center">
-                                <ShoppingBagIcon className="w-6 h-6 text-indigo-600" />
+                            <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                                <ShoppingBagIcon className="w-6 h-6 text-emerald-600" />
                             </div>
                             Tóm tắt đơn hàng
                         </h2>
@@ -332,7 +332,7 @@ export default function Checkout() {
                             {items.map((item) => (
                                 <div key={item.cartItemId} className="flex justify-between items-start text-sm group animate-in slide-in-from-right duration-300">
                                     <div className="flex-1">
-                                        <p className="text-gray-900 font-black group-hover:text-indigo-600 transition-colors leading-snug">{item.productName}</p>
+                                        <p className="text-gray-900 font-black group-hover:text-emerald-600 transition-colors leading-snug">{item.productName}</p>
                                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 italic">Số lượng: {item.quantity}</p>
                                     </div>
                                     <span className="font-black text-gray-800 ml-4 font-vietnam whitespace-nowrap">{item.subtotal?.toLocaleString('vi-VN')} đ</span>
@@ -353,10 +353,10 @@ export default function Checkout() {
                                 </div>
                             )}
 
-                            <div className="flex justify-between items-end pt-6 mt-4 border-t border-indigo-100/50 border-dashed">
+                            <div className="flex justify-between items-end pt-6 mt-4 border-t border-emerald-100/50 border-dashed">
                                 <span className="text-sm font-black text-gray-400 uppercase tracking-widest pb-1 mb-1">Tổng tiền thanh toán</span>
                                 <div className="text-right">
-                                    <span className="text-3xl font-black text-indigo-600 block leading-none font-vietnam tracking-tighter">
+                                    <span className="text-3xl font-black text-emerald-600 block leading-none font-vietnam tracking-tighter">
                                         {finalAmount.toLocaleString('vi-VN')} <span className="text-xl">đ</span>
                                     </span>
                                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-2">Đã bao gồm VAT & Phí dịch vụ</p>
@@ -364,8 +364,8 @@ export default function Checkout() {
                             </div>
                         </div>
 
-                        <div className="mt-8 p-4 bg-indigo-50/30 rounded-2xl border border-indigo-50">
-                            <p className="text-[10px] text-indigo-400 font-medium italic text-center">
+                        <div className="mt-8 p-4 bg-emerald-50/30 rounded-2xl border border-emerald-50">
+                            <p className="text-[10px] text-emerald-400 font-medium italic text-center">
                                 Phí vận chuyển sẽ được hiển thị khi liên hệ xác nhận đơn hàng theo khu vực.
                             </p>
                         </div>
