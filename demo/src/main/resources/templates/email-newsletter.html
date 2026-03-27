@@ -1,0 +1,9 @@
+<div th:fragment="content">
+    <div style="text-align: left;">
+        <h1 th:text="${subject}" style="color: #111827; font-size: 24px; font-weight: 800; margin-bottom: 20px;"></h1>
+        <div class="main-content" th:utext="${content}" style="font-size: 16px; color: #4b5563; line-height: 1.8;"></div>
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="http://localhost:3000/products" class="btn" style="background-color: #10b981; color: #ffffff; padding: 14px 28px; border-radius: 12px; font-weight: bold; text-decoration: none;">Xem ngay các sản phẩm mới nhất</a>
+        </div>
+    </div>
+</div>

@@ -107,7 +107,7 @@ export default function AdminCoupons() {
                 </div>
                 <button 
                     onClick={openCreate} 
-                    className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 py-4 rounded-2xl shadow-lg shadow-indigo-100 transition-all active:scale-95"
+                    className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95"
                 >
                     <PlusIcon className="w-5 h-5 stroke-[3]" />
                     <span>Tạo Voucher</span>
@@ -138,10 +138,10 @@ export default function AdminCoupons() {
                                     <td colSpan={5} className="px-6 py-20 text-center text-gray-400 font-black italic uppercase tracking-widest">Chưa có mã giảm giá nào</td>
                                 </tr>
                             ) : coupons.map((c) => (
-                                <tr key={c.id} className="hover:bg-indigo-50/30 transition-colors group">
+                                <tr key={c.id} className="hover:bg-emerald-50/30 transition-colors group">
                                     <td className="px-6 py-4 pl-8">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
                                                 <TicketIcon className="w-6 h-6" />
                                             </div>
                                             <div>
@@ -152,7 +152,7 @@ export default function AdminCoupons() {
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <div className="inline-flex flex-col items-center">
-                                            <span className="text-lg font-black text-indigo-600">{c.discountPercent}%</span>
+                                            <span className="text-lg font-black text-emerald-600">{c.discountPercent}%</span>
                                             {c.maxDiscountAmount && (
                                                 <span className="text-[10px] text-gray-400 font-bold italic">Tối đa {formatCurrency(c.maxDiscountAmount)}</span>
                                             )}
@@ -168,7 +168,7 @@ export default function AdminCoupons() {
                                             <span className="text-sm font-black text-gray-900">{c.usedCount} / {c.usageLimit || '∞'}</span>
                                             <div className="w-16 h-1 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
                                                 <div 
-                                                    className="h-full bg-indigo-500 rounded-full" 
+                                                    className="h-full bg-emerald-500 rounded-full" 
                                                     style={{ width: c.usageLimit ? `${(c.usedCount / c.usageLimit) * 100}%` : '0%' }}
                                                 ></div>
                                             </div>
@@ -178,7 +178,7 @@ export default function AdminCoupons() {
                                         <div className="flex items-center justify-center gap-2">
                                             <button 
                                                 onClick={() => openEdit(c)} 
-                                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                                className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                                                 title="Chỉnh sửa"
                                             >
                                                 <PencilSquareIcon className="w-5 h-5" />
@@ -222,7 +222,7 @@ export default function AdminCoupons() {
                                         required 
                                         value={form.code} 
                                         onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 uppercase tracking-widest focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 uppercase tracking-widest focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
                                         placeholder="VÍ DỤ: GIAM50K"
                                     />
                                 </div>
@@ -238,7 +238,7 @@ export default function AdminCoupons() {
                                         required 
                                         value={form.discountPercent ?? 0} 
                                         onChange={(e) => setForm({ ...form, discountPercent: e.target.value === '' ? '' : parseInt(e.target.value) })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
                                     />
                                 </div>
 
@@ -250,7 +250,7 @@ export default function AdminCoupons() {
                                         type="number"
                                         value={form.maxDiscountAmount ?? ''} 
                                         onChange={(e) => setForm({ ...form, maxDiscountAmount: e.target.value === '' ? null : parseFloat(e.target.value) })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
                                         placeholder="Để trống nếu không giới hạn"
                                     />
                                 </div>
@@ -263,7 +263,7 @@ export default function AdminCoupons() {
                                         type="number"
                                         value={form.minOrderAmount ?? 0} 
                                         onChange={(e) => setForm({ ...form, minOrderAmount: e.target.value === '' ? '' : parseFloat(e.target.value) })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
                                     />
                                 </div>
 
@@ -276,7 +276,7 @@ export default function AdminCoupons() {
                                         required 
                                         value={form.expiryDate} 
                                         onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
                                     />
                                 </div>
 
@@ -288,7 +288,7 @@ export default function AdminCoupons() {
                                         type="number"
                                         value={form.usageLimit ?? ''} 
                                         onChange={(e) => setForm({ ...form, usageLimit: e.target.value === '' ? null : parseInt(e.target.value) })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
                                         placeholder="Để trống nếu không giới hạn"
                                     />
                                 </div>
@@ -302,20 +302,20 @@ export default function AdminCoupons() {
                                     rows={2} 
                                     value={form.description} 
                                     onChange={(e) => setForm({ ...form, description: e.target.value })} 
-                                    className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-medium text-gray-900 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none font-vietnam" 
+                                    className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-medium text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none font-vietnam" 
                                     placeholder="Ví dụ: Giảm 10% tối đa 50k cho đơn từ 200k..."
                                 />
                             </div>
 
-                            <div className="flex items-center gap-3 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                            <div className="flex items-center gap-3 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100">
                                 <input 
                                     type="checkbox" 
                                     id="isActiveCoupon" 
                                     checked={form.isActive} 
                                     onChange={(e) => setForm({ ...form, isActive: e.target.checked })} 
-                                    className="w-6 h-6 rounded-lg text-indigo-600 focus:ring-indigo-500 border-none" 
+                                    className="w-6 h-6 rounded-lg text-emerald-600 focus:ring-emerald-500 border-none" 
                                 />
-                                <label htmlFor="isActiveCoupon" className="text-sm font-bold text-indigo-800 font-vietnam">Kích hoạt mã giảm giá này ngay bây giờ</label>
+                                <label htmlFor="isActiveCoupon" className="text-sm font-bold text-emerald-800 font-vietnam">Kích hoạt mã giảm giá này ngay bây giờ</label>
                             </div>
 
                             <div className="flex gap-4 pt-4 sticky bottom-0 bg-white">
@@ -329,7 +329,7 @@ export default function AdminCoupons() {
                                 <button 
                                     type="submit" 
                                     disabled={saving} 
-                                    className="flex-1 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 font-vietnam"
+                                    className="flex-1 px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 font-vietnam"
                                 >
                                     {saving ? 'Đang lưu...' : 'Lưu lại'}
                                 </button>

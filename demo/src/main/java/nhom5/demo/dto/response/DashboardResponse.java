@@ -18,6 +18,7 @@ public class DashboardResponse {
     private long totalProducts;
     private long totalOrders;
     private long totalFarms;
+    private long totalSubscribers;
     private BigDecimal revenueToday;
     private BigDecimal revenueThisMonth;
 

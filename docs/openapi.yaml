@@ -1,0 +1,50 @@
+openapi: 3.0.3
+info:
+  title: FreshFood - Nền tảng Thực phẩm hữu cơ
+  description: Tài liệu REST API cho dự án FreshFood - Spring Boot 3 & React.
+  version: 1.2.0
+  contact:
+    name: FreshFood Team
+    url: https://github.com/thanhtoan2004
+servers:
+  - url: http://localhost:5050/api/v1
+    description: Máy chủ phát triển (Local)
+tags:
+  - name: Authentication
+    description: Đăng nhập, đăng ký và xác thực JWT
+  - name: Products
+    description: Quản lý và tìm kiếm sản phẩm hữu cơ
+  - name: Cart & Orders
+    description: Quy trình mua sắm và giao hàng
+  - name: Reviews
+    description: Đánh giá sản phẩm với hình ảnh/video
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Đăng nhập người dùng
+      responses:
+        '200':
+          description: Thành công, trả về JWT.
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Danh sách sản phẩm (Public)
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Trả về danh sách sản phẩm.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []

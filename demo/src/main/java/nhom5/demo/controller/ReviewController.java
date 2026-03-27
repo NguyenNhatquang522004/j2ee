@@ -27,13 +27,14 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    @Operation(summary = "Đánh giá sản phẩm (đã mua mới được đánh giá)")
+    @Operation(summary = "Đánh giá sản phẩm")
     @SecurityRequirement(name = "bearerAuth")
-    @PostMapping
+    @PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ReviewResponse>> addReview(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody ReviewRequest request) {
-        ReviewResponse data = reviewService.addReview(userDetails.getUsername(), request);
+            @RequestPart("review") @Valid ReviewRequest request,
+            @RequestPart(value = "files", required = false) java.util.List<org.springframework.web.multipart.MultipartFile> files) throws java.io.IOException {
+        ReviewResponse data = reviewService.addReview(userDetails.getUsername(), request, files);
         return ResponseEntity.status(201).body(ApiResponse.created(data));
     }
 
@@ -48,13 +49,35 @@ public class ReviewController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    @Operation(summary = "Xoá đánh giá (chủ nhân hoặc Admin)")
+    @Operation(summary = "Danh sách tất cả đánh giá (Admin)")
     @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/all")
+    public ResponseEntity<ApiResponse<Page<ReviewResponse>>> getAllReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(ApiResponse.success(reviewService.getAllReviews(pageable)));
+    }
+
+    @Operation(summary = "Duyệt / Phản hồi đánh giá (Admin)")
+    @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/admin/{id}/moderate")
+    public ResponseEntity<ApiResponse<ReviewResponse>> moderateReview(
+            @PathVariable Long id,
+            @Valid @RequestBody nhom5.demo.dto.request.ModerateReviewRequest request) {
+        ReviewResponse data = reviewService.moderateReview(id, request.getStatus(), request.getAdminReply());
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật trạng thái đánh giá", data));
+    }
+
+    @Operation(summary = "Xoá đánh giá (Admin)")
+    @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<Void>> deleteReview(
-            @PathVariable Long reviewId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        reviewService.deleteReview(reviewId, userDetails.getUsername());
+            @PathVariable Long reviewId) {
+        reviewService.deleteReview(reviewId);
         return ResponseEntity.ok(ApiResponse.success("Đã xoá đánh giá", null));
     }
 }

@@ -11,6 +11,14 @@ export function AuthProvider({ children }) {
             return null;
         }
     });
+    
+    useEffect(() => {
+        if (user) {
+            localStorage.setItem('user', JSON.stringify(user));
+        } else {
+            localStorage.removeItem('user');
+        }
+    }, [user]);
 
     const login = async (credentials) => {
         const { data } = await authService.login(credentials);

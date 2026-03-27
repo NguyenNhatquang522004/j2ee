@@ -198,6 +198,7 @@ public class OrderServiceImpl implements OrderService {
         
         switch (status) {
             case CONFIRMED -> { if (order.getConfirmedAt() == null) order.setConfirmedAt(now); }
+            case PACKAGING -> { /* Just status update */ }
             case SHIPPING -> { if (order.getShippedAt() == null) order.setShippedAt(now); }
             case DELIVERED -> { 
                 if (order.getDeliveredAt() == null) order.setDeliveredAt(now);

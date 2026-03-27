@@ -20,8 +20,11 @@ export const settingsService = {
 // 2FA Management (user)
 export const twoFactorService = {
     setup: () => api.post('/2fa/setup'),
+    setupEmail: () => api.post('/2fa/setup-email'),
     enable: (data) => api.post('/2fa/enable', data),
+    enableEmail: (data) => api.post('/2fa/enable-email', data),
     disable: (data) => api.post('/2fa/disable', data),
+    changeMethod: (method) => api.patch('/2fa/method', { method }),
 };
 
 // Products
@@ -70,8 +73,13 @@ export const orderService = {
 // Reviews
 export const reviewService = {
     byProduct: (productId, params) => api.get(`/reviews/product/${productId}`, { params }),
-    add: (data) => api.post('/reviews', data),
+    add: (formData) => api.post('/reviews', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    }),
     delete: (id) => api.delete(`/reviews/${id}`),
+    // Admin
+    getAll: (params) => api.get('/reviews/admin/all', { params }),
+    moderate: (id, data) => api.put(`/reviews/admin/${id}/moderate`, data),
 };
 
 // Farms
@@ -103,6 +111,9 @@ export const dashboardService = {
 export const userService = {
     me: () => api.get('/users/me'),
     updateMe: (data) => api.put('/users/me', data),
+    updateAvatar: (formData) => api.post('/users/me/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    }),
     getAll: (params) => api.get('/users', { params }),
     toggleActive: (id) => api.patch(`/users/${id}/toggle-status`),
 };
@@ -139,4 +150,20 @@ export const wishlistService = {
     remove: (productId) => api.delete(`/wishlist/${productId}`),
     check: (productId) => api.get(`/wishlist/check/${productId}`),
     count: () => api.get('/wishlist/count'),
+};
+
+export const newsletterService = {
+    subscribe: (email) => api.post('/newsletters/subscribe', { email }),
+    getAll: () => api.get('/newsletters/all'),
+    send: (data) => api.post('/newsletters/send', data),
+    delete: (id) => api.delete(`/newsletters/${id}`),
+};
+
+// Media (Cloudinary)
+export const mediaService = {
+    upload: (formData) => api.post('/media/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+    getAll: () => api.get('/media/all'),
+    delete: (id) => api.delete(`/media/${id}`),
 };

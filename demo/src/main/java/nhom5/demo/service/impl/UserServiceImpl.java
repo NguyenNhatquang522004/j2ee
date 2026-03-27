@@ -1,7 +1,6 @@
 package nhom5.demo.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import nhom5.demo.dto.request.RegisterRequest;
 import nhom5.demo.dto.response.UserResponse;
 import nhom5.demo.entity.User;
 import nhom5.demo.exception.BusinessException;
@@ -20,6 +19,21 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.cloudinary.Cloudinary cloudinary;
+
+    @Override
+    @Transactional
+    public UserResponse updateAvatar(String username, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
+        User user = findByUsername(username);
+        
+        java.util.Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), 
+                com.cloudinary.utils.ObjectUtils.asMap("folder", "avatars"));
+        
+        String url = uploadResult.get("secure_url").toString();
+        user.setAvatarUrl(url);
+        
+        return toResponse(userRepository.save(user));
+    }
 
     @Override
     public UserResponse getProfile(String username) {
@@ -102,6 +116,7 @@ public class UserServiceImpl implements UserService {
                 .dateOfBirth(user.getDateOfBirth())
                 .gender(user.getGender())
                 .membershipTier(user.getMembershipTier())
+                .avatarUrl(user.getAvatarUrl())
                 .points(user.getPoints())
                 .emailNotifications(user.getEmailNotifications())
                 .promoNotifications(user.getPromoNotifications())

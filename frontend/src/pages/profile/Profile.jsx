@@ -23,7 +23,8 @@ import {
     StarIcon,
     CommandLineIcon,
     ArchiveBoxIcon,
-    ArrowRightIcon
+    ArrowRightIcon,
+    ArrowLeftOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
@@ -49,26 +50,50 @@ export default function Profile() {
     const [twoFactorQrUrl, setTwoFactorQrUrl] = useState('');
     const [twoFactorCode, setTwoFactorCode] = useState('');
 
+    const [setupMethod, setSetupMethod] = useState('TOTP'); // 'TOTP' or 'EMAIL'
+    const [setupStep, setSetupStep] = useState(1); // 1: choose method, 2: setup, 3: verify
+
     const handleTwoFactorClick = () => {
         if (user.isTwoFactorEnabled) {
             setShowTwoFactorDisable(true);
             setTwoFactorCode('');
         } else {
             setShowTwoFactorSetup(true);
+            setSetupMethod('TOTP');
+            setSetupStep(1);
             setTwoFactorSecret('');
             setTwoFactorCode('');
+        }
+    };
+
+    const handleMethodChange = async (method) => {
+        try {
+            setSaving(true);
+            await twoFactorService.changeMethod(method);
+            setUserData({ ...user, twoFactorMethod: method });
+            toast.success(`Đã chuyển sang xác thực qua ${method === 'EMAIL' ? 'Email' : 'ứng dụng'}`);
+        } catch (err) {
+            toast.error('Không thể thay đổi phương thức');
+        } finally {
+            setSaving(false);
         }
     };
 
     const startTwoFactorSetup = async () => {
         try {
             setSetupLoading(true);
-            const response = await twoFactorService.setup();
-            const data = response.data;
-            if (data) {
-                setTwoFactorSecret(data.secret);
-                setTwoFactorQrUrl(data.qrCode || data.qrUrl);
+            if (setupMethod === 'EMAIL') {
+                await twoFactorService.setupEmail();
+                toast.success('Mã xác thực đã được gửi về Email của bạn');
+            } else {
+                const response = await twoFactorService.setup();
+                const data = response.data;
+                if (data) {
+                    setTwoFactorSecret(data.secret);
+                    setTwoFactorQrUrl(data.qrCode || data.qrUrl);
+                }
             }
+            setSetupStep(2);
         } catch (err) {
             toast.error('Không thể khởi tạo 2FA');
         } finally {
@@ -79,7 +104,11 @@ export default function Profile() {
     const confirmTwoFactorEnable = async () => {
         setSaving(true);
         try {
-            await twoFactorService.enable({ secret: twoFactorSecret, code: twoFactorCode });
+            if (setupMethod === 'EMAIL') {
+                await twoFactorService.enableEmail({ code: twoFactorCode });
+            } else {
+                await twoFactorService.enable({ secret: twoFactorSecret, code: twoFactorCode });
+            }
             toast.success('Đã kích hoạt 2FA thành công');
             setShowTwoFactorSetup(false);
             loadData();
@@ -148,6 +177,8 @@ export default function Profile() {
             ]);
             setUserData(userRes.data);
             setAddresses(addrRes.data || []);
+            // Update global user context
+            setUser({ ...authUser, ...userRes.data });
             setProfileForm(prev => ({
                 ...prev,
                 fullName: userRes.data.fullName || '',
@@ -185,11 +216,32 @@ export default function Profile() {
 
             const { data } = await userService.updateMe(payload);
             setUserData(data);
-            setUser({ ...authUser, fullName: data.fullName });
+            setUser({ ...authUser, fullName: data.fullName, avatarUrl: data.avatarUrl });
             toast.success('Cập nhật hồ sơ thành công');
             setProfileForm(prev => ({ ...prev, password: '' }));
         } catch (err) {
             toast.error(err.response?.data?.message || 'Cập nhật thất bại');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        setSaving(true);
+        toast.loading('Đang cập nhật ảnh đại diện...', { id: 'avatar' });
+        try {
+            const { data } = await userService.updateAvatar(formData);
+            setUserData(data);
+            setUser({ ...authUser, avatarUrl: data.avatarUrl });
+            toast.success('Đã cập nhật ảnh đại diện', { id: 'avatar' });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Cập nhật thất bại', { id: 'avatar' });
         } finally {
             setSaving(false);
         }
@@ -323,8 +375,16 @@ export default function Profile() {
                     {/* Left: Navigation Sidebar */}
                     <aside className="w-full md:w-80 bg-gray-50/50 border-r border-gray-100 p-8 flex flex-col gap-8">
                         <div className="flex flex-col items-center text-center">
-                            <div className="w-24 h-24 rounded-[2rem] bg-black flex items-center justify-center text-white text-3xl font-black shadow-xl mb-4 relative group">
-                                {user.fullName?.charAt(0).toUpperCase() || 'U'}
+                            <div className="w-24 h-24 rounded-[2rem] bg-gray-100 flex items-center justify-center text-gray-400 text-3xl font-black shadow-xl mb-4 relative group overflow-hidden border-2 border-white">
+                                {user.avatarUrl ? (
+                                    <img src={user.avatarUrl} className="w-full h-full object-cover" alt="" />
+                                ) : (
+                                    user.fullName?.charAt(0).toUpperCase() || 'U'
+                                )}
+                                <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                    <PencilIcon className="w-6 h-6 text-white" />
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={saving} />
+                                </label>
                             </div>
                             <h2 className="font-black text-gray-900 leading-tight">{user.fullName}</h2>
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 italic">Thành viên thân thiết</span>
@@ -354,7 +414,7 @@ export default function Profile() {
                         </nav>
 
                         {/* Membership Card - Premium Layout */}
-                        <div className="mt-10 bg-gradient-to-br from-indigo-900 via-purple-900 to-black p-6 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
+                        <div className="mt-10 bg-gradient-to-br from-emerald-900 via-green-900 to-black p-6 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
                             <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all"></div>
                             <div className="relative z-10">
                                 <div className="flex justify-between items-start mb-6">
@@ -397,6 +457,21 @@ export default function Profile() {
                                 </Link>
                             </div>
                         )}
+
+                        <div className="mt-auto pt-6 border-t border-gray-100">
+                            <button 
+                                onClick={() => {
+                                    if(window.confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+                                        logout();
+                                        toast.success('Đã đăng xuất thành công');
+                                    }
+                                }}
+                                className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] text-red-400 hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100 shadow-sm hover:shadow-md"
+                            >
+                                <ArrowLeftOnRectangleIcon className="w-5 h-5" />
+                                Đăng xuất khỏi hệ thống
+                            </button>
+                        </div>
                     </aside>
 
                     {/* Right: Content Area */}
@@ -548,12 +623,33 @@ export default function Profile() {
                                             }`} />
                                         </button>
                                     </div>
-                                    <p className="text-sm text-gray-500 pr-12">Bảo vệ tài khoản bằng mã 6 số từ ứng dụng Google Authenticator mỗi khi đăng nhập.</p>
-                                    <div className="mt-4 flex items-center gap-2">
-                                        <span className={`w-2 h-2 rounded-full ${user.isTwoFactorEnabled ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                        <span className="text-sm font-medium text-gray-600">
-                                            {user.isTwoFactorEnabled ? 'Đang kích hoạt' : 'Chưa kích hoạt'}
-                                        </span>
+                                    <p className="text-sm text-gray-500 pr-12">Bảo vệ tài khoản bằng mã 6 số từ {user.twoFactorMethod === 'EMAIL' ? 'Email' : 'ứng dụng Google Authenticator'} mỗi khi đăng nhập.</p>
+                                    <div className="mt-4 flex flex-wrap items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`w-2 h-2 rounded-full ${user.isTwoFactorEnabled ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                            <span className="text-sm font-medium text-gray-600">
+                                                {user.isTwoFactorEnabled ? `Đang kích hoạt (${user.twoFactorMethod === 'EMAIL' ? 'EMAIL' : 'TOTP'})` : 'Chưa kích hoạt'}
+                                            </span>
+                                        </div>
+                                        
+                                        {user.isTwoFactorEnabled && (
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => handleMethodChange('TOTP')}
+                                                    disabled={user.twoFactorMethod === 'TOTP' || saving}
+                                                    className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${user.twoFactorMethod === 'TOTP' ? 'bg-gray-100 text-gray-400 border-transparent' : 'bg-white text-gray-900 border-gray-200 hover:border-black'}`}
+                                                >
+                                                    Sử dụng App
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleMethodChange('EMAIL')}
+                                                    disabled={user.twoFactorMethod === 'EMAIL' || saving}
+                                                    className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${user.twoFactorMethod === 'EMAIL' ? 'bg-gray-100 text-gray-400 border-transparent' : 'bg-white text-gray-900 border-gray-200 hover:border-black'}`}
+                                                >
+                                                    Sử dụng Email
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Session Management Placeholder */}
@@ -582,68 +678,102 @@ export default function Profile() {
 
                                     {/* 2FA Setup flow - inline */}
                                     {showTwoFactorSetup && (
-                                        <div className="mt-6 pt-6 border-t border-gray-100">
-                                            {!twoFactorSecret ? (
-                                                <div className="flex flex-col items-center gap-4 py-6 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50">
-                                                    <p className="text-sm text-gray-500 text-center font-medium max-w-xs">Hệ thống sẽ tạo mã bí mật liên kết với ứng dụng xác thực trên điện thoại của bạn.</p>
-                                                    <div className="flex gap-3">
+                                        <div className="mt-6 pt-6 border-t border-gray-100 animate-fade-in">
+                                            {setupStep === 1 ? (
+                                                <div className="space-y-6">
+                                                    <div className="text-center mb-6">
+                                                        <h5 className="font-black text-gray-900 uppercase tracking-widest text-xs">Chọn phương thức bảo vệ</h5>
+                                                        <p className="text-sm text-gray-500 mt-2">Chọn cách bạn muốn nhận mã xác thực mỗi khi đăng nhập.</p>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <button 
+                                                            onClick={() => setSetupMethod('TOTP')}
+                                                            className={`p-6 rounded-2xl border-2 text-left transition-all ${setupMethod === 'TOTP' ? 'border-black bg-gray-50' : 'border-gray-100 hover:border-gray-300'}`}
+                                                        >
+                                                            <ShieldCheckIcon className="w-8 h-8 mb-3 text-gray-900" />
+                                                            <p className="font-black text-xs uppercase tracking-widest">Ứng dụng Authenticator</p>
+                                                            <p className="text-xs text-gray-500 mt-2">Sử dụng Google Authenticator, Authy, v.v.</p>
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => setSetupMethod('EMAIL')}
+                                                            className={`p-6 rounded-2xl border-2 text-left transition-all ${setupMethod === 'EMAIL' ? 'border-black bg-gray-50' : 'border-gray-100 hover:border-gray-300'}`}
+                                                        >
+                                                            <AtSymbolIcon className="w-8 h-8 mb-3 text-gray-900" />
+                                                            <p className="font-black text-xs uppercase tracking-widest">Xác thực qua Email</p>
+                                                            <p className="text-xs text-gray-500 mt-2">Mã xác thực sẽ được gửi trực tiếp vào hòm thư.</p>
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex gap-3 justify-center">
                                                         <button
                                                             onClick={startTwoFactorSetup}
                                                             disabled={setupLoading}
-                                                            className="px-8 py-3 bg-black text-white rounded-2xl font-bold text-sm hover:bg-gray-800 transition-all flex items-center gap-2"
+                                                            className="px-12 py-4 bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-gray-800 transition-all shadow-xl active:scale-95"
                                                         >
-                                                            <ArrowPathIcon className={`w-4 h-4 ${setupLoading ? 'animate-spin' : ''}`} />
-                                                            {setupLoading ? 'Đang tạo...' : 'Bắt đầu thiết lập'}
+                                                            TIẾP TỤC BƯỚC {setupMethod === 'EMAIL' ? 'DUY NHẤT' : 'TIẾP THEO'}
                                                         </button>
-                                                        <button onClick={() => setShowTwoFactorSetup(false)} className="px-6 py-3 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors">Hủy</button>
+                                                        <button onClick={() => setShowTwoFactorSetup(false)} className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-900">HỦY</button>
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="flex flex-col md:flex-row gap-8 items-center">
-                                                    {/* QR Code */}
-                                                    <div className="shrink-0">
-                                                        <div className="bg-white p-3 border-4 border-gray-100 rounded-2xl shadow-inner">
-                                                            <img
-                                                                src={twoFactorQrUrl && twoFactorQrUrl.startsWith('data:') ? twoFactorQrUrl : `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(twoFactorQrUrl)}&margin=8`}
-                                                                alt="QR Code 2FA"
-                                                                className="w-48 h-48"
-                                                            />
-                                                        </div>
-                                                        <div className="mt-3 bg-amber-50 border border-amber-100 px-4 py-2 rounded-xl">
-                                                            <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1">Mã bí mật (Setup Key)</p>
-                                                            <code className="text-xs font-mono font-bold text-amber-800 break-all">{twoFactorSecret}</code>
-                                                        </div>
-                                                    </div>
-                                                    {/* Input flow */}
-                                                    <div className="flex-1 space-y-5">
-                                                        <div className="space-y-3">
-                                                            <div className="flex items-start gap-3">
-                                                                <span className="w-6 h-6 rounded-lg bg-black text-white text-xs font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
-                                                                <p className="text-sm font-medium text-gray-600">Mở <b>Google Authenticator</b> và quét mã QR bên cạnh.</p>
+                                                <div className="space-y-8">
+                                                    {setupMethod === 'TOTP' && (
+                                                        <div className="flex flex-col md:flex-row gap-8 items-center bg-gray-50 p-8 rounded-3xl border border-gray-100">
+                                                            <div className="shrink-0">
+                                                                <div className="bg-white p-3 border-4 border-white rounded-2xl shadow-xl">
+                                                                    <img
+                                                                        src={twoFactorQrUrl && twoFactorQrUrl.startsWith('data:') ? twoFactorQrUrl : `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(twoFactorQrUrl)}&margin=8`}
+                                                                        alt="QR Code 2FA"
+                                                                        className="w-40 h-40"
+                                                                    />
+                                                                </div>
+                                                                <div className="mt-4 bg-amber-50 border border-amber-100 px-4 py-3 rounded-xl">
+                                                                    <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-1">Mã bí mật (Setup Key)</p>
+                                                                    <code className="text-[10px] font-mono font-bold text-amber-800 break-all">{twoFactorSecret}</code>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex items-start gap-3">
-                                                                <span className="w-6 h-6 rounded-lg bg-black text-white text-xs font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
-                                                                <p className="text-sm font-medium text-gray-600">Nhập mã 6 số từ ứng dụng để xác nhận.</p>
+                                                            <div className="flex-1 space-y-6">
+                                                                <h6 className="font-black text-xs uppercase tracking-[0.2em] text-gray-900">Thiết lập ứng dụng</h6>
+                                                                <div className="space-y-4">
+                                                                    <div className="flex items-start gap-3">
+                                                                        <span className="w-6 h-6 rounded-lg bg-black text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
+                                                                        <p className="text-sm font-medium text-gray-600">Mở ứng dụng <b>Authenticator</b> và quét mã QR.</p>
+                                                                    </div>
+                                                                    <div className="flex items-start gap-3">
+                                                                        <span className="w-6 h-6 rounded-lg bg-black text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
+                                                                        <p className="text-sm font-medium text-gray-600">Nhập mã 6 số từ ứng dụng dưới đây.</p>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
+                                                    )}
+
+                                                    {setupMethod === 'EMAIL' && (
+                                                        <div className="text-center py-8 bg-green-50 rounded-3xl border border-green-100">
+                                                            <AtSymbolIcon className="w-12 h-12 mx-auto text-green-600 mb-4" />
+                                                            <h5 className="font-black text-gray-900 uppercase tracking-widest text-xs">Xác minh hòm thư</h5>
+                                                            <p className="text-sm text-gray-600 mt-2 max-w-sm mx-auto">Chúng tôi đã gửi một mã xác nhận gồm 6 chữ số đến địa chỉ <b>{user.email}</b>. Vui lòng kiểm tra và nhập mã vào ô dưới đây.</p>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="space-y-4 max-w-md mx-auto">
                                                         <input
                                                             type="text"
                                                             maxLength="6"
                                                             value={twoFactorCode}
                                                             onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
-                                                            className="w-full text-center text-3xl font-black tracking-[0.8rem] py-4 border-2 border-gray-200 rounded-2xl focus:border-black outline-none transition-all"
+                                                            className="w-full text-center text-4xl font-black tracking-[1.5rem] py-6 border-4 border-gray-100 rounded-[2rem] focus:border-black shadow-inner outline-none transition-all placeholder:tracking-normal placeholder:text-gray-200"
                                                             placeholder="000000"
                                                             autoFocus
                                                         />
-                                                        <div className="flex gap-3">
+                                                        <div className="flex gap-4">
                                                             <button
                                                                 onClick={confirmTwoFactorEnable}
                                                                 disabled={twoFactorCode.length !== 6 || saving}
-                                                                className="flex-1 bg-black text-white py-3 rounded-2xl font-bold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                                                className="flex-1 bg-black text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-gray-800 disabled:opacity-40 transition-all shadow-xl active:scale-95"
                                                             >
-                                                                {saving ? 'Đang xác minh...' : 'Kích hoạt'}
+                                                                {saving ? 'XÁC MINH...' : 'KÍCH HOẠT NGAY'}
                                                             </button>
-                                                            <button onClick={() => setShowTwoFactorSetup(false)} className="px-5 border border-gray-200 rounded-2xl font-bold text-gray-500 hover:bg-gray-50 transition-all">Hủy</button>
+                                                            <button onClick={() => setSetupStep(1)} className="px-8 border-2 border-gray-100 rounded-2xl font-black uppercase text-[10px] tracking-widest text-gray-400 hover:border-gray-300 hover:text-gray-900 transition-all">QUAY LẠI</button>
                                                         </div>
                                                     </div>
                                                 </div>

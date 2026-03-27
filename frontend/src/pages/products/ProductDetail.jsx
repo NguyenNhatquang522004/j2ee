@@ -14,7 +14,10 @@ import {
     InformationCircleIcon,
     CubeIcon,
     MinusIcon,
-    PlusIcon
+    PlusIcon,
+    PhotoIcon as PhotoIconOutline,
+    VideoCameraIcon as VideoCameraIconOutline,
+    UserCircleIcon as UserCircleIconOutline
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
@@ -30,6 +33,7 @@ export default function ProductDetail() {
     const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
     const [loading, setLoading] = useState(true);
     const [submittingReview, setSubmittingReview] = useState(false);
+    const [reviewFiles, setReviewFiles] = useState([]);
     const [isLiked, setIsLiked] = useState(false);
 
     useEffect(() => {
@@ -89,9 +93,14 @@ export default function ProductDetail() {
         if (!user) { toast.error('Vui lòng đăng nhập'); return; }
         setSubmittingReview(true);
         try {
-            await reviewService.add({ productId: product.id, ...reviewForm });
-            toast.success('Đã gửi đánh giá!');
+            const formData = new FormData();
+            formData.append('review', new Blob([JSON.stringify({ productId: product.id, ...reviewForm })], { type: 'application/json' }));
+            reviewFiles.forEach(file => formData.append('files', file));
+
+            await reviewService.add(formData);
+            toast.success('Đã gửi đánh giá! Vui lòng chờ kiểm duyệt.');
             setReviewForm({ rating: 5, comment: '' });
+            setReviewFiles([]);
             const r = await reviewService.byProduct(id, { page: 0, size: 10 });
             setReviews(r.data.content || r.data);
         } catch (err) {
@@ -251,10 +260,39 @@ export default function ProductDetail() {
                             onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                             placeholder="Nhận xét của bạn..."
                             rows={3}
-                            className="input-field mb-3"
+                            className="input-field mb-4"
                         />
-                        <button type="submit" disabled={submittingReview} className="btn-primary">
-                            {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                        <div className="mb-4">
+                            <label className="flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-gray-100 p-4 rounded-xl border-2 border-dashed border-gray-200 transition-all">
+                                <PhotoIconOutline className="w-8 h-8 text-gray-400" />
+                                <div className="text-left">
+                                    <p className="text-sm font-black text-gray-700">Đính kèm ảnh/video</p>
+                                    <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest">Tối đa 5 tập tin • dung lượng 50MB</p>
+                                </div>
+                                <input 
+                                    type="file" 
+                                    multiple 
+                                    className="hidden" 
+                                    accept="image/*,video/*"
+                                    onChange={(e) => setReviewFiles(Array.from(e.target.files))}
+                                />
+                            </label>
+                            {reviewFiles.length > 0 && (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {reviewFiles.map((f, i) => (
+                                        <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border">
+                                            {f.type.startsWith('image') ? (
+                                                <img src={URL.createObjectURL(f)} className="w-full h-full object-cover" alt="" />
+                                            ) : (
+                                                <div className="w-full h-full bg-black flex items-center justify-center text-white"><VideoCameraIconOutline className="w-6 h-6" /></div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <button type="submit" disabled={submittingReview} className="btn-primary w-full py-4 text-base font-black uppercase tracking-widest shadow-xl shadow-green-100">
+                            {submittingReview ? 'ĐANG GỬI ĐÁNH GIÁ...' : 'GỬI ĐÁNH GIÁ NGAY'}
                         </button>
                     </form>
                 )}
@@ -264,21 +302,50 @@ export default function ProductDetail() {
                 ) : (
                     <div className="space-y-4">
                         {reviews.map((r) => (
-                            <div key={r.id} className="card">
-                                <div className="flex items-center gap-4 mb-3">
+                            <div key={r.id} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+                                <div className="flex items-start gap-4 mb-4">
+                                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 border-2 border-white shadow-sm ring-1 ring-gray-100">
+                                        {r.userAvatarUrl ? (
+                                            <img src={r.userAvatarUrl} className="w-full h-full object-cover" alt="" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-300"><UserCircleIconOutline className="w-7 h-7" /></div>
+                                        )}
+                                    </div>
                                     <div className="flex-1">
-                                        <p className="font-black text-gray-800 text-base">{r.fullName || r.username}</p>
-                                        <div className="flex items-center gap-1 mt-0.5">
+                                        <p className="font-black text-gray-900 leading-tight uppercase tracking-tighter">{r.userFullName || r.username}</p>
+                                        <div className="flex items-center gap-1.5 mt-1">
                                             {[1, 2, 3, 4, 5].map(s => (
                                                 s <= r.rating 
-                                                ? <StarIconSolid key={s} className="w-4 h-4 text-yellow-400" /> 
-                                                : <StarIconOutline key={s} className="w-4 h-4 text-gray-200" />
+                                                ? <StarIconSolid key={s} className="w-3.5 h-3.5 text-yellow-400" /> 
+                                                : <StarIconOutline key={s} className="w-3.5 h-3.5 text-gray-200" />
                                             ))}
-                                            <span className="text-[10px] text-gray-400 ml-2 font-bold uppercase tracking-widest">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
+                                            <span className="text-[10px] text-gray-400 ml-2 font-black uppercase tracking-widest italic">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <p className="text-gray-600 text-sm">{r.comment}</p>
+                                <p className="text-gray-700 leading-relaxed font-medium pl-1">{r.comment}</p>
+                                
+                                {r.mediaUrls && r.mediaUrls.length > 0 && (
+                                    <div className="mt-4 flex flex-wrap gap-2 pl-1">
+                                        {r.mediaUrls.map((url, i) => (
+                                            <div key={i} className="relative w-24 h-24 rounded-2xl overflow-hidden border border-gray-50 flex-shrink-0 bg-gray-50">
+                                                {url.includes('/video/') ? (
+                                                    <video src={url} className="w-full h-full object-cover" controls />
+                                                ) : (
+                                                    <img src={url} className="w-full h-full object-cover cursor-zoom-in hover:scale-110 transition-transform duration-500" alt="" onClick={() => window.open(url, '_blank')} />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {r.adminReply && (
+                                    <div className="mt-6 ml-4 p-5 bg-blue-50/50 border border-blue-100/50 rounded-2xl relative">
+                                        <div className="absolute top-0 left-6 -translate-y-1/2 w-4 h-4 bg-blue-50/50 border-t border-l border-blue-100/50 rotate-45"></div>
+                                        <p className="text-[10px] font-black text-blue-900 uppercase tracking-widest mb-1 shadow-sm w-fit bg-blue-100 px-2 py-0.5 rounded-lg">Admin phản hồi</p>
+                                        <p className="text-sm text-blue-800 font-medium italic">{r.adminReply}</p>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
