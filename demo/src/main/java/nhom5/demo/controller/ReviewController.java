@@ -49,6 +49,17 @@ public class ReviewController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
+    @Operation(summary = "Danh sách đánh giá của tôi")
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/my-reviews")
+    public ResponseEntity<ApiResponse<Page<ReviewResponse>>> getMyReviews(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(ApiResponse.success(reviewService.getMyReviews(userDetails.getUsername(), pageable)));
+    }
+
     @Operation(summary = "Danh sách tất cả đánh giá (Admin)")
     @SecurityRequirement(name = "bearerAuth")
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
@@ -79,5 +90,15 @@ public class ReviewController {
             @PathVariable Long reviewId) {
         reviewService.deleteReview(reviewId);
         return ResponseEntity.ok(ApiResponse.success("Đã xoá đánh giá", null));
+    }
+
+    @Operation(summary = "Kiểm tra quyền đánh giá")
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/can-review/{productId}")
+    public ResponseEntity<ApiResponse<Boolean>> canReview(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long productId) {
+        boolean canReview = reviewService.canReview(userDetails.getUsername(), productId);
+        return ResponseEntity.ok(ApiResponse.success(canReview));
     }
 }

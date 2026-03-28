@@ -38,14 +38,14 @@ export default function Home() {
         <Layout>
             {/* Hero */}
             <section
-                className="rounded-[2.5rem] text-white text-center py-20 px-4 mb-12 shadow-2xl overflow-hidden relative"
+                className="rounded-3xl text-white text-center py-12 px-4 mb-8 shadow-2xl overflow-hidden relative"
                 style={{ background: 'linear-gradient(135deg, #064e3b 0%, #059669 100%)' }}
             >
                 <div className="absolute top-0 right-0 p-10 opacity-10">
                     <CubeIcon className="w-64 h-64 rotate-12" />
                 </div>
-                <h1 className="text-5xl font-black mb-6 tracking-tight">Thực Phẩm Sạch <br/><span className="text-green-300 italic">Tươi Ngon Mỗi Ngày</span></h1>
-                <p className="text-lg text-green-50/80 mb-10 max-w-2xl mx-auto font-medium">
+                <h1 className="text-4xl font-black mb-4 tracking-tight">Thực Phẩm Sạch <br/><span className="text-green-300 italic">Tươi Ngon Mỗi Ngày</span></h1>
+                <p className="text-sm text-green-50/80 mb-8 max-w-xl mx-auto font-medium">
                     Hỗ trợ nông dân, bảo vệ sức khỏe gia đình bạn với các sản phẩm nông sản hữu cơ đạt chuẩn quốc tế.
                 </p>
                 <div className="flex justify-center gap-6">
@@ -65,21 +65,21 @@ export default function Home() {
                     { icon: <TruckIcon className="w-10 h-10" />, title: 'Giao hàng nhanh', desc: 'Giao hàng trong ngày, đảm bảo độ tươi của sản phẩm', color: 'bg-blue-50 text-blue-600' },
                     { icon: <ShieldCheckIcon className="w-10 h-10" />, title: 'Đảm bảo chất lượng', desc: 'Hoàn tiền 100% nếu sản phẩm không đạt chất lượng', color: 'bg-amber-50 text-amber-600' },
                 ].map((f) => (
-                    <div key={f.title} className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all group">
-                        <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3 ${f.color}`}>
+                    <div key={f.title} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all group">
+                        <div className={`w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3 ${f.color}`}>
                             {f.icon}
                         </div>
-                        <h3 className="font-black text-gray-800 text-xl mb-3 tracking-tight">{f.title}</h3>
-                        <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
+                        <h3 className="font-black text-gray-800 text-lg mb-2 tracking-tight">{f.title}</h3>
+                        <p className="text-gray-500 text-xs leading-relaxed">{f.desc}</p>
                     </div>
                 ))}
             </section>
 
             {/* Categories */}
             {categories.length > 0 && (
-                <section className="mb-16">
-                    <div className="flex items-center gap-4 mb-8">
-                        <h2 className="text-3xl font-black text-gray-800 tracking-tight">Danh mục</h2>
+                <section className="mb-12">
+                    <div className="flex items-center gap-4 mb-6">
+                        <h2 className="text-2xl font-black text-gray-800 tracking-tight">Danh mục</h2>
                         <div className="h-px flex-1 bg-gray-100"></div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
@@ -87,7 +87,7 @@ export default function Home() {
                             <Link
                                 key={cat.id}
                                 to={`/products?categoryId=${cat.id}`}
-                                className="bg-white p-6 text-center rounded-3xl border border-gray-100 hover:border-green-200 hover:shadow-2xl transition-all group"
+                                className="bg-white p-4 text-center rounded-2xl border border-gray-100 hover:border-green-200 hover:shadow-2xl transition-all group"
                             >
                                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-green-50 transition-colors">
                                     {cat.imageUrl ? (
@@ -104,9 +104,9 @@ export default function Home() {
             )}
 
             {/* Top products */}
-            <section className="mb-20">
-                <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-3xl font-black text-gray-800 tracking-tight">Sản phẩm bán chạy</h2>
+            <section className="mb-16">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-black text-gray-800 tracking-tight">Sản phẩm bán chạy</h2>
                     <Link to="/products" className="group flex items-center gap-2 text-green-700 font-bold hover:gap-4 transition-all">
                         Xem tất cả <ArrowRightIcon className="w-5 h-5" />
                     </Link>
@@ -154,8 +154,8 @@ function ProductCard({ product }) {
     };
 
     return (
-        <Link to={`/products/${product.id}`} className="group bg-white rounded-[2rem] border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
-            <div className="h-56 bg-gray-50 flex items-center justify-center overflow-hidden relative">
+        <Link to={`/products/${product.id}`} className="group bg-white rounded-2xl border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
+            <div className="h-48 bg-gray-50 flex items-center justify-center overflow-hidden relative">
                 {product.imageUrl ? (
                     <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 ) : (
@@ -182,9 +182,9 @@ function ProductCard({ product }) {
                 {isLiked ? <HeartIconSolid className="w-6 h-6" /> : <HeartIcon className="w-6 h-6" />}
             </button>
 
-            <div className="p-6">
-                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">{product.farmName || 'Trang trại'}</p>
-                <h3 className="font-bold text-gray-800 text-lg mb-4 line-clamp-1 group-hover:text-green-700 transition-colors uppercase tracking-tight">{product.name}</h3>
+            <div className="p-4">
+                <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-1">{product.farmName || 'Trang trại'}</p>
+                <h3 className="font-bold text-gray-800 text-sm mb-3 line-clamp-1 group-hover:text-green-700 transition-colors uppercase tracking-tight">{product.name}</h3>
                 
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
                     <div>

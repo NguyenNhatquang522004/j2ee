@@ -6,6 +6,7 @@ import nhom5.demo.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,6 +21,22 @@ public class UserController {
 
     public UserController(UserService userService) {
         this.userService = userService;
+    }
+
+    @PreAuthorize("hasAuthority('manage:users')")
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<UserResponse>>> getAll(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) nhom5.demo.enums.RoleEnum role,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(defaultValue="0") int page,
+            @RequestParam(defaultValue="10") int size,
+            @RequestParam(defaultValue="createdAt") String sortBy,
+            @RequestParam(defaultValue="desc") String direction) {
+        
+        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(ApiResponse.success(userService.getAllUsers(query, role, isActive, pageable)));
     }
 
     @GetMapping("/me")

@@ -74,6 +74,6 @@ public class GlobalExceptionHandler {
         // Log locally if needed: ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "Lỗi hệ thống. Vui lòng liên hệ quản trị viên hoặc thử lại sau."));
+                        "Lỗi hệ thống: " + ex.getMessage()));
     }
 }

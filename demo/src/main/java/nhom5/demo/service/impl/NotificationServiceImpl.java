@@ -74,6 +74,27 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.markAllAsReadByUserId(user.getId());
     }
 
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Notification not found"));
+        
+        // Ensure user owns this notification
+        if (!notification.getUser().getId().equals(getCurrentUser().getId())) {
+            throw new RuntimeException("Unauthorized");
+        }
+        
+        notificationRepository.delete(notification);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAll() {
+        User user = getCurrentUser();
+        notificationRepository.deleteAllByUserId(user.getId());
+    }
+
     private User getCurrentUser() {
         String username = SecurityUtils.getCurrentUsername();
         if (username == null || "anonymousUser".equals(username)) {

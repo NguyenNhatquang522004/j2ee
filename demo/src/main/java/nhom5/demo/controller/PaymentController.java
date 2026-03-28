@@ -21,8 +21,20 @@ public class PaymentController {
 
     private final OrderRepository orderRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.sepay.token:SECRET_TOKEN}")
+    private String sepayToken;
+
     @PostMapping("/sepay-webhook")
-    public ResponseEntity<?> sepayWebhook(@RequestBody SepayWebhookRequest request) {
+    public ResponseEntity<?> sepayWebhook(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody SepayWebhookRequest request) {
+        
+        // Security Check: Verify SePay Token
+        if (authHeader == null || !authHeader.contains(sepayToken)) {
+            log.warn("Unauthorized SePay Webhook attempt. Header: {}", authHeader);
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
         log.info("Incoming SePay Webhook - ID: {}, Content: {}, Amount In: {}", 
                 request.getId(), request.getContent(), request.getAmount_in());
 

@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { UserPlusIcon } from '@heroicons/react/24/outline';
+import { UserPlusIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 export default function Register() {
     const { register } = useAuth();
     const navigate = useNavigate();
     const [form, setForm] = useState({ username: '', password: '', email: '', fullName: '', phone: '' });
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -56,7 +57,29 @@ export default function Register() {
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Mật khẩu</label>
-                        <input type="password" name="password" value={form.password} onChange={handleChange} required minLength={6} className="input-field py-2.5" placeholder="Ít nhất 6 ký tự" />
+                        <div className="relative">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                value={form.password}
+                                onChange={handleChange}
+                                required
+                                minLength={8}
+                                className="input-field py-2.5 pr-11"
+                                placeholder="Ít nhất 8 ký tự (A, a, 1, @)"
+                            />
+                            <button
+                                type="button"
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-green-600 transition-colors"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? (
+                                    <EyeSlashIcon className="h-5 w-5" />
+                                ) : (
+                                    <EyeIcon className="h-5 w-5" />
+                                )}
+                            </button>
+                        </div>
                     </div>
                     
                     <div className="md:col-span-2 mt-2">

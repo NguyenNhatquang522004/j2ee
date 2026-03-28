@@ -21,7 +21,9 @@ import {
     BriefcaseIcon,
     PhoneIcon,
     PlusIcon,
-    PencilSquareIcon
+    PencilSquareIcon,
+    EyeIcon,
+    EyeSlashIcon
 } from '@heroicons/react/24/outline';
 
 export default function AdminSettings() {
@@ -34,12 +36,15 @@ export default function AdminSettings() {
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showOldPassword, setShowOldPassword] = useState(false);
 
     // Profile Form state
     const [profileForm, setProfileForm] = useState({
         fullName: '',
         email: '',
         phone: '',
+        oldPassword: '',
         password: '',
         dateOfBirth: '',
         gender: 'other',
@@ -85,11 +90,12 @@ export default function AdminSettings() {
                 fullName: data.fullName || '',
                 email: data.email || '',
                 phone: data.phone || '',
-                password: '',
                 dateOfBirth: data.dateOfBirth || '',
                 gender: data.gender || 'other',
                 emailNotifications: data.emailNotifications ?? true,
-                promoNotifications: data.promoNotifications ?? false
+                promoNotifications: data.promoNotifications ?? false,
+                oldPassword: '',
+                password: ''
             });
 
             // Load addresses
@@ -321,15 +327,15 @@ export default function AdminSettings() {
 
     return (
         <AdminLayout>
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                <div className="mb-10 text-center md:text-left">
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tighter uppercase mb-2">Trung tâm cấu hình</h1>
-                    <p className="text-gray-500 font-medium italic">Quản trị toàn bộ cài đặt hệ thống và bảo mật cá nhân của bạn.</p>
+            <div className="max-w-7xl mx-auto px-4 py-6">
+                <div className="mb-8 text-center md:text-left">
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tighter uppercase mb-1.5">Trung tâm cấu hình</h1>
+                    <p className="text-sm text-gray-500 font-medium italic">Quản trị toàn bộ cài đặt hệ thống và bảo mật cá nhân của bạn.</p>
                 </div>
 
-                <div className="bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-[700px]">
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-[600px]">
                     {/* Navigation Sidebar */}
-                    <aside className="w-full md:w-72 bg-gray-50/50 border-r border-gray-100 p-6 flex flex-col gap-6">
+                    <aside className="w-full md:w-64 bg-gray-50/50 border-r border-gray-100 p-5 flex flex-col gap-6">
                         <div className="flex flex-col items-center text-center">
                             <div className="w-20 h-20 rounded-2xl bg-black flex items-center justify-center text-white text-2xl font-black shadow-lg mb-4 relative group overflow-hidden">
                                 {authUser?.avatarUrl ? (
@@ -371,7 +377,7 @@ export default function AdminSettings() {
                     </aside>
 
                     {/* Content Area */}
-                    <main className="flex-1 p-8 bg-white overflow-y-auto max-h-[85vh]">
+                    <main className="flex-1 p-6 bg-white overflow-y-auto max-h-[85vh]">
                         {loading ? (
                             <div className="flex items-center justify-center h-full">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
@@ -380,30 +386,30 @@ export default function AdminSettings() {
                             <div className="max-w-3xl mx-auto">
                                 {/* Tab: System Settings - Structured like TOAN_STORE */}
                                 {activeTab === 'system' && (
-                                    <div className="space-y-12 animate-fade-in pb-20">
+                                    <div className="space-y-10 animate-fade-in pb-16">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <h3 className="text-3xl font-black text-gray-900 tracking-tight">Cấu hình hệ thống</h3>
-                                                <p className="text-gray-500 font-medium italic mt-2">Quản lý toàn bộ thông số định danh và vận hành cửa hàng.</p>
+                                                <h3 className="text-2xl font-black text-gray-900 tracking-tight">Cấu hình hệ thống</h3>
+                                                <p className="text-sm text-gray-500 font-medium italic mt-1.5">Quản lý toàn bộ thông số định danh và vận hành cửa hàng.</p>
                                             </div>
-                                            <button onClick={fetchSettings} className={`p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all ${loading ? 'animate-spin' : ''}`}>
-                                                <ArrowPathIcon className="w-6 h-6 text-gray-400" />
+                                            <button onClick={fetchSettings} className={`p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all ${loading ? 'animate-spin' : ''}`}>
+                                                <ArrowPathIcon className="w-5 h-5 text-gray-400" />
                                             </button>
                                         </div>
 
                                         {/* Section: Thông tin cửa hàng */}
-                                        <section className="space-y-4">
-                                            <div className="flex items-center gap-3">
+                                        <section className="space-y-3">
+                                            <div className="flex items-center gap-2.5">
                                                 <div className="w-1.5 h-6 bg-black rounded-full"></div>
-                                                <h4 className="text-lg font-black text-gray-900 uppercase tracking-tighter">Thông tin cửa hàng</h4>
+                                                <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Thông tin cửa hàng</h4>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                                                 {settings.filter(s => ['STORE_NAME', 'STORE_EMAIL', 'STORE_PHONE', 'STORE_ADDRESS', 'COPYRIGHT_TEXT'].some(k => s.settingKey.includes(k))).map(s => (
-                                                    <div key={s.id} className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 hover:border-black transition-all group">
-                                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1.5 block">{s.settingKey.replace(/_/g, ' ')}</label>
+                                                    <div key={s.id} className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 hover:border-black transition-all group">
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">{s.settingKey.replace(/_/g, ' ')}</label>
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-gray-400 group-hover:text-black transition-colors shadow-sm">
-                                                                {getSettingIcon(s.settingKey)}
+                                                            <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center text-gray-400 group-hover:text-black transition-colors shadow-sm">
+                                                                <span className="scale-75">{getSettingIcon(s.settingKey)}</span>
                                                             </div>
                                                             <input type="text" value={s.settingValue} className="flex-1 bg-transparent border-none font-bold text-gray-900 focus:ring-0 text-sm p-0" onChange={(e) => handleToggle(s.settingKey, e.target.value)} readOnly={s.settingKey === 'STORE_EMAIL'} />
                                                         </div>
@@ -416,23 +422,23 @@ export default function AdminSettings() {
                                         </section>
 
                                         {/* Section: Tài chính & Thanh toán */}
-                                        <section className="space-y-4">
-                                            <div className="flex items-center gap-3">
+                                        <section className="space-y-3">
+                                            <div className="flex items-center gap-2.5">
                                                 <div className="w-1.5 h-6 bg-green-600 rounded-full"></div>
-                                                <h4 className="text-lg font-black text-gray-900 uppercase tracking-tighter">Tài chính & Thanh toán</h4>
+                                                <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Tài chính & Thanh toán</h4>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
                                                 {settings.filter(s => ['TAX', 'CURRENCY', 'SHIPPING', 'FEE'].some(k => s.settingKey.includes(k))).map(s => (
-                                                    <div key={s.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">{s.settingKey.replace(/_/g, ' ')}</label>
+                                                    <div key={s.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">{s.settingKey.replace(/_/g, ' ')}</label>
                                                         <div className="flex items-center gap-2">
                                                             <input 
                                                                 type={s.settingKey.includes('CURRENCY') ? 'text' : 'number'} 
                                                                 value={s.settingValue} 
-                                                                className="w-full text-xl font-black text-gray-900 border-none p-0 focus:ring-0" 
+                                                                className="w-full text-lg font-black text-gray-900 border-none p-0 focus:ring-0" 
                                                                 step="0.01"
                                                             />
-                                                            <span className="text-gray-300 font-bold text-xs">{s.settingKey.includes('TAX') ? '%' : ''}</span>
+                                                            <span className="text-gray-300 font-bold text-[10px]">{s.settingKey.includes('TAX') ? '%' : ''}</span>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -440,10 +446,10 @@ export default function AdminSettings() {
                                         </section>
 
                                         {/* Section: Mạng xã hội */}
-                                        <section className="space-y-4">
-                                            <div className="flex items-center gap-3">
+                                        <section className="space-y-3">
+                                            <div className="flex items-center gap-2.5">
                                                 <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-                                                <h4 className="text-lg font-black text-gray-900 uppercase tracking-tighter">Mạng xã hội</h4>
+                                                <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Mạng xã hội</h4>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                 {settings.filter(s => ['FACEBOOK', 'INSTAGRAM', 'YOUTUBE', 'TWITTER'].some(k => s.settingKey.includes(k))).map(s => (
@@ -461,17 +467,17 @@ export default function AdminSettings() {
                                         </section>
 
                                         {/* Section: Vận hành & Bảo mật hệ thống */}
-                                        <section className="space-y-4">
-                                            <div className="flex items-center gap-3">
+                                        <section className="space-y-3">
+                                            <div className="flex items-center gap-2.5">
                                                 <div className="w-1.5 h-6 bg-red-600 rounded-full"></div>
-                                                <h4 className="text-lg font-black text-gray-900 uppercase tracking-tighter">Vận hành & Bảo mật</h4>
+                                                <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Vận hành & Bảo mật</h4>
                                             </div>
                                             <div className="grid gap-3">
                                                 {settings.filter(s => ['MAINTENANCE', 'IP_WHITELIST', 'ENFORCE'].some(k => s.settingKey.includes(k))).map((s) => (
-                                                    <div key={s.id} className="group flex items-center justify-between p-5 bg-white border border-gray-100 rounded-2xl hover:border-red-100 hover:bg-red-50/10 transition-all shadow-sm">
+                                                    <div key={s.id} className="group flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl hover:border-red-100 hover:bg-red-50/10 transition-all shadow-sm">
                                                         <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-red-100 group-hover:text-red-600 transition-all">
-                                                                {getSettingIcon(s.settingKey)}
+                                                            <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 group-hover:bg-red-100 group-hover:text-red-600 transition-all">
+                                                                <span className="scale-75">{getSettingIcon(s.settingKey)}</span>
                                                             </div>
                                                             <div>
                                                                 <h4 className="font-black text-gray-900 text-sm uppercase tracking-tight">{s.settingKey.replace(/_/g, ' ')}</h4>
@@ -497,24 +503,24 @@ export default function AdminSettings() {
                                         </section>
 
                                         {/* Shortcut to Logs */}
-                                        <div className="pt-10 border-t border-gray-100 text-center">
-                                            <Link to="/admin/audit-logs" className="inline-flex items-center gap-4 px-10 py-5 bg-gray-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-2xl active:scale-95">
-                                                <CommandLineIcon className="w-6 h-6" />
+                                        <div className="pt-8 border-t border-gray-100 text-center">
+                                            <Link to="/admin/audit-logs" className="inline-flex items-center gap-4 px-8 py-4 bg-gray-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all shadow-xl active:scale-95">
+                                                <CommandLineIcon className="w-5 h-5" />
                                                 Xem nhật ký hoạt động (Audit Logs)
                                             </Link>
-                                            <p className="text-gray-400 text-[10px] font-black italic mt-4 uppercase tracking-widest">Giám sát toàn bộ thay đổi dữ liệu từ quản trị viên</p>
+                                            <p className="text-gray-400 text-[9px] font-black italic mt-3 uppercase tracking-widest">Giám sát toàn bộ thay đổi dữ liệu từ quản trị viên</p>
                                         </div>
                                     </div>
                                 )}
 
                                 {/* Tab: Profile (Migrated from Profile.jsx) */}
                                 {activeTab === 'profile' && (
-                                    <div className="space-y-10 animate-fade-in">
+                                    <div className="space-y-8 animate-fade-in">
                                         <div>
-                                            <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-4">Hồ sơ định danh</h3>
-                                            <p className="text-sm text-gray-500 font-medium italic mt-1">Thông tin định danh quản trị viên trên hệ thống.</p>
+                                            <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-4">Hồ sơ định danh</h3>
+                                            <p className="text-[13px] text-gray-500 font-medium italic mt-1">Thông tin định danh quản trị viên trên hệ thống.</p>
                                         </div>
-                                        <form onSubmit={handleProfileSubmit} className="space-y-6 bg-gray-50/50 p-8 rounded-3xl border border-gray-100">
+                                        <form onSubmit={handleProfileSubmit} className="space-y-5 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <div className="space-y-1.5">
                                                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-3">Họ và tên quản trị</label>
@@ -532,8 +538,42 @@ export default function AdminSettings() {
                                                     <input className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold focus:border-green-600 transition-all shadow-sm outline-none" value={profileForm.phone} onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})} />
                                                 </div>
                                                 <div className="space-y-1.5">
+                                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-3">Mật khẩu cũ (Xác nhận)</label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type={showOldPassword ? "text" : "password"}
+                                                            className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold focus:border-green-600 transition-all shadow-sm outline-none pr-10"
+                                                            value={profileForm.oldPassword}
+                                                            onChange={(e) => setProfileForm({ ...profileForm, oldPassword: e.target.value })}
+                                                            placeholder="Bắt buộc nếu đổi pass"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-green-600 transition-colors"
+                                                            onClick={() => setShowOldPassword(!showOldPassword)}
+                                                        >
+                                                            {showOldPassword ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5">
                                                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-3">Đổi mật khẩu mới</label>
-                                                    <input type="password" className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold focus:border-green-600 transition-all shadow-sm outline-none" value={profileForm.password} onChange={(e) => setProfileForm({...profileForm, password: e.target.value})} placeholder="Để trống nếu không muốn đổi" />
+                                                    <div className="relative">
+                                                        <input
+                                                            type={showPassword ? "text" : "password"}
+                                                            className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold focus:border-green-600 transition-all shadow-sm outline-none pr-10"
+                                                            value={profileForm.password}
+                                                            onChange={(e) => setProfileForm({ ...profileForm, password: e.target.value })}
+                                                            placeholder="Để trống nếu không đổi"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-green-600 transition-colors"
+                                                            onClick={() => setShowPassword(!showPassword)}
+                                                        >
+                                                            {showPassword ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-3">Ngày sinh</label>
@@ -557,17 +597,17 @@ export default function AdminSettings() {
 
                                 {/* Tab: Notifications (Communication Preferences) */}
                                 {activeTab === 'notifications' && (
-                                    <div className="space-y-8 animate-fade-in">
+                                    <div className="space-y-6 animate-fade-in">
                                         <div>
-                                            <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-4">Cài đặt thông báo</h3>
-                                            <p className="text-sm text-gray-500 font-medium italic mt-1">Tùy chỉnh cách chúng tôi liên lạc và gửi thông tin vận hành cho bạn.</p>
+                                            <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-4">Cài đặt thông báo</h3>
+                                            <p className="text-[13px] text-gray-500 font-medium italic mt-1">Tùy chỉnh cách chúng tôi liên lạc và gửi thông tin vận hành cho bạn.</p>
                                         </div>
-                                        <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+                                        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
                                             {[
                                                 { key: 'emailNotifications', label: 'Email thông báo hệ thống', desc: 'Nhận tin nhắn về trạng thái đơn hàng, đăng nhập và bảo mật qua email.' },
                                                 { key: 'promoNotifications', label: 'Email ưu đãi & Marketing', desc: 'Nhận các bản tin về sản phẩm mới, khuyến mãi và tích điểm thành viên.' }
                                             ].map((n) => (
-                                                <div key={n.key} className="flex items-center justify-between p-6 border-b last:border-none border-gray-50 group hover:bg-gray-50/50 transition-all">
+                                                <div key={n.key} className="flex items-center justify-between p-5 border-b last:border-none border-gray-50 group hover:bg-gray-50/50 transition-all">
                                                     <div className="flex items-center gap-5">
                                                         <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-black group-hover:text-white transition-all">
                                                             <BellIcon className="w-5 h-5" />
@@ -595,22 +635,22 @@ export default function AdminSettings() {
 
                                 {/* Tab: Security (Integrated) */}
                                 {activeTab === 'security' && (
-                                    <div className="space-y-8 animate-fade-in">
+                                    <div className="space-y-6 animate-fade-in">
                                         <div>
-                                            <h3 className="text-2xl font-black text-gray-900 tracking-tight">Bảo mật & 2FA</h3>
-                                            <p className="text-sm text-gray-500 font-medium italic mt-1">Nâng cấp lớp bảo vệ tài khoản bằng ứng dụng Google Authenticator.</p>
+                                            <h3 className="text-xl font-black text-gray-900 tracking-tight">Bảo mật & 2FA</h3>
+                                            <p className="text-[13px] text-gray-500 font-medium italic mt-1">Nâng cấp lớp bảo vệ tài khoản bằng ứng dụng Google Authenticator.</p>
                                         </div>
                                         
-                                        <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm relative overflow-hidden">
+                                        <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm relative overflow-hidden">
                                             <div className="relative z-10">
                                                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
                                                     <div className="flex items-center gap-5">
-                                                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg ${user?.isTwoFactorEnabled ? 'bg-green-600' : 'bg-red-600'}`}>
-                                                            <ShieldCheckIcon className="w-8 h-8" />
+                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg ${user?.isTwoFactorEnabled ? 'bg-green-600' : 'bg-red-600'}`}>
+                                                            <ShieldCheckIcon className="w-6 h-6" />
                                                         </div>
                                                         <div>
-                                                            <h4 className="text-xl font-black text-gray-900 leading-tight">Xác thực 2 bước</h4>
-                                                            <div className={`mt-1.5 inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black tracking-[0.2em] ${user?.isTwoFactorEnabled ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+                                                            <h4 className="text-lg font-black text-gray-900 leading-tight">Xác thực 2 bước</h4>
+                                                            <div className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-[8.5px] font-black tracking-[0.2em] ${user?.isTwoFactorEnabled ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
                                                                 {user?.isTwoFactorEnabled ? 'ĐANG KÍCH HOẠT' : 'CHƯA BẢO VỆ'}
                                                             </div>
                                                         </div>
@@ -624,7 +664,7 @@ export default function AdminSettings() {
                                                 </div>
 
                                                 {/* Session Placeholder */}
-                                                <div className="mt-8 p-6 bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-200">
+                                                <div className="mt-6 p-4 bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200">
                                                     <div className="flex items-center gap-3 mb-4">
                                                         <CommandLineIcon className="w-5 h-5 text-gray-400" />
                                                         <h5 className="font-black text-gray-900 uppercase tracking-widest text-[10px]">Quản lý phiên đăng nhập</h5>
@@ -650,9 +690,9 @@ export default function AdminSettings() {
 
                                                 {/* Setup flow */}
                                                 {showTwoFactorSetup && (
-                                                    <div className="mt-8 pt-8 border-t border-gray-100 animate-fade-in">
+                                                    <div className="mt-8 pt-6 border-t border-gray-100 animate-fade-in">
                                                         {!twoFactorSecret ? (
-                                                            <div className="text-center py-10 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-100">
+                                                            <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-100">
                                                                 <p className="font-bold text-gray-500 italic mb-8">Hệ thống sẽ tạo mã QR bảo mật riêng cho quản trị viên.</p>
                                                                 <div className="flex justify-center gap-4">
                                                                     <button onClick={startTwoFactorSetup} disabled={setupLoading} className="bg-black text-white px-10 py-4 rounded-xl font-black flex items-center gap-3">
@@ -663,10 +703,10 @@ export default function AdminSettings() {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="flex flex-col xl:flex-row gap-10 bg-white p-8 rounded-[2.5rem] shadow-inner border border-gray-100">
+                                                            <div className="flex flex-col xl:flex-row gap-8 bg-white p-6 rounded-xl shadow-inner border border-gray-100">
                                                                 <div className="flex flex-col items-center gap-6 xl:w-1/2">
-                                                                    <div className="p-4 bg-gray-50 rounded-3xl border-4 border-white shadow-xl relative overflow-hidden">
-                                                                        <img src={twoFactorQrUrl && twoFactorQrUrl.startsWith('data:') ? twoFactorQrUrl : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(twoFactorQrUrl)}&margin=10`} alt="QR" className="w-48 h-48 mix-blend-multiply" />
+                                                                    <div className="p-3 bg-gray-50 rounded-xl border-4 border-white shadow-xl relative overflow-hidden">
+                                                                        <img src={twoFactorQrUrl && twoFactorQrUrl.startsWith('data:') ? twoFactorQrUrl : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(twoFactorQrUrl)}&margin=10`} alt="QR" className="w-40 h-40 mix-blend-multiply" />
                                                                     </div>
                                                                     <div className="bg-green-50 px-6 py-2 rounded-2xl border border-green-100 italic">
                                                                         <code className="text-xs font-black text-green-700 tracking-widest">{twoFactorSecret}</code>
@@ -684,7 +724,7 @@ export default function AdminSettings() {
                                                                             </div>
                                                                         </div>
                                                                         <div className="space-y-4">
-                                                                            <input type="text" maxLength="6" value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))} className="w-full text-center text-4xl font-black py-4 border-2 border-gray-100 rounded-[1.5rem] focus:border-green-600 outline-none shadow-sm transition-all" placeholder="000000" />
+                                                                            <input type="password" maxLength="6" value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))} className="w-full text-center text-4xl font-black py-4 border-2 border-gray-100 rounded-[1.5rem] focus:border-green-600 outline-none shadow-sm transition-all placeholder:tracking-normal" placeholder="..." />
                                                                             <div className="flex flex-col sm:flex-row gap-3">
                                                                                 <button onClick={confirmTwoFactorEnable} disabled={twoFactorCode.length !== 6 || saving} className="flex-1 bg-green-600 text-white py-4 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-green-500 transition-all">KÍCH HOẠT NHANH</button>
                                                                                 <button onClick={() => setShowTwoFactorSetup(false)} className="px-6 py-4 font-black text-gray-400 uppercase text-[10px] tracking-widest hover:text-gray-900 transition-all">HỦY</button>
@@ -698,10 +738,10 @@ export default function AdminSettings() {
 
                                                 {/* Disable flow */}
                                                 {showTwoFactorDisable && (
-                                                    <div className="mt-8 pt-8 border-t border-red-50 space-y-8 text-center bg-red-50/20 p-10 rounded-[2.5rem]">
+                                                    <div className="mt-8 pt-8 border-t border-red-50 space-y-6 text-center bg-red-50/20 p-6 rounded-2xl">
                                                         <p className="text-red-600 font-black italic">Hệ thống yêu cầu mã xác thực hiện tại để xác nhận gỡ bỏ.</p>
                                                         <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
-                                                            <input type="text" maxLength="6" value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))} className="w-64 py-5 rounded-3xl text-center text-3xl font-black focus:border-red-600 outline-none border-2 border-red-100" placeholder="000000" />
+                                                            <input type="password" maxLength="6" value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))} className="w-64 py-5 rounded-3xl text-center text-3xl font-black focus:border-red-600 outline-none border-2 border-red-100" placeholder="..." />
                                                             <button onClick={confirmTwoFactorDisable} className="px-10 py-5 bg-red-600 text-white rounded-2xl font-black shadow-xl">XÁC NHẬN TẮT</button>
                                                             <button onClick={() => setShowTwoFactorDisable(false)} className="font-black text-gray-400">HỦY</button>
                                                         </div>
@@ -714,20 +754,20 @@ export default function AdminSettings() {
 
                                 {/* Tab: Addresses */}
                                 {activeTab === 'addresses' && (
-                                    <div className="space-y-8 animate-fade-in">
+                                    <div className="space-y-6 animate-fade-in">
                                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                                             <div>
-                                                <h3 className="text-2xl font-black text-gray-900 tracking-tight">Sổ địa chỉ cá nhân</h3>
-                                                <p className="text-sm text-gray-500 font-medium italic mt-1">Dành cho việc nhận hàng mẫu hoặc quà tặng doanh nghiệp.</p>
+                                                <h3 className="text-xl font-black text-gray-900 tracking-tight">Sổ địa chỉ cá nhân</h3>
+                                                <p className="text-[13px] text-gray-500 font-medium italic mt-1">Dành cho việc nhận hàng mẫu hoặc quà tặng doanh nghiệp.</p>
                                             </div>
-                                            <button onClick={() => setShowAddrForm(!showAddrForm)} className="bg-black text-white px-6 py-3 rounded-xl font-black shadow-lg flex items-center gap-2 active:scale-95 transition-all text-[11px] tracking-wider uppercase">
+                                            <button onClick={() => setShowAddrForm(!showAddrForm)} className="bg-black text-white px-5 py-2.5 rounded-xl font-black shadow-lg flex items-center gap-2 active:scale-95 transition-all text-[10px] tracking-wider uppercase">
                                                 <PlusIcon className="w-4 h-4" />
                                                 {showAddrForm ? 'HỦY BỎ' : 'THÊM ĐỊA CHỈ'}
                                             </button>
                                         </div>
                                         
                                         {showAddrForm && (
-                                            <form onSubmit={handleAddrSubmit} className="bg-gray-50 p-8 rounded-3xl border border-gray-100 shadow-inner grid grid-cols-1 md:grid-cols-2 gap-6 relative animate-fade-in">
+                                            <form onSubmit={handleAddrSubmit} className="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-inner grid grid-cols-1 md:grid-cols-2 gap-4 relative animate-fade-in">
                                                 <div className="md:col-span-2 flex items-center justify-between mb-2">
                                                     <h4 className="font-black text-gray-900 uppercase tracking-widest text-[9px] italic">{editingAddrId ? 'Đang cập nhật' : 'Thêm mới'} địa chỉ</h4>
                                                     <div className="flex items-center gap-2 bg-white px-4 py-1.5 rounded-xl border">
@@ -760,34 +800,34 @@ export default function AdminSettings() {
 
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                             {addresses.length === 0 ? (
-                                                <div className="lg:col-span-2 text-center py-12 bg-gray-50 rounded-3xl border-4 border-dashed border-gray-100 text-gray-300 font-black italic tracking-widest uppercase text-xs">Chưa có dữ liệu địa chỉ</div>
+                                                <div className="lg:col-span-2 text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-100 text-gray-300 font-black italic tracking-widest uppercase text-[10px]">Chưa có dữ liệu địa chỉ</div>
                                             ) : (
                                                 addresses.map(addr => (
-                                                    <div key={addr.id} className={`p-8 rounded-3xl border-2 transition-all hover:shadow-xl flex flex-col justify-between ${addr.isDefault ? 'bg-green-50/20 border-green-600 shadow-md' : 'bg-white border-gray-50'}`}>
+                                                    <div key={addr.id} className={`p-4 rounded-xl border-2 transition-all hover:shadow-lg flex flex-col justify-between ${addr.isDefault ? 'bg-green-50/20 border-green-600 shadow-sm' : 'bg-white border-gray-50'}`}>
                                                         <div>
-                                                            <div className="flex items-center justify-between mb-6">
-                                                                <div className={`p-4 rounded-xl shadow-md ${addr.isDefault ? 'bg-green-600 text-white shadow-green-900/20' : 'bg-gray-100 text-gray-400'}`}>
-                                                                    {addr.label === 'Nhà' ? <HomeIcon className="w-6 h-6" /> : addr.label === 'Công ty' ? <BriefcaseIcon className="w-6 h-6" /> : <MapPinIcon className="w-6 h-6" />}
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className={`p-2 rounded-lg ${addr.isDefault ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                                                    {addr.label === 'Nhà' ? <HomeIcon className="w-5 h-5" /> : addr.label === 'Công ty' ? <BriefcaseIcon className="w-5 h-5" /> : <MapPinIcon className="w-5 h-5" />}
                                                                 </div>
                                                                 <div className="flex flex-col items-end gap-1.5">
                                                                     {addr.isDefault && <span className="bg-green-600 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm">MẶC ĐỊNH</span>}
                                                                     <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest italic">{addr.label}</span>
                                                                 </div>
                                                             </div>
-                                                            <h4 className="text-xl font-black text-gray-900 mb-1.5">{addr.fullName}</h4>
-                                                            <div className="flex items-center gap-2.5 text-[11px] font-black text-gray-400 mb-4 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 inline-flex">
-                                                                <PhoneIcon className="w-3.5 h-3.5 text-green-600" />
+                                                            <h4 className="text-base font-black text-gray-900 mb-1">{addr.fullName}</h4>
+                                                            <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 mb-2.5 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100 inline-flex">
+                                                                <PhoneIcon className="w-3 h-3 text-green-600" />
                                                                 {addr.phone}
                                                             </div>
-                                                            <p className="text-xs font-bold text-gray-500 italic bg-gray-50/50 p-4 rounded-xl leading-relaxed">{addr.details}</p>
+                                                            <p className="text-[11px] font-bold text-gray-500 italic bg-gray-100/30 p-2.5 rounded-lg leading-relaxed">{addr.details}</p>
                                                         </div>
-                                                        <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100/50">
+                                                        <div className="flex items-center justify-between mt-5 pt-5 border-t border-gray-100/50">
                                                             <div className="flex gap-4">
                                                                 <button type="button" onClick={() => handleEditAddress(addr)} className="text-gray-900 hover:text-green-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5">CHỈNH SỬA</button>
                                                                 <button type="button" onClick={() => handleDeleteAddress(addr.id)} className="text-gray-400 hover:text-red-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5">XÓA</button>
                                                             </div>
                                                             {!addr.isDefault && (
-                                                                <button type="button" onClick={() => handleSetDefault(addr.id)} className="text-[8px] font-black text-white bg-black px-4 py-2 rounded-full uppercase tracking-tighter hover:bg-green-600 transition-all shadow-md active:scale-95">ĐẶT LÀM CHÍNH</button>
+                                                                <button type="button" onClick={() => handleSetDefault(addr.id)} className="text-[8px] font-black text-white bg-black px-3 py-1.5 rounded-full uppercase tracking-tighter hover:bg-green-600 transition-all shadow-md active:scale-95">ĐẶT LÀM CHÍNH</button>
                                                             )}
                                                         </div>
                                                     </div>
@@ -798,22 +838,22 @@ export default function AdminSettings() {
                                 )}
 
                                 {activeTab === 'privacy' && (
-                                    <div className="space-y-8 animate-fade-in">
+                                    <div className="space-y-6 animate-fade-in">
                                         <div>
-                                            <h3 className="text-2xl font-black text-gray-900 tracking-tight">Quyền riêng tư & Dữ liệu</h3>
-                                            <p className="text-sm text-gray-500 font-medium italic mt-1">Quyền kiểm soát dữ liệu cá nhân của bạn theo tiêu chuẩn bảo mật quốc tế.</p>
+                                            <h3 className="text-xl font-black text-gray-900 tracking-tight">Quyền riêng tư & Dữ liệu</h3>
+                                            <p className="text-[13px] text-gray-500 font-medium italic mt-1">Quyền kiểm soát dữ liệu cá nhân của bạn theo tiêu chuẩn bảo mật quốc tế.</p>
                                         </div>
 
                                         <div className="grid md:grid-cols-2 gap-6">
-                                            <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-                                                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
-                                                    <ArchiveBoxIcon className="w-6 h-6" />
+                                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
+                                                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center shadow-inner">
+                                                    <ArchiveBoxIcon className="w-5 h-5" />
                                                 </div>
                                                 <div>
-                                                    <h4 className="text-lg font-black text-gray-900 uppercase tracking-tighter">Xuất dữ liệu cá nhân</h4>
+                                                    <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Xuất dữ liệu cá nhân</h4>
                                                     <p className="text-[11px] text-gray-500 font-medium italic mt-1.5">Chúng tôi sẽ tạo một bản sao dữ liệu của bạn ở định dạng JSON. Quá trình này có thể mất vài phút.</p>
                                                 </div>
-                                                <button onClick={handleExportData} className="w-full py-4 bg-black text-white rounded-xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-gray-800 transition-all shadow-lg active:scale-95">BẮT ĐẦU TRÍCH XUẤT</button>
+                                                <button onClick={handleExportData} className="w-full py-3 bg-black text-white rounded-xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-gray-800 transition-all shadow-lg active:scale-95">BẮT ĐẦU TRÍCH XUẤT</button>
                                             </div>
                                         </div>
                                     </div>

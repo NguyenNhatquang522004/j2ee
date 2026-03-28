@@ -26,16 +26,16 @@ export default function Cart() {
 
     return (
         <Layout>
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">Giỏ hàng của bạn</h1>
+            <h1 className="text-xl font-bold text-gray-800 mb-6">Giỏ hàng của bạn</h1>
 
             {items.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
+                <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-100">
                     <div className="flex justify-center mb-4">
-                        <div className="p-6 bg-green-50 rounded-full">
-                            <ShoppingCartIcon className="w-16 h-16 text-green-600" />
+                        <div className="p-5 bg-green-50 rounded-full">
+                            <ShoppingCartIcon className="w-12 h-12 text-green-600" />
                         </div>
                     </div>
-                    <p className="text-gray-500 mb-6 text-lg">Giỏ hàng của bạn đang trống</p>
+                    <p className="text-gray-500 mb-6 text-base">Giỏ hàng của bạn đang trống</p>
                     <Link to="/products" className="btn-primary px-8">Mua sắm ngay</Link>
                 </div>
             ) : (
@@ -85,11 +85,11 @@ export default function Cart() {
 function CartItem({ item, onUpdate, onRemove }) {
     return (
         <div className="card flex items-center gap-4">
-            <div className="w-20 h-20 bg-green-50 rounded-xl flex items-center justify-center shrink-0 overflow-hidden border border-green-100">
+            <div className="w-16 h-16 bg-green-50 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border border-green-100">
                 {item.productImageUrl ? (
                     <img src={item.productImageUrl} alt={item.productName} className="h-full w-full object-cover" />
                 ) : (
-                    <ShoppingCartIcon className="w-10 h-10 text-green-200" />
+                    <ShoppingCartIcon className="w-8 h-8 text-green-200" />
                 )}
             </div>
             <div className="flex-1">

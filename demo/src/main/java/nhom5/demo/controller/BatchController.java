@@ -39,13 +39,14 @@ public class BatchController {
     @Operation(summary = "Danh sách tất cả lô hàng (Admin)")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<BatchResponse>>> getAllBatches(
+            @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "expiryDate") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(ApiResponse.success(batchService.getAllBatches(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(batchService.getAllBatches(query, pageable)));
     }
 
     @Operation(summary = "Chi tiết lô hàng theo ID")

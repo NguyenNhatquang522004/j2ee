@@ -15,7 +15,10 @@ FreshFood là một nền tảng thương mại điện tử hiện đại, chuy
 - **Tìm kiếm nâng cao**: Tích hợp **Meilisearch** cho tốc độ tìm kiếm cực nhanh.
 
 ### 🛡️ Dành cho Quản trị (Admin Dashboard)
-- **Quản lý Sản phẩm & Danh mục**: Thêm mới, cập nhật trạng thái và tồn kho.
+- **Quản lý Sản phẩm & Danh mục**: Thêm mới, cập nhật trạng thái, tồn kho, lọc theo trang trại và khoảng giá.
+- **Quản lý Đơn hàng**: Theo dõi trạng thái, tìm kiếm mã đơn/khách hàng và sắp xếp theo ngày/giá tiền.
+- **Tích hợp Thanh toán Tự động**: Hỗ trợ **SePay (VietQR)** với Webhook bảo mật bằng Token, tự động xác nhận đơn hàng khi có tiền về.
+- **Bảo mật Nâng cao**: Đạt tiêu chuẩn Enterprise với CSRF Strict Match, Sliding Window Rate Limit (Redis) và Account Lockout sau 5 lần sai mật khẩu.
 - **Quản lý Nhân sự**: Hệ thống phân quyền cụ thể cho từng nhân viên (RBAC).
 - **Hệ thống Mã giảm giá**: Quản lý Voucher công khai/riêng tư và logic tặng quà cá nhân.
 - **Audit Logs**: Nhật ký hoạt động quản trị viên đạt tiêu chuẩn audit doanh nghiệp.

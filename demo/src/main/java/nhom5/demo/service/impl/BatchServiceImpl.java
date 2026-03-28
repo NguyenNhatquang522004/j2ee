@@ -114,8 +114,8 @@ public class BatchServiceImpl implements BatchService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<BatchResponse> getAllBatches(Pageable pageable) {
-        return batchRepository.findAll(pageable).map(this::toResponse);
+    public Page<BatchResponse> getAllBatches(String query, Pageable pageable) {
+        return batchRepository.searchBatches(query, pageable).map(this::toResponse);
     }
 
     @Override

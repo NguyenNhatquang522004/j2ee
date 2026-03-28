@@ -14,4 +14,6 @@ public interface NotificationService {
     long getUnreadCount();
     void markAsRead(Long id);
     void markAllAsRead();
+    void delete(Long id);
+    void deleteAll();
 }

@@ -115,8 +115,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductResponse> searchProducts(String name, Long categoryId, Long farmId, Boolean isActive, Pageable pageable) {
-        return productRepository.searchProducts(name, categoryId, farmId, isActive, pageable)
+    public Page<ProductResponse> searchProducts(String name, Long categoryId, Long farmId, Boolean isActive, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice, Boolean isNew, Boolean isSale, Pageable pageable) {
+        return productRepository.searchProducts(name, categoryId, farmId, isActive, minPrice, maxPrice, isNew, isSale, pageable)
                 .map(this::toResponse);
     }
 

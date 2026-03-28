@@ -79,18 +79,18 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
     });
 
     const Content = (
-        <div className={`flex flex-col h-full bg-white ${isModal ? 'rounded-3xl overflow-hidden' : ''}`}>
+        <div className={`flex flex-col h-full bg-white ${isModal ? 'rounded-xl overflow-hidden' : ''}`}>
             {/* Header */}
-            <div className={`p-6 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/50`}>
+            <div className={`p-4.5 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/50`}>
                 <div>
-                    <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-                        <PhotoIcon className="w-8 h-8 text-green-600" />
+                    <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                        <PhotoIcon className="w-6 h-6 text-green-600" />
                         Thư viện Media
                     </h1>
-                    <p className="text-sm text-gray-500 font-medium">Lưu trữ và quản lý tài sản số của FreshFood.</p>
+                    <p className="text-[13px] text-gray-500 font-medium">Lưu trữ và quản lý tài sản số của FreshFood.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <label className={`cursor-pointer flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-black rounded-xl shadow-lg shadow-green-100 transition-all active:scale-95 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <label className={`cursor-pointer flex items-center gap-2 px-4.5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-black rounded-lg shadow-lg shadow-green-100 transition-all active:scale-95 text-[11px] uppercase tracking-wider ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
                         <CloudArrowUpIcon className="w-5 h-5 stroke-[3]" />
                         <span>{uploading ? 'Đang tải...' : 'Tải lên'}</span>
                         <input type="file" className="hidden" onChange={handleUpload} disabled={uploading} />
@@ -111,7 +111,7 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Tìm kiếm file..."
-                        className="w-full pl-11 pr-4 py-3 bg-gray-50 border-none rounded-xl font-medium focus:ring-2 focus:ring-green-500/20 outline-none"
+                        className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border-none rounded-xl font-medium focus:ring-2 focus:ring-green-500/20 outline-none text-sm"
                     />
                 </div>
                 <div className="flex bg-gray-100 p-1 rounded-xl w-full md:w-auto">
@@ -128,24 +128,24 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
             </div>
 
             {/* Grid */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4">
                 {loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         {Array(12).fill(0).map((_, i) => (
-                            <div key={i} className="aspect-square bg-gray-100 rounded-2xl animate-pulse" />
+                            <div key={i} className="aspect-square bg-gray-100 rounded-xl animate-pulse" />
                         ))}
                     </div>
                 ) : filteredMedia.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-300 py-20">
-                        <PhotoIcon className="w-20 h-20 mb-4 opacity-20" />
-                        <p className="font-bold">Chưa có tập tin nào.</p>
+                    <div className="h-full flex flex-col items-center justify-center text-gray-300 py-16">
+                        <PhotoIcon className="w-16 h-16 mb-4 opacity-20" />
+                        <p className="font-bold text-sm">Chưa có tập tin nào.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         {filteredMedia.map((m) => {
                             const isVideo = m.fileType?.startsWith('video');
                             return (
-                                <div key={m.id} className="group relative aspect-square rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 shadow-sm hover:shadow-xl transition-all duration-300">
+                                <div key={m.id} className="group relative aspect-square rounded-xl overflow-hidden border border-gray-100 bg-gray-50 shadow-sm hover:shadow-lg transition-all duration-300">
                                     {isVideo ? (
                                         <div className="w-full h-full flex items-center justify-center bg-gray-900">
                                             <VideoCameraIcon className="w-10 h-10 text-white/50" />

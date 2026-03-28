@@ -88,9 +88,10 @@ public class SecurityConfig {
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .ignoringRequestMatchers(
                             "/api/v1/auth/**", 
-                            "/api/v1/payment/callback/**", 
+                            "/api/v1/payment/**", 
                             "/api/v1/newsletters/subscribe/**", 
-                            "/api/v1/notifications/read-all"
+                            "/api/v1/notifications/read-all",
+                            "/api/v1/contacts"
                         )
                 )
                 .headers(headers -> headers
@@ -107,6 +108,7 @@ public class SecurityConfig {
                         // Auth & AI & Newsletter endpoints — public
                         .requestMatchers("/api/v1/auth/**", "/api/v1/ai/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/newsletters/subscribe").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/contacts").permitAll()
                         .requestMatchers("/api/v1/newsletters/**").hasAuthority("manage:newsletters")
                         // Swagger UI — public
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()

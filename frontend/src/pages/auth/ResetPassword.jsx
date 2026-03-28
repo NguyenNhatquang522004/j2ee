@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { LockClosedIcon } from '@heroicons/react/24/outline';
+import { LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 export default function ResetPassword() {
     const [searchParams] = useSearchParams();
@@ -11,6 +11,8 @@ export default function ResetPassword() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -44,25 +46,52 @@ export default function ResetPassword() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2 font-vietnam">Mật khẩu mới</label>
-                        <input
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            required
-                            className="input-field py-3 px-4 focus:ring-2 focus:ring-green-500 transition-all font-vietnam"
-                            placeholder="Ít nhất 6 ký tự"
-                        />
+                        <div className="relative">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                required
+                                minLength={8}
+                                className="input-field py-3 px-4 pr-11 focus:ring-2 focus:ring-green-500 transition-all font-vietnam"
+                                placeholder="Ít nhất 8 ký tự (A, a, 1, @)"
+                            />
+                            <button
+                                type="button"
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-green-600 transition-colors"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? (
+                                    <EyeSlashIcon className="h-5 w-5" />
+                                ) : (
+                                    <EyeIcon className="h-5 w-5" />
+                                )}
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2 font-vietnam">Xác nhận mật khẩu mới</label>
-                        <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                            className="input-field py-3 px-4 focus:ring-2 focus:ring-green-500 transition-all font-vietnam"
-                            placeholder="Nhập lại mật khẩu mới"
-                        />
+                        <div className="relative">
+                            <input
+                                type={showConfirmPassword ? "text" : "password"}
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                                className="input-field py-3 px-4 pr-11 focus:ring-2 focus:ring-green-500 transition-all font-vietnam"
+                                placeholder="Nhập lại mật khẩu mới"
+                            />
+                            <button
+                                type="button"
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-green-600 transition-colors"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            >
+                                {showConfirmPassword ? (
+                                    <EyeSlashIcon className="h-5 w-5" />
+                                ) : (
+                                    <EyeIcon className="h-5 w-5" />
+                                )}
+                            </button>
+                        </div>
                     </div>
 
                     <button

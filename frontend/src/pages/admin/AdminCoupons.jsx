@@ -149,7 +149,7 @@ export default function AdminCoupons() {
         <AdminLayout>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight">Voucher & Khuyến mãi</h1>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Voucher & Khuyến mãi</h1>
                     <p className="text-gray-500 font-medium">Hệ thống quản lý mã giảm giá công khai và cá nhân.</p>
                 </div>
                 <div className="flex gap-4">
@@ -159,14 +159,14 @@ export default function AdminCoupons() {
                             setForm({ ...EMPTY, code: giftCode, isPrivate: true }); 
                             setShowModal(true); 
                         }} 
-                        className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-4 rounded-2xl shadow-lg shadow-blue-100 transition-all active:scale-95"
+                        className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black px-5 py-3 rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95"
                     >
                         <EnvelopeIcon className="w-5 h-5 stroke-[3]" />
                         <span>Tặng Voucher</span>
                     </button>
                     <button 
                         onClick={openCreate} 
-                        className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95"
+                        className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-3 rounded-xl shadow-lg shadow-emerald-100 transition-all active:scale-95"
                     >
                         <PlusIcon className="w-5 h-5 stroke-[3]" />
                         <span>Tạo Voucher</span>
@@ -175,7 +175,7 @@ export default function AdminCoupons() {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex items-center gap-2 mb-8 bg-gray-100/50 p-1.5 rounded-2xl w-fit border border-gray-100 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-8 bg-gray-100/50 p-1.5 rounded-xl w-fit border border-gray-100 backdrop-blur-sm">
                 {[
                     { id: 'ALL', label: 'Tất cả' },
                     { id: 'PUBLIC', label: 'Công khai' },
@@ -191,7 +191,7 @@ export default function AdminCoupons() {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-3 ${activeTab === tab.id ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-white/50'}`}
+                            className={`px-5 py-2 rounded-lg font-black text-xs uppercase tracking-wider transition-all flex items-center gap-3 ${activeTab === tab.id ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-white/50'}`}
                         >
                             {tab.label}
                             <span className={`px-2 py-0.5 rounded-md text-[10px] ${activeTab === tab.id ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-200 text-gray-500'}`}>
@@ -202,7 +202,7 @@ export default function AdminCoupons() {
                 })}
             </div>
 
-            <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
+            <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -231,8 +231,8 @@ export default function AdminCoupons() {
                                 <tr key={c.id} className="hover:bg-emerald-50/30 transition-colors group">
                                     <td className="px-6 py-4 pl-8">
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${(c.isPrivate ?? c.is_private) ? 'bg-purple-50 text-purple-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                                                <TicketIcon className="w-6 h-6" />
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${(c.isPrivate ?? c.is_private) ? 'bg-purple-50 text-purple-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                                <TicketIcon className="w-5 h-5" />
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
@@ -310,10 +310,10 @@ export default function AdminCoupons() {
 
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 max-h-[90vh]">
-                        <div className="flex items-center justify-between p-8 border-b border-gray-50 bg-gray-50/30">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 max-h-[90vh]">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-50 bg-gray-50/30">
                             <div>
-                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">{editing ? 'Chi tiết Voucher' : 'Tạo Voucher mới'}</h2>
+                                <h2 className="text-xl font-black text-gray-900 tracking-tight">{editing ? 'Chi tiết Voucher' : 'Tạo Voucher mới'}</h2>
                                 <p className="text-sm text-gray-500 font-medium font-vietnam">Cấu hình tham số cho chương trình khuyến mãi.</p>
                             </div>
                             <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all">
@@ -321,18 +321,18 @@ export default function AdminCoupons() {
                             </button>
                         </div>
                         
-                        <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto">
+                        <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto">
                             <div className="space-y-3">
                                 <label className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1 font-vietnam">
-                                    <HashtagIcon className="w-4 h-4" /> Mã Voucher
+                                    <HashtagIcon className="w-5 h-5" /> Mã Voucher
                                 </label>
-                                <input 
-                                    required 
-                                    value={form.code} 
-                                    onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} 
-                                    className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 uppercase focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
-                                    placeholder="VÍ DỤ: GIAM50K"
-                                />
+                                    <input 
+                                        required 
+                                        value={form.code} 
+                                        onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} 
+                                        className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-black text-sm text-gray-900 uppercase focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
+                                        placeholder="VÍ DỤ: GIAM50K"
+                                    />
                             </div>
 
                             <div className="space-y-3">
@@ -343,7 +343,7 @@ export default function AdminCoupons() {
                                     rows={2}
                                     value={form.description} 
                                     onChange={(e) => setForm({ ...form, description: e.target.value })} 
-                                    className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-bold text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none font-vietnam"
+                                    className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-bold text-sm text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none font-vietnam"
                                     placeholder="Vd: Giảm 50% cho đơn hàng thực phẩm sạch đầu tiên..."
                                 />
                             </div>
@@ -355,7 +355,7 @@ export default function AdminCoupons() {
                                         type="number" min="0" max="100" required 
                                         value={form.discountPercent ?? 0} 
                                         onChange={(e) => setForm({ ...form, discountPercent: Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 outline-none"
+                                        className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-black text-sm text-gray-900 outline-none"
                                     />
                                 </div>
                                 <div className="space-y-3">
@@ -407,7 +407,7 @@ export default function AdminCoupons() {
                             {form.isPrivate && (
                                 <div className="space-y-3 p-6 bg-purple-50/50 rounded-3xl border border-purple-100/50 animate-in slide-in-from-top-2 duration-300">
                                     <label className="flex items-center gap-2 text-[11px] font-black text-purple-600 uppercase tracking-widest pl-1 font-vietnam">
-                                        <EnvelopeIcon className="w-4 h-4" /> Gửi trực tiếp cho khách hàng (Email)
+                                        <EnvelopeIcon className="w-5 h-5" /> Gửi trực tiếp cho khách hàng (Email)
                                     </label>
                                     <input 
                                         type="email"

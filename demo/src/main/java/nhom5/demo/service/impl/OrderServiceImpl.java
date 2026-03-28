@@ -77,7 +77,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal discountAmount = BigDecimal.ZERO;
         Coupon coupon = null;
         if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
-            coupon = couponRepository.findByCodeAndIsActiveTrue(request.getCouponCode())
+            coupon = couponRepository.findByCodeAndIsActiveTrueWithLock(request.getCouponCode())
                     .orElseThrow(() -> new BusinessException("Mã giảm giá không hợp lệ hoặc đã hết hạn"));
 
             if (coupon.getExpiryDate().isBefore(LocalDate.now())) {
@@ -186,8 +186,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<OrderResponse> getAllOrders(Pageable pageable) {
-        return orderRepository.findAllByOrderByCreatedAtDesc(pageable).map(this::toResponse);
+    public Page<OrderResponse> getAllOrders(String query, OrderStatusEnum status, Pageable pageable) {
+        return orderRepository.searchOrders(query, status, pageable).map(this::toResponse);
     }
 
     @Override

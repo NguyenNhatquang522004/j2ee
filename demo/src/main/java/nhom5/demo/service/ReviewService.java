@@ -11,9 +11,12 @@ public interface ReviewService {
 
     Page<ReviewResponse> getReviewsByProduct(Long productId, Pageable pageable);
 
+    Page<ReviewResponse> getMyReviews(String username, Pageable pageable);
+
     Page<ReviewResponse> getAllReviews(Pageable pageable);
 
     ReviewResponse moderateReview(Long id, ReviewStatusEnum status, String adminReply);
 
     void deleteReview(Long reviewId);
+    boolean canReview(String username, Long productId);
 }

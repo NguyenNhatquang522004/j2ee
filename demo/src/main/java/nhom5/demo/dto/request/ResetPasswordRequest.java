@@ -12,6 +12,10 @@ public class ResetPasswordRequest {
     private String token;
 
     @NotBlank(message = "Mật khẩu mới không được để trống")
-    @Size(min = 6, message = "Mật khẩu mới phải có ít nhất 6 ký tự")
+    @Size(min = 8, max = 100, message = "Mật khẩu mới phải từ 8-100 ký tự")
+    @jakarta.validation.constraints.Pattern(
+        regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{8,}$",
+        message = "Mật khẩu mới phải chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt"
+    )
     private String newPassword;
 }

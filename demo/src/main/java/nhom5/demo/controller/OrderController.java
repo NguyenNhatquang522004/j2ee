@@ -63,10 +63,16 @@ public class OrderController {
     @PreAuthorize("hasAuthority('manage:orders')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) OrderStatusEnum status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<OrderResponse> data = orderService.getAllOrders(pageable);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+        
+        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<OrderResponse> data = orderService.getAllOrders(query, status, pageable);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 

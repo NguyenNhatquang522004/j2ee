@@ -137,7 +137,7 @@ export default function Checkout() {
                 toast.success('Đơn hàng đã được tạo. Vui lòng thanh toán!');
             } else {
                 toast.success('Đặt hàng thành công!');
-                navigate('/orders');
+                navigate(`/success?orderId=${res.data.id}`);
             }
         } catch (err) {
             toast.error(err.response?.data?.message || 'Đặt hàng thất bại');
@@ -150,11 +150,11 @@ export default function Checkout() {
 
     return (
         <Layout>
-            <h1 className="text-2xl font-bold text-gray-800 mb-6 font-vietnam tracking-tight">Thanh toán</h1>
+            <h1 className="text-xl font-bold text-gray-800 mb-6 font-vietnam tracking-tight">Thanh toán</h1>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-4 font-vietnam">
-                    <div className="card shadow-sm border border-gray-100 rounded-3xl p-8">
+                    <div className="card shadow-sm border border-gray-100 rounded-xl p-6">
                         <h2 className="font-bold text-gray-700 mb-6 flex items-center gap-2">
                             <MapPinIcon className="w-5 h-5 text-emerald-600" />
                             Thông tin giao hàng
@@ -204,7 +204,7 @@ export default function Checkout() {
                                     onChange={handleChange}
                                     rows={3}
                                     required
-                                    className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-medium text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none focus:bg-white"
+                                    className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-medium text-sm text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none focus:bg-white"
                                     placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"
                                 />
                             </div>
@@ -232,7 +232,7 @@ export default function Checkout() {
                                         name="paymentMethod" 
                                         value={form.paymentMethod} 
                                         onChange={handleChange} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none appearance-none cursor-pointer focus:bg-white"
+                                        className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-black text-sm text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none appearance-none cursor-pointer focus:bg-white"
                                     >
                                         {PAYMENT_METHODS.map((m) => (
                                             <option key={m.value} value={m.value}>{m.label}</option>
@@ -251,7 +251,7 @@ export default function Checkout() {
                                         value={form.couponCode} 
                                         onChange={handleChange} 
                                         disabled={!!appliedCoupon}
-                                        className={`w-full px-6 py-4 pr-32 bg-gray-50 border-none rounded-2xl font-black tracking-widest uppercase focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none ${appliedCoupon ? 'bg-green-50 text-green-700' : 'focus:bg-white'}`} 
+                                        className={`w-full px-5 py-3.5 pr-28 bg-gray-50 border-none rounded-xl font-black text-sm tracking-widest uppercase focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none ${appliedCoupon ? 'bg-green-50 text-green-700' : 'focus:bg-white'}`} 
                                         placeholder="NHẬP MÃ" 
                                     />
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -291,7 +291,7 @@ export default function Checkout() {
                                     value={form.note} 
                                     onChange={handleChange} 
                                     rows={2} 
-                                    className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-medium text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none focus:bg-white" 
+                                    className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-medium text-sm text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none focus:bg-white" 
                                     placeholder="Ghi chú thêm về thời gian, địa điểm cụ thể..." 
                                 />
                             </div>
@@ -301,7 +301,7 @@ export default function Checkout() {
                     <button 
                         type="submit" 
                         disabled={loading || items.length === 0} 
-                        className="w-full py-5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-[2rem] font-black text-xl shadow-xl shadow-green-100 transition-all active:scale-[0.98] disabled:opacity-50 flex justify-center items-center gap-3 mt-8 uppercase tracking-tight"
+                        className="w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-black text-lg shadow-xl shadow-green-100 transition-all active:scale-[0.98] disabled:opacity-50 flex justify-center items-center gap-3 mt-8 uppercase tracking-tight"
                     >
                         {loading ? (
                             <div className="flex items-center gap-2">
@@ -319,10 +319,10 @@ export default function Checkout() {
 
                 {/* Summary */}
                 <div className="lg:col-span-1">
-                    <div className="card shadow-2xl shadow-emerald-50/50 border border-emerald-50 rounded-[2.5rem] p-8 sticky top-24 bg-white/70 backdrop-blur-xl">
-                        <h2 className="font-black text-xl text-gray-900 mb-8 flex items-center gap-3">
-                            <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center">
-                                <ShoppingBagIcon className="w-6 h-6 text-emerald-600" />
+                    <div className="card shadow-2xl shadow-emerald-50/50 border border-emerald-50 rounded-2xl p-6 sticky top-24 bg-white/70 backdrop-blur-xl">
+                        <h2 className="font-black text-lg text-gray-900 mb-6 flex items-center gap-3">
+                            <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center">
+                                <ShoppingBagIcon className="w-5 h-5 text-emerald-600" />
                             </div>
                             Tóm tắt đơn hàng
                         </h2>
@@ -398,13 +398,13 @@ export default function Checkout() {
                                 leaveFrom="opacity-100 scale-100"
                                 leaveTo="opacity-0 scale-95"
                             >
-                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-2xl transition-all border border-gray-100 text-center relative">
-                                    <div className="absolute top-6 right-6">
+                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-2xl transition-all border border-gray-100 text-center relative">
+                                    <div className="absolute top-4 right-4">
                                         <button 
                                             onClick={() => navigate('/orders')}
-                                            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400"
+                                            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-400"
                                         >
-                                            <XMarkIcon className="w-6 h-6" />
+                                            <XMarkIcon className="w-5 h-5" />
                                         </button>
                                     </div>
 
@@ -412,7 +412,7 @@ export default function Checkout() {
                                         <QrCodeIcon className="w-10 h-10" />
                                     </div>
 
-                                    <Dialog.Title as="h3" className="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tight">
+                                    <Dialog.Title as="h3" className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tight">
                                         Thanh toán chuyển khoản
                                     </Dialog.Title>
                                     <p className="text-sm text-gray-400 font-bold mb-8 uppercase tracking-widest italic">Quét mã VietQR để hoàn tất</p>
@@ -440,7 +440,7 @@ export default function Checkout() {
                                     </div>
 
                                     <button
-                                        onClick={() => navigate('/orders')}
+                                        onClick={() => navigate(`/success?orderId=${createdOrder?.id}`)}
                                         className="w-full py-4 bg-black text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
                                     >
                                         Tôi đã chuyển khoản

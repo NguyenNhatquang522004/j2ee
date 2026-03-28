@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { SparklesIcon } from '@heroicons/react/24/outline';
+import { SparklesIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 export default function Login() {
     const { login, verify2fa } = useAuth();
@@ -12,6 +12,7 @@ export default function Login() {
     const [twoFactorNeeded, setTwoFactorNeeded] = useState(false);
     const [twoFactorMethod, setTwoFactorMethod] = useState('TOTP'); // 'TOTP' or 'EMAIL'
     const [otpCode, setOtpCode] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -77,15 +78,28 @@ export default function Login() {
                                         Quên mật khẩu?
                                     </Link>
                                 </div>
-                                <input
-                                    type="password"
-                                    name="password"
-                                    value={form.password}
-                                    onChange={handleChange}
-                                    required
-                                    className="input-field py-3 px-4"
-                                    placeholder="Nhập mật khẩu"
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        name="password"
+                                        value={form.password}
+                                        onChange={handleChange}
+                                        required
+                                        className="input-field py-3 px-4 pr-11"
+                                        placeholder="Nhập mật khẩu"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-green-600 transition-colors"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                        {showPassword ? (
+                                            <EyeSlashIcon className="h-5 w-5" />
+                                        ) : (
+                                            <EyeIcon className="h-5 w-5" />
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </>
                     ) : (
@@ -94,14 +108,14 @@ export default function Login() {
                                 Mã xác thực {twoFactorMethod === 'EMAIL' ? 'từ Email' : '2 bước (TOTP)'}
                             </label>
                             <input
-                                type="text"
+                                type="password"
                                 maxLength="6"
                                 value={otpCode}
                                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                                 required
                                 autoFocus
-                                className="input-field text-center text-3xl tracking-[1rem] font-bold py-4 text-green-600"
-                                placeholder="000000"
+                                className="input-field text-center text-3xl tracking-[1.2rem] font-bold py-4 text-green-600 placeholder:tracking-normal"
+                                placeholder="..."
                             />
                             <p className="mt-4 text-xs text-gray-500 text-center">
                                 {twoFactorMethod === 'EMAIL' 

@@ -16,7 +16,7 @@ public interface BatchService {
 
     void deleteBatch(Long id);
 
-    Page<BatchResponse> getAllBatches(Pageable pageable);
+    Page<BatchResponse> getAllBatches(String query, Pageable pageable);
 
     Page<BatchResponse> getBatchesByProduct(Long productId, Pageable pageable);
 

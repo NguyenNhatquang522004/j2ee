@@ -79,14 +79,14 @@ export default function Navbar() {
                             </span>
                         </Link>
 
-                        <nav className="hidden md:flex items-center gap-6">
+                        <nav className="hidden lg:flex items-center gap-6">
                             {!isManagement ? (
                                 <>
-                                    <Link to="/products" className="nav-link">Sản phẩm</Link>
+                                    <Link to="/products" className="nav-link whitespace-nowrap">Sản phẩm</Link>
                                     
                                     {/* Categories Dropdown */}
                                     <div className="relative group/cat h-full flex items-center">
-                                        <button className="nav-link flex items-center gap-1 group-hover/cat:text-green-600">
+                                        <button className="nav-link flex items-center gap-1 group-hover/cat:text-green-600 whitespace-nowrap">
                                             <span>Danh mục</span>
                                             <ChevronDownIcon className="w-3.5 h-3.5 transition-transform group-hover/cat:rotate-180" />
                                         </button>
@@ -125,7 +125,7 @@ export default function Navbar() {
 
                                     {/* Farms Dropdown */}
                                     <div className="relative group/farm h-full flex items-center">
-                                        <button className="nav-link flex items-center gap-1 group-hover/farm:text-green-600">
+                                        <button className="nav-link flex items-center gap-1 group-hover/farm:text-green-600 whitespace-nowrap">
                                             <span>Trang trại</span>
                                             <ChevronDownIcon className="w-3.5 h-3.5 transition-transform group-hover/farm:rotate-180" />
                                         </button>
@@ -161,22 +161,43 @@ export default function Navbar() {
                                             </div>
                                         </div>
                                     </div>
-                                    <Link to="/ai-scan" className="nav-link flex items-center gap-1.5">
+                                    <Link to="/ai-scan" className="nav-link flex items-center gap-1.5 whitespace-nowrap">
                                         <BeakerIcon className="w-4 h-4" />
                                         <span>AI Scan</span>
                                     </Link>
-                                    <Link to="/coupons" className="nav-link flex items-center gap-1.5">
+                                    <Link to="/coupons" className="nav-link flex items-center gap-1.5 whitespace-nowrap">
                                         <TicketIcon className="w-4 h-4" />
                                         <span>Khuyến mãi</span>
                                     </Link>
                                 </>
                             ) : (
-                                <Link to="/admin" className="nav-link text-green-700 font-bold bg-green-50 px-3 py-1 rounded-full border border-green-100 hover:bg-green-100 transition-all flex items-center gap-1.5">
+                                <Link to="/admin" className="nav-link text-green-700 font-bold bg-green-50 px-3 py-1 rounded-full border border-green-100 hover:bg-green-100 transition-all flex items-center gap-1.5 whitespace-nowrap">
                                     <AcademicCapIcon className="w-4 h-4" />
                                     <span>Bảng điều khiển Quản trị</span>
                                 </Link>
                             )}
                         </nav>
+                    </div>
+
+                    <div className="flex-1 max-w-md mx-8 hidden lg:block">
+                        <div className="relative group">
+                            <input 
+                                type="text"
+                                placeholder="Bạn tìm nông sản gì hôm nay?"
+                                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-600 outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all placeholder:text-gray-300"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        const q = e.target.value.trim();
+                                        if (q) navigate(`/products?keyword=${encodeURIComponent(q)}`);
+                                    }
+                                }}
+                            />
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-green-500 transition-colors">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Right Side Icons/Buttons */}

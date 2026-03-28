@@ -76,10 +76,12 @@ export const reviewService = {
     add: (formData) => api.post('/reviews', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),
+    myReviews: (params) => api.get('/reviews/my-reviews', { params }),
     delete: (id) => api.delete(`/reviews/${id}`),
     // Admin
     getAll: (params) => api.get('/reviews/admin/all', { params }),
     moderate: (id, data) => api.put(`/reviews/admin/${id}/moderate`, data),
+    canReview: (productId) => api.get(`/reviews/can-review/${productId}`),
 };
 
 // Farms
@@ -153,6 +155,8 @@ export const notificationService = {
     getUnreadCount: () => api.get('/notifications/unread/count'),
     markAsRead: (id) => api.put(`/notifications/${id}/read`),
     markAllAsRead: () => api.put('/notifications/read-all'),
+    delete: (id) => api.delete(`/notifications/${id}`),
+    deleteAll: () => api.delete('/notifications/delete-all'),
 };
 
 export const wishlistService = {
@@ -177,4 +181,12 @@ export const mediaService = {
     }),
     getAll: () => api.get('/media/all'),
     delete: (id) => api.delete(`/media/${id}`),
+};
+
+export const contactService = {
+    send: (data) => api.post('/contacts', data),
+    getAll: (params) => api.get('/contacts', { params }),
+    markAsRead: (id) => api.put(`/contacts/${id}/read`),
+    delete: (id) => api.delete(`/contacts/${id}`),
+    getUnreadCount: () => api.get('/contacts/unread/count'),
 };

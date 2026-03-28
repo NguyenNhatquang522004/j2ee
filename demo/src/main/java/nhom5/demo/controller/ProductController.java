@@ -32,6 +32,10 @@ public class ProductController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long farmId,
             @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) java.math.BigDecimal minPrice,
+            @RequestParam(required = false) java.math.BigDecimal maxPrice,
+            @RequestParam(required = false) Boolean isNew,
+            @RequestParam(required = false) Boolean isSale,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -58,7 +62,7 @@ public class ProductController {
         }
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<ProductResponse> data = productService.searchProducts(name, categoryId, farmId, finalIsActive, pageable);
+        Page<ProductResponse> data = productService.searchProducts(name, categoryId, farmId, finalIsActive, minPrice, maxPrice, isNew, isSale, pageable);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 

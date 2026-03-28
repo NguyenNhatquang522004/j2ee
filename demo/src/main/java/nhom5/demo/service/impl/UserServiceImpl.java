@@ -59,7 +59,15 @@ public class UserServiceImpl implements UserService {
         user.setPhone(request.getPhone());
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            if (request.getOldPassword() == null || request.getOldPassword().isBlank()) {
+                throw new BusinessException("Vui lòng cung cấp mật khẩu cũ để thực hiện đổi mật khẩu");
+            }
+            if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+                throw new BusinessException("Mật khẩu cũ không chính xác");
+            }
             user.setPassword(passwordEncoder.encode(request.getPassword()));
+            // Invalidate other sessions after password change
+            user.setTokenVersion(user.getTokenVersion() + 1);
         }
 
         if (request.getDateOfBirth() != null) user.setDateOfBirth(request.getDateOfBirth());
@@ -71,8 +79,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<UserResponse> getAllUsers(Pageable pageable) {
-        return userRepository.findAll(pageable).map(this::toResponse);
+    public Page<UserResponse> getAllUsers(String query, nhom5.demo.enums.RoleEnum role, Boolean isActive, Pageable pageable) {
+        return userRepository.searchUsers(query, role, isActive, pageable).map(this::toResponse);
     }
 
     @Override

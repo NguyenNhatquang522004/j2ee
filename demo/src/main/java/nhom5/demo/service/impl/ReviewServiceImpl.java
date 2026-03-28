@@ -81,6 +81,13 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    public Page<ReviewResponse> getMyReviews(String username, Pageable pageable) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
+        return reviewRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable).map(this::toResponse);
+    }
+
+    @Override
     public Page<ReviewResponse> getAllReviews(Pageable pageable) {
         return reviewRepository.findAllByOrderByCreatedAtDesc(pageable).map(this::toResponse);
     }
@@ -102,6 +109,23 @@ public class ReviewServiceImpl implements ReviewService {
             throw new ResourceNotFoundException("Review", "id", reviewId);
         }
         reviewRepository.deleteById(reviewId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean canReview(String username, Long productId) {
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) return false;
+
+        boolean hasPurchased = orderItemRepository.existsByOrderUserIdAndProductIdAndOrderStatus(
+                user.getId(), productId, nhom5.demo.enums.OrderStatusEnum.DELIVERED);
+        
+        if (!hasPurchased) return false;
+
+        boolean alreadyReviewed = reviewRepository.existsByProductIdAndUserIdAndStatusIsNot(
+                productId, user.getId(), nhom5.demo.enums.ReviewStatusEnum.REJECTED);
+        
+        return !alreadyReviewed;
     }
 
     private ReviewResponse toResponse(Review review) {

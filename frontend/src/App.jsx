@@ -39,6 +39,15 @@ import AdminAudit from './pages/admin/AdminAudit';
 import Maintenance from './pages/other/Maintenance';
 import Legal from './pages/other/Legal';
 import CouponList from './pages/coupons/CouponList';
+import Notifications from './pages/notifications/Notifications';
+import Contact from './pages/other/Contact';
+import FAQ from './pages/other/FAQ';
+import NotFound from './pages/other/NotFound';
+import Success from './pages/checkout/Success';
+import BuyingGuide from './pages/guide/BuyingGuide';
+import About from './pages/other/About';
+import AdminContact from './pages/admin/AdminContact';
+import AdminBuyingGuide from './pages/admin/AdminBuyingGuide';
 
 export default function App() {
   return (
@@ -67,19 +76,24 @@ export default function App() {
             <Route path="/compare" element={<Compare />} />
             <Route path="/farms" element={<FarmList />} />
             <Route path="/coupons" element={<CouponList />} />
-            <Route path="/about" element={<Legal />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/privacy" element={<Legal />} />
             <Route path="/terms" element={<Legal />} />
             <Route path="/cookies" element={<Legal />} />
             <Route path="/maintenance" element={<Maintenance />} />
+            <Route path="/buying-guide" element={<BuyingGuide />} />
 
             {/* Protected user routes */}
             <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
             <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
+            <Route path="/success" element={<PrivateRoute><Success /></PrivateRoute>} />
             <Route path="/orders" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
             <Route path="/ai-scan" element={<PrivateRoute><AiScan /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/wishlist" element={<PrivateRoute><Wishlist /></PrivateRoute>} />
+            <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
 
             {/* Admin routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -96,11 +110,13 @@ export default function App() {
             <Route path="/admin/reviews" element={<AdminRoute permission="manage:reviews"><AdminReviews /></AdminRoute>} />
             <Route path="/admin/staff" element={<AdminRoute permission="manage:users"><AdminStaff /></AdminRoute>} />
             <Route path="/admin/audit" element={<AdminRoute permission="view:reports"><AdminAudit /></AdminRoute>} />
+            <Route path="/admin/contacts" element={<AdminRoute><AdminContact /></AdminRoute>} />
+            <Route path="/admin/guide" element={<AdminRoute><AdminBuyingGuide /></AdminRoute>} />
             <Route path="/admin/2fa" element={<AdminRoute><Navigate to="/admin/settings?tab=security" replace /></AdminRoute>} />
             <Route path="/admin/profile" element={<AdminRoute><Navigate to="/admin/settings?tab=profile" replace /></AdminRoute>} />
 
             {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
           </CompareProvider>
         </CartProvider>

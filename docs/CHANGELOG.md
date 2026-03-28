@@ -12,6 +12,23 @@ Tất cả các cập nhật quan trọng cho dự án FreshFood sẽ được l
 - **Đồng bộ Header**: Thêm menu Danh mục và Trang trại dạng dropdown động.
 - **Phản hồi đánh giá**: Admin có thể trả lời trực tiếp các đánh giá của khách hàng.
 
+## [v1.4.0] - 2026-03-28
+
+### 💳 Thanh toán & Tự động hoá
+- **Tích hợp SePay (VietQR)**: Hệ thống tự động xác nhận đơn hàng qua Webhook khi khách hàng chuyển khoản đúng nội dung `FF{orderId}`.
+- **Bảo mật Webhook**: Thêm mã xác thực Token trong Header cho các yêu cầu từ SePay để ngăn chặn giả mạo dữ liệu.
+- **Sửa lỗi CSRF Webhook**: Cấu hình ngoại lệ bảo mật cho phép SePay giao tiếp với Backend mà không bị chặn bởi bộ lọc CSRF.
+
+### 🔍 Tìm kiếm & Lọc nâng cao (Advanced Filtering)
+- **Bộ lọc Sản phẩm (Admin)**: Bổ sung lọc theo **Trang trại**, **Khoảng giá (Min-Max)** và nút **Xóa bộ lọc**.
+- **Bộ lọc Đơn hàng (Admin)**: Thêm chức năng **Sắp xếp (Sort)** theo Ngày tạo và Tổng tiền (Tăng/Giảm).
+- **Bộ lọc Người dùng (Admin)**: Thêm chức năng **Sắp xếp** theo Tên và Ngày tham gia.
+- **Tìm kiếm Trang trại**: Bổ sung thanh tìm kiếm theo Tên/Tỉnh thành và lọc theo loại **Chứng nhận** (VietGAP, Organic...).
+
+### 🛠️ Sửa lỗi & Tối ưu (Fixes & Optimization)
+- **Đồng bộ Wishlist**: Sửa lỗi danh sách yêu thích không hiển thị số lượng tồn kho và điểm đánh giá trung bình.
+- **Dọn dẹp mã nguồn**: Loại bỏ các Import không sử dụng và sửa lỗi Warning trong Backend Service.
+
 ## [v1.3.0] - 2026-03-28
 
 ### 🛡️ Bảo mật tiêu chuẩn Enterprise (Level 3/3)

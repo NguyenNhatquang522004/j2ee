@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, Fragment } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useCompare } from '../../context/CompareContext';
-import { productService, categoryService, wishlistService } from '../../api/services';
+import { productService, categoryService, wishlistService, farmService } from '../../api/services';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout';
@@ -34,6 +34,7 @@ const sortOptions = [
 export default function ProductList() {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [farms, setFarms] = useState([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -41,6 +42,10 @@ export default function ProductList() {
     const keyword = searchParams.get('keyword') || '';
     const categoryId = searchParams.get('categoryId') || '';
     const farmId = searchParams.get('farmId') || '';
+    const minPrice = searchParams.get('minPrice') || '';
+    const maxPrice = searchParams.get('maxPrice') || '';
+    const isNew = searchParams.get('isNew') === 'true';
+    const isSale = searchParams.get('isSale') === 'true';
     const sortBy = searchParams.get('sortBy') || 'id';
     const direction = searchParams.get('direction') || 'desc';
     const page = parseInt(searchParams.get('page') || '0');
@@ -52,16 +57,20 @@ export default function ProductList() {
         setLoading(true);
         try {
             let res;
-            const params = { page, size, sortBy, direction };
-            if (keyword) {
-                res = await productService.search(keyword, params);
-            } else {
-                res = await productService.getAll({ 
-                    ...params, 
-                    categoryId: categoryId || undefined,
-                    farmId: farmId || undefined 
-                });
-            }
+            const params = { 
+                page, 
+                size, 
+                sortBy, 
+                direction,
+                name: keyword || undefined,
+                categoryId: categoryId || undefined,
+                farmId: farmId || undefined,
+                minPrice: minPrice || undefined,
+                maxPrice: maxPrice || undefined,
+                isNew: isNew || undefined,
+                isSale: isSale || undefined
+            };
+            res = await productService.getAll(params);
             setProducts(res.data.content || res.data);
             setTotal(res.data.totalElements || res.data.length);
         } catch {
@@ -73,21 +82,38 @@ export default function ProductList() {
 
     useEffect(() => {
         fetchProducts();
-        categoryService.getAll().then((r) => setCategories(r.data));
     }, [fetchProducts]);
+
+    useEffect(() => {
+        categoryService.getAll().then((r) => setCategories(r.data));
+        farmService.getAll({ page: 0, size: 100 }).then((r) => setFarms(r.data.content || r.data));
+    }, []);
 
     const handleSortChange = (option) => {
         const [sort, dir] = option.id.split('-');
         setSearchParams({ ...Object.fromEntries(searchParams), sortBy: sort, direction: dir, page: 0 });
     };
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        const val = e.target.keyword.value.trim();
+    const handleSearch = (val) => {
         const newParams = { ...Object.fromEntries(searchParams) };
         if (val) newParams.keyword = val; else delete newParams.keyword;
         newParams.page = 0;
         setSearchParams(newParams);
+    };
+
+    const handlePriceFilter = (e) => {
+        e.preventDefault();
+        const min = e.target.minPrice.value;
+        const max = e.target.maxPrice.value;
+        const newParams = { ...Object.fromEntries(searchParams) };
+        if (min) newParams.minPrice = min; else delete newParams.minPrice;
+        if (max) newParams.maxPrice = max; else delete newParams.maxPrice;
+        newParams.page = 0;
+        setSearchParams(newParams);
+    };
+
+    const resetFilters = () => {
+        setSearchParams({ sortBy: 'id', direction: 'desc' });
     };
 
     const totalPages = Math.ceil(total / size);
@@ -96,27 +122,28 @@ export default function ProductList() {
         <Layout>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-12">
                 <div>
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2 uppercase">Cửa hàng</h1>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2 uppercase">Cửa hàng</h1>
                     <div className="flex items-center gap-2">
                         <span className="w-8 h-1 bg-green-600 rounded-full"></span>
                         <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">
-                            {farmId ? "Sản phẩm của trang trại đối tác" : "Thực phẩm sạch mỗi ngày"}
+                            {total} sản phẩm {farmId ? "của trang trại đối tác" : "thực phẩm sạch mỗi ngày"}
                         </p>
                     </div>
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-4">
-                    <form onSubmit={handleSearch} className="relative group">
+                    <div className="relative group">
                         <input 
                             name="keyword" 
-                            defaultValue={keyword} 
+                            value={keyword} 
+                            onChange={(e) => handleSearch(e.target.value)}
                             placeholder="Tìm kiếm sản phẩm..." 
                             className="w-[300px] pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all shadow-sm font-medium" 
                         />
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors">
                             <ShoppingBagIcon className="w-5 h-5" />
                         </div>
-                    </form>
+                    </div>
 
                     <div className="w-56">
                         <Listbox value={currentSort} onChange={handleSortChange}>
@@ -174,46 +201,142 @@ export default function ProductList() {
             </div>
 
             <div className="flex gap-10 items-start">
-                <aside className="w-64 hidden md:block shrink-0 sticky top-28 self-start">
-                    <div className="bg-white/70 backdrop-blur-md border border-gray-100 rounded-[2.5rem] p-6 shadow-xl shadow-gray-100/50">
-                        <div className="flex items-center gap-3 mb-6 pl-2">
-                            <div className="w-2 h-6 bg-green-500 rounded-full"></div>
-                            <h3 className="font-black text-gray-900 uppercase tracking-[0.2em] text-[11px]">Danh mục</h3>
-                        </div>
-                        <ul className="space-y-2">
-                            <li>
+                <aside className="w-56 hidden md:block shrink-0 sticky top-28 self-start">
+                    <div className="space-y-8 bg-white/70 backdrop-blur-md border border-gray-100 rounded-3xl p-6 shadow-xl shadow-gray-100/50">
+                        {/* Categories */}
+                        <div>
+                            <div className="flex items-center gap-3 mb-4 pl-2">
+                                <div className="w-1.5 h-5 bg-green-500 rounded-full"></div>
+                                <h3 className="font-black text-gray-900 uppercase tracking-widest text-[10px]">Danh mục</h3>
+                            </div>
+                            <div className="space-y-1">
                                 <button
-                                    onClick={() => setSearchParams({ sortBy, direction })}
-                                    className={`w-full text-left px-5 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 flex items-center justify-between group ${!categoryId ? 'bg-green-600 text-white shadow-xl shadow-green-200' : 'text-gray-500 hover:bg-green-50 hover:text-green-600 border border-transparent hover:border-green-100'}`}
+                                    onClick={() => setSearchParams({ ...Object.fromEntries(searchParams), categoryId: '', page: 0 })}
+                                    className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${!categoryId ? 'bg-green-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
                                 >
-                                    Tất cả sản phẩm
-                                    {!categoryId && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>}
+                                    Tất cả
+                                    {!categoryId && <CheckIcon className="w-3 h-3" />}
                                 </button>
-                            </li>
-                            {categories.map((c) => (
-                                <li key={c.id}>
+                                {categories.map((c) => (
                                     <button
-                                        onClick={() => setSearchParams({ categoryId: c.id, sortBy, direction })}
-                                        className={`w-full text-left px-5 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 flex items-center justify-between group ${categoryId === String(c.id) ? 'bg-green-600 text-white shadow-xl shadow-green-200' : 'text-gray-500 hover:bg-green-50 hover:text-green-600 border border-transparent hover:border-green-100'}`}
+                                        key={c.id}
+                                        onClick={() => setSearchParams({ ...Object.fromEntries(searchParams), categoryId: c.id, page: 0 })}
+                                        className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${categoryId === String(c.id) ? 'bg-green-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
                                     >
                                         {c.name}
-                                        {categoryId === String(c.id) && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>}
+                                        {categoryId === String(c.id) && <CheckIcon className="w-3 h-3" />}
                                     </button>
-                                </li>
-                            ))}
-                        </ul>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Farms */}
+                        <div>
+                            <div className="flex items-center gap-3 mb-4 pl-2">
+                                <div className="w-1.5 h-5 bg-orange-500 rounded-full"></div>
+                                <h3 className="font-black text-gray-900 uppercase tracking-widest text-[10px]">Trang trại</h3>
+                            </div>
+                            <div className="space-y-1">
+                                <button
+                                    onClick={() => setSearchParams({ ...Object.fromEntries(searchParams), farmId: '', page: 0 })}
+                                    className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${!farmId ? 'bg-orange-500 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                                >
+                                    Tất cả đối tác
+                                    {!farmId && <CheckIcon className="w-3 h-3" />}
+                                </button>
+                                {farms.map((f) => (
+                                    <button
+                                        key={f.id}
+                                        onClick={() => setSearchParams({ ...Object.fromEntries(searchParams), farmId: f.id, page: 0 })}
+                                        className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${farmId === String(f.id) ? 'bg-orange-500 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                                    >
+                                        <span className="truncate pr-2">{f.name}</span>
+                                        {farmId === String(f.id) && <CheckIcon className="w-3 h-3 flex-shrink-0" />}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Price Range */}
+                        <div>
+                            <div className="flex items-center gap-3 mb-4 pl-2">
+                                <div className="w-1.5 h-5 bg-blue-500 rounded-full"></div>
+                                <h3 className="font-black text-gray-900 uppercase tracking-widest text-[10px]">Khoảng giá</h3>
+                            </div>
+                            <form onSubmit={handlePriceFilter} className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <input 
+                                        name="minPrice"
+                                        defaultValue={minPrice}
+                                        placeholder="Từ"
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-[11px] font-bold outline-none focus:border-blue-500"
+                                    />
+                                    <span className="text-gray-300">-</span>
+                                    <input 
+                                        name="maxPrice"
+                                        defaultValue={maxPrice}
+                                        placeholder="Đến"
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-[11px] font-bold outline-none focus:border-blue-500"
+                                    />
+                                </div>
+                                <button type="submit" className="w-full py-2 bg-gray-900 text-white text-[10px] font-black uppercase rounded-xl hover:bg-blue-600 transition-colors">
+                                    Áp dụng
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* Quick Filters */}
+                        <div>
+                            <div className="flex items-center gap-3 mb-4 pl-2">
+                                <div className="w-1.5 h-5 bg-red-500 rounded-full"></div>
+                                <h3 className="font-black text-gray-900 uppercase tracking-widest text-[10px]">Ưu đãi & Mới</h3>
+                            </div>
+                            <div className="grid grid-cols-1 gap-2">
+                                <button
+                                    onClick={() => {
+                                        const next = !isNew;
+                                        const p = { ...Object.fromEntries(searchParams), page: 0 };
+                                        if (next) p.isNew = 'true'; else delete p.isNew;
+                                        setSearchParams(p);
+                                    }}
+                                    className={`flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold border transition-all ${isNew ? 'bg-black text-white border-black shadow-lg' : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-300'}`}
+                                >
+                                    Sản phẩm mới
+                                    <div className={`w-2 h-2 rounded-full ${isNew ? 'bg-green-400 animate-ping' : 'bg-gray-200'}`}></div>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const next = !isSale;
+                                        const p = { ...Object.fromEntries(searchParams), page: 0 };
+                                        if (next) p.isSale = 'true'; else delete p.isSale;
+                                        setSearchParams(p);
+                                    }}
+                                    className={`flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold border transition-all ${isSale ? 'bg-red-600 text-white border-red-600 shadow-lg' : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-red-100'}`}
+                                >
+                                    Đang giảm giá
+                                    <div className={`w-2 h-2 rounded-full ${isSale ? 'bg-white animate-pulse' : 'bg-gray-200'}`}></div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={resetFilters}
+                            className="w-full py-3 border-2 border-dashed border-gray-100 text-gray-400 text-[10px] font-black uppercase rounded-2xl hover:border-red-200 hover:text-red-500 transition-all font-bold"
+                        >
+                            Dọn sạch bộ lọc
+                        </button>
                     </div>
                 </aside>
 
                 <div className="flex-1">
                     {loading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {Array(8).fill(0).map((_, i) => (
-                                <div key={i} className="bg-gray-50 animate-pulse rounded-[2.5rem] h-96 border border-gray-100"></div>
+                                <div key={i} className="bg-gray-50 animate-pulse rounded-2xl h-80 border border-gray-100"></div>
                             ))}
                         </div>
                     ) : products.length === 0 ? (
-                        <div className="text-center py-32 bg-gray-50/50 rounded-[4rem] border-2 border-dashed border-gray-100 relative overflow-hidden group">
+                        <div className="text-center py-20 bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-100 relative overflow-hidden group">
                             <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             <div className="relative z-10">
                                 <Square3Stack3DIcon className="w-20 h-20 text-gray-200 mx-auto mb-6 group-hover:scale-110 transition-transform duration-500" />
@@ -222,7 +345,7 @@ export default function ProductList() {
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {products.map((p) => <ProductCard key={p.id} product={p} />)}
                             </div>
 
@@ -278,8 +401,8 @@ function ProductCard({ product }) {
     };
 
     return (
-        <div className="group bg-white rounded-[2.5rem] border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col h-full border-b-[6px] hover:border-b-green-500">
-            <Link to={`/products/${product.id}`} className="relative block h-56 overflow-hidden">
+        <div className="group bg-white rounded-2xl border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col h-full border-b-[4px] hover:border-b-green-500">
+            <Link to={`/products/${product.id}`} className="relative block h-48 overflow-hidden">
                 <div className="h-full bg-gray-50 flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
                         <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
@@ -314,13 +437,13 @@ function ProductCard({ product }) {
                 </button>
             </Link>
             
-            <div className="p-6 flex flex-col flex-1">
-                <div className="flex items-center gap-1.5 text-[9px] text-gray-300 mb-2 truncate font-black uppercase tracking-widest">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+            <div className="p-4 flex flex-col flex-1">
+                <div className="flex items-center gap-1 text-[9px] text-gray-300 mb-1 truncate font-black uppercase tracking-widest">
+                    <span className="w-1 h-1 rounded-full bg-green-500"></span>
                     {product.farmName || 'Trang trại hữu cơ'}
                 </div>
                 
-                <Link to={`/products/${product.id}`} className="font-extrabold text-gray-800 hover:text-green-700 block truncate text-lg transition-colors uppercase tracking-tight">
+                <Link to={`/products/${product.id}`} className="font-extrabold text-gray-800 hover:text-green-700 block truncate text-sm transition-colors uppercase tracking-tight">
                     {product.name}
                 </Link>
 

@@ -57,4 +57,18 @@ public class NotificationController {
         notificationService.markAllAsRead();
         return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu tất cả là đã đọc", null));
     }
+
+    @Operation(summary = "Xóa một thông báo")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        notificationService.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Đã xóa thông báo", null));
+    }
+
+    @Operation(summary = "Xóa tất cả thông báo của tôi")
+    @DeleteMapping("/delete-all")
+    public ResponseEntity<ApiResponse<Void>> deleteAll() {
+        notificationService.deleteAll();
+        return ResponseEntity.ok(ApiResponse.success("Đã xóa tất cả thông báo", null));
+    }
 }

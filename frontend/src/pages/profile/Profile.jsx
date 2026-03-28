@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../../components/Layout';
 import AdminLayout from '../../components/AdminLayout';
-import { userService, addressService, twoFactorService, orderService } from '../../api/services';
+import { userService, addressService, twoFactorService, orderService, reviewService } from '../../api/services';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -24,17 +24,22 @@ import {
     CommandLineIcon,
     ArchiveBoxIcon,
     ArrowRightIcon,
-    ArrowLeftOnRectangleIcon
+    ArrowLeftOnRectangleIcon,
+    EyeIcon,
+    EyeSlashIcon,
+    ShoppingBagIcon
 } from '@heroicons/react/24/outline';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
 export default function Profile() {
-    const { user: authUser, setUser } = useAuth();
+    const { user: authUser, setUser, logout } = useAuth();
     const [user, setUserData] = useState(null);
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [setupLoading, setSetupLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showOldPassword, setShowOldPassword] = useState(false);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const activeTab = searchParams.get('tab') || 'personal';
@@ -52,6 +57,10 @@ export default function Profile() {
 
     const [setupMethod, setSetupMethod] = useState('TOTP'); // 'TOTP' or 'EMAIL'
     const [setupStep, setSetupStep] = useState(1); // 1: choose method, 2: setup, 3: verify
+
+    // Reviews state
+    const [myReviews, setMyReviews] = useState([]);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
 
     const handleTwoFactorClick = () => {
         if (user.isTwoFactorEnabled) {
@@ -142,6 +151,7 @@ export default function Profile() {
         fullName: '',
         email: '',
         phone: '',
+        oldPassword: '',
         password: '',
         dateOfBirth: '',
         gender: 'other',
@@ -170,7 +180,23 @@ export default function Profile() {
             toast.error('BẢO MẬT: Quản trị viên bắt buộc phải kích hoạt 2FA để tiếp tục.', { duration: 5000 });
             setShowTwoFactorSetup(true);
         }
-    }, [search]);
+
+        if (activeTab === 'reviews') {
+            loadReviews();
+        }
+    }, [search, activeTab]);
+
+    const loadReviews = async () => {
+        try {
+            setReviewsLoading(true);
+            const { data } = await reviewService.myReviews({ size: 100 });
+            setMyReviews(data.content || []);
+        } catch (err) {
+            toast.error('Không thể tải danh sách đánh giá');
+        } finally {
+            setReviewsLoading(false);
+        }
+    };
 
     const loadData = async () => {
         try {
@@ -192,6 +218,7 @@ export default function Profile() {
                 gender: userRes.data.gender || 'other',
                 emailNotifications: userRes.data.emailNotifications ?? true,
                 promoNotifications: userRes.data.promoNotifications ?? false,
+                oldPassword: '',
                 password: ''
             }));
             // Default for new address
@@ -411,6 +438,10 @@ export default function Profile() {
                                 <MapPinIcon className="w-5 h-5" />
                                 Sổ địa chỉ
                             </button>
+                            <button onClick={() => setActiveTab('reviews')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all ${activeTab === 'reviews' ? 'bg-black text-white shadow-xl scale-105' : 'text-gray-400 hover:bg-gray-100'}`}>
+                                <StarIcon className="w-5 h-5" />
+                                Đánh giá của tôi
+                            </button>
                             <button onClick={() => setActiveTab('privacy')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all ${activeTab === 'privacy' ? 'bg-black text-white shadow-xl scale-105' : 'text-gray-400 hover:bg-gray-100'}`}>
                                 <LockClosedIcon className="w-5 h-5" />
                                 Quyền riêng tư
@@ -523,14 +554,42 @@ export default function Profile() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Đổi mật khẩu mới</label>
-                                            <input
-                                                type="password"
-                                                className="w-full bg-gray-50 border-2 border-transparent rounded-[1.5rem] px-6 py-4 font-bold text-gray-900 focus:border-green-600 focus:bg-white transition-all shadow-sm outline-none"
-                                                value={profileForm.password}
-                                                onChange={(e) => setProfileForm({ ...profileForm, password: e.target.value })}
-                                                placeholder="Để trống nếu không muốn đổi"
-                                            />
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Mật khẩu cũ (Để xác nhận)</label>
+                                            <div className="relative">
+                                                <input
+                                                    type={showOldPassword ? "text" : "password"}
+                                                    className="w-full bg-gray-50 border-2 border-transparent rounded-[1.5rem] px-6 py-4 font-bold text-gray-900 focus:border-green-600 focus:bg-white transition-all shadow-sm outline-none pr-12"
+                                                    value={profileForm.oldPassword}
+                                                    onChange={(e) => setProfileForm({ ...profileForm, oldPassword: e.target.value })}
+                                                    placeholder="Bắt buộc nếu đổi mật khẩu"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-green-600 transition-colors"
+                                                    onClick={() => setShowOldPassword(!showOldPassword)}
+                                                >
+                                                    {showOldPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Mật khẩu mới</label>
+                                            <div className="relative">
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    className="w-full bg-gray-50 border-2 border-transparent rounded-[1.5rem] px-6 py-4 font-bold text-gray-900 focus:border-green-600 focus:bg-white transition-all shadow-sm outline-none pr-12"
+                                                    value={profileForm.password}
+                                                    onChange={(e) => setProfileForm({ ...profileForm, password: e.target.value })}
+                                                    placeholder="Để trống nếu không đổi"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-green-600 transition-colors"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                >
+                                                    {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-3">Ngày sinh</label>
@@ -761,12 +820,12 @@ export default function Profile() {
 
                                                     <div className="space-y-4 max-w-md mx-auto">
                                                         <input
-                                                            type="text"
+                                                            type="password"
                                                             maxLength="6"
                                                             value={twoFactorCode}
                                                             onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
-                                                            className="w-full text-center text-4xl font-black tracking-[1rem] py-6 border-4 border-gray-100 rounded-[2rem] focus:border-black shadow-inner outline-none transition-all placeholder:tracking-normal placeholder:text-gray-200"
-                                                            placeholder="000000"
+                                                            className="w-full text-center text-4xl font-black tracking-[1.2rem] py-6 border-4 border-gray-100 rounded-[2rem] focus:border-black shadow-inner outline-none transition-all placeholder:tracking-normal placeholder:text-gray-200"
+                                                            placeholder="..."
                                                             autoFocus
                                                         />
                                                         <div className="flex flex-col sm:flex-row gap-4">
@@ -791,12 +850,12 @@ export default function Profile() {
                                             <p className="text-sm font-bold text-red-700 mb-4">Nhập mã OTP hiện tại để xác nhận vô hiệu hóa lớp bảo vệ.</p>
                                             <div className="flex gap-3">
                                                 <input
-                                                    type="text"
+                                                    type="password"
                                                     maxLength="6"
                                                     value={twoFactorCode}
                                                     onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
                                                     className="flex-1 text-center text-2xl font-black tracking-widest py-3 border-2 border-red-200 bg-white rounded-2xl focus:border-red-500 outline-none transition-all"
-                                                    placeholder="000000"
+                                                    placeholder="..."
                                                     autoFocus
                                                 />
                                                 <button
@@ -852,7 +911,7 @@ export default function Profile() {
                                 </div>
 
                                 {showAddrForm && (
-                                    <form onSubmit={handleAddrSubmit} className="bg-gray-50 p-10 rounded-[3rem] border border-gray-100 shadow-inner grid grid-cols-1 md:grid-cols-2 gap-8 relative fade-in">
+                                    <form onSubmit={handleAddrSubmit} className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 shadow-inner grid grid-cols-1 md:grid-cols-2 gap-4 relative fade-in">
                                             <div className="md:col-span-2 flex items-center justify-between mb-4">
                                                 <h4 className="font-black text-gray-900 uppercase tracking-[0.2em] text-xs italic">{editingAddrId ? 'Đang cập nhật' : 'Tạo mới'} địa chỉ nhận hàng</h4>
                                                 <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-gray-200 shadow-sm">
@@ -870,7 +929,7 @@ export default function Profile() {
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-gray-400 ml-3 uppercase tracking-widest">Họ tên người nhận</label>
                                                 <input
-                                                    className="w-full bg-white border-2 border-transparent rounded-2xl px-6 py-4 font-bold text-gray-900 shadow-sm focus:border-green-600 outline-none transition-all"
+                                                    className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold text-gray-900 shadow-sm focus:border-green-600 outline-none transition-all"
                                                     value={addrForm.fullName}
                                                     onChange={(e) => setAddrForm({ ...addrForm, fullName: e.target.value })}
                                                     required
@@ -879,7 +938,7 @@ export default function Profile() {
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-gray-400 ml-3 uppercase tracking-widest">Số điện thoại</label>
                                                 <input
-                                                    className="w-full bg-white border-2 border-transparent rounded-2xl px-6 py-4 font-bold text-gray-900 shadow-sm focus:border-green-600 outline-none transition-all"
+                                                    className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold text-gray-900 shadow-sm focus:border-green-600 outline-none transition-all"
                                                     value={addrForm.phone}
                                                     onChange={(e) => setAddrForm({ ...addrForm, phone: e.target.value })}
                                                     required
@@ -888,7 +947,7 @@ export default function Profile() {
                                             <div className="md:col-span-2 space-y-2">
                                                 <label className="text-[10px] font-black text-gray-400 ml-3 uppercase tracking-widest">Địa chỉ chi tiết (Thành phố, Quận, Phường, Tên đường...)</label>
                                                 <textarea
-                                                    className="w-full bg-white border-2 border-transparent rounded-2xl px-6 py-4 font-bold text-gray-900 shadow-sm focus:border-green-600 outline-none transition-all"
+                                                    className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold text-gray-900 shadow-sm focus:border-green-600 outline-none transition-all"
                                                     rows={2}
                                                     value={addrForm.details}
                                                     onChange={(e) => setAddrForm({ ...addrForm, details: e.target.value })}
@@ -915,8 +974,8 @@ export default function Profile() {
                                                         ))}
                                                     </div>
                                                 </div>
-                                                <button type="submit" className="w-full bg-green-600 text-white rounded-[1.5rem] py-4.5 font-black uppercase text-sm tracking-widest shadow-xl shadow-green-900/10 hover:bg-green-500 transition-all h-[56px]">
-                                                    {editingAddrId ? 'CẬP NHẬT ĐỊA CHỈ' : 'LƯU VÀO SỔ TAY'}
+                                                <button type="submit" className="w-full bg-green-600 text-white rounded-xl py-3 font-black uppercase text-xs tracking-widest shadow-lg shadow-green-900/10 hover:bg-green-500 transition-all h-[48px]">
+                                                    {editingAddrId ? 'CẬP NHẬT' : 'LƯU SỔ ĐỊA CHỈ'}
                                                 </button>
                                             </div>
                                         </form>
@@ -924,21 +983,21 @@ export default function Profile() {
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                                     {addresses.length === 0 ? (
-                                        <div className="lg:col-span-2 text-center py-32 bg-gray-50 rounded-[3rem] border-4 border-dashed border-gray-100">
-                                            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-gray-100">
-                                                <MapPinIcon className="w-10 h-10 text-gray-200" />
+                                        <div className="lg:col-span-2 text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-100">
+                                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-gray-100">
+                                                <MapPinIcon className="w-6 h-6 text-gray-200" />
                                             </div>
-                                            <p className="font-black text-gray-400 italic uppercase tracking-[0.3em] text-sm">Chưa có địa chỉ nào</p>
+                                            <p className="font-black text-gray-400 italic uppercase tracking-[0.3em] text-[10px]">Chưa có địa chỉ nào</p>
                                         </div>
                                     ) : (
                                         addresses.map(addr => (
-                                            <div key={addr.id} className={`group relative p-10 rounded-[3rem] border-2 transition-all hover:shadow-2xl hover:scale-[1.01] flex flex-col justify-between ${
+                                            <div key={addr.id} className={`group relative p-5 rounded-xl border-2 transition-all hover:shadow-lg flex flex-col justify-between ${
                                                 addr.isDefault ? 'bg-green-50/20 border-green-600 shadow-xl shadow-green-900/5' : 'bg-white border-gray-100'
                                             }`}>
                                                 <div>
-                                                    <div className="flex items-center justify-between mb-8">
-                                                        <div className={`p-5 rounded-[1.5rem] shadow-sm ${addr.isDefault ? 'bg-green-600 text-white shadow-green-900/20' : 'bg-gray-100 text-gray-400'}`}>
-                                                            {addr.label === 'Nhà' ? <HomeIcon className="w-8 h-8" /> : addr.label === 'Công ty' ? <BriefcaseIcon className="w-8 h-8" /> : <MapPinIcon className="w-8 h-8" />}
+                                                    <div className="flex items-center justify-between mb-5">
+                                                        <div className={`p-3 rounded-lg shadow-sm ${addr.isDefault ? 'bg-green-600 text-white shadow-green-900/20' : 'bg-gray-100 text-gray-400'}`}>
+                                                            {addr.label === 'Nhà' ? <HomeIcon className="w-5 h-5" /> : addr.label === 'Công ty' ? <BriefcaseIcon className="w-5 h-5" /> : <MapPinIcon className="w-5 h-5" />}
                                                         </div>
                                                         <div className="flex flex-col items-end gap-2">
                                                             {addr.isDefault && (
@@ -947,18 +1006,18 @@ export default function Profile() {
                                                             <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest italic">{addr.label}</span>
                                                         </div>
                                                     </div>
-                                                    <h4 className="text-2xl font-black text-gray-900 mb-2 truncate">{addr.fullName}</h4>
-                                                    <div className="flex items-center gap-3 text-sm font-black text-gray-400 mb-6 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100 inline-flex">
-                                                        <PhoneIcon className="w-4 h-4 text-green-600" />
+                                                    <h4 className="text-base font-black text-gray-900 mb-1 truncate">{addr.fullName}</h4>
+                                                    <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 mb-4 bg-gray-50 px-3 py-1 rounded-lg border border-gray-100 inline-flex">
+                                                        <PhoneIcon className="w-3.5 h-3.5 text-green-600" />
                                                         {addr.phone}
                                                     </div>
-                                                    <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100/50">
-                                                        <p className="text-sm font-bold text-gray-600 leading-relaxed italic">{addr.details}</p>
+                                                    <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100/50">
+                                                        <p className="text-[10px] font-bold text-gray-600 leading-relaxed italic">{addr.details}</p>
                                                     </div>
                                                 </div>
                                                 
-                                                <div className="flex items-center justify-between mt-10 pt-8 border-t border-gray-100/50">
-                                                    <div className="flex gap-6">
+                                                <div className="flex items-center justify-between mt-6 pt-5 border-t border-gray-100/50">
+                                                    <div className="flex gap-4">
                                                         <button type="button" onClick={() => handleEditAddress(addr)} className="text-gray-900 hover:text-green-600 text-xs font-black uppercase tracking-widest flex items-center gap-2 group/btn">
                                                             <PencilSquareIcon className="w-4 h-4 text-gray-300 group-hover/btn:text-green-600" />
                                                             CHỈNH SỬA
@@ -979,6 +1038,94 @@ export default function Profile() {
                             </div>
                         )}
 
+                        {/* Tab Content: My Reviews */}
+                        {activeTab === 'reviews' && (
+                            <div className="animate-fade-in space-y-12 max-w-5xl">
+                                <div>
+                                    <h3 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-4">
+                                        <div className="w-3 h-10 bg-yellow-400 rounded-full"></div>
+                                        Lịch sử đánh giá
+                                    </h3>
+                                    <p className="text-gray-500 font-medium mt-3 italic">Mọi phản hồi của bạn giúp chúng tôi nâng cao chất lượng dịch vụ & sản phẩm sạch.</p>
+                                </div>
+
+                                {reviewsLoading ? (
+                                    <div className="flex justify-center items-center py-20">
+                                        <ArrowPathIcon className="w-10 h-10 text-gray-200 animate-spin" />
+                                    </div>
+                                ) : myReviews.length === 0 ? (
+                                    <div className="text-center py-16 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-100">
+                                        <StarIcon className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Bạn chưa thực hiện đánh giá nào</p>
+                                        <Link to="/orders" className="mt-6 inline-block text-xs font-black text-green-600 hover:text-green-700 underline decoration-2 underline-offset-4">ĐẾN ĐƠN HÀNG ĐỂ ĐÁNH GIÁ NGAY →</Link>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-6">
+                                        {myReviews.map(review => (
+                                            <div key={review.id} className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50 rounded-full -mr-16 -mt-16 group-hover:bg-yellow-50 transition-colors duration-500"></div>
+                                                <div className="relative z-10">
+                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100 group-hover:scale-110 transition-transform shadow-sm overflow-hidden">
+                                                                <ShoppingBagIcon className="w-8 h-8 text-gray-300" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-black text-gray-900 uppercase tracking-tight text-lg">{review.productName}</h4>
+                                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Đánh giá ngày {new Date(review.createdAt).toLocaleDateString('vi-VN')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 px-6 py-3 bg-gray-50 rounded-2xl group-hover:bg-black transition-colors">
+                                                            {[1, 2, 3, 4, 5].map(star => (
+                                                                <StarIcon key={star} className={`w-5 h-5 ${star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 group-hover:text-gray-800'}`} />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-50 italic text-gray-600 font-medium leading-relaxed mb-6">
+                                                        "{review.comment}"
+                                                    </div>
+
+                                                    {review.mediaUrls && review.mediaUrls.length > 0 && (
+                                                        <div className="flex gap-3 mb-8">
+                                                            {review.mediaUrls.map((url, idx) => (
+                                                                <img key={idx} src={url} className="w-20 h-20 object-cover rounded-xl border border-gray-100 shadow-sm hover:scale-110 transition-transform cursor-pointer" alt="" />
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-gray-50">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm ${
+                                                                review.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                                                                review.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                                'bg-blue-100 text-blue-700 animate-pulse'
+                                                            }`}>
+                                                                Trạng thái: {
+                                                                    review.status === 'APPROVED' ? 'Đã duyệt' :
+                                                                    review.status === 'REJECTED' ? 'Bị từ chối' :
+                                                                    'Đang chờ duyệt'
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                        {review.adminReply && (
+                                                            <div className="flex-1 min-w-[280px] bg-emerald-50 p-4 rounded-xl border border-emerald-100 relative group-hover:scale-[1.02] transition-transform">
+                                                                <div className="flex items-center gap-2 mb-1.5">
+                                                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
+                                                                    <p className="text-[9px] font-black text-emerald-800 uppercase tracking-widest">Phản hồi từ FreshFood:</p>
+                                                                </div>
+                                                                <p className="text-xs text-emerald-700 font-bold italic">{review.adminReply}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {/* Tab Content: Privacy & Data (User Facing) */}
                         {activeTab === 'privacy' && (
                             <div className="space-y-12 animate-fade-in pb-20 max-w-4xl relative z-10">
@@ -991,32 +1138,32 @@ export default function Profile() {
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-10">
-                                    <div className="bg-white p-10 rounded-[3rem] border-2 border-gray-100 shadow-xl shadow-gray-900/5 space-y-6 group hover:border-blue-600 transition-all transform hover:-translate-y-1">
-                                        <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                            <ArchiveBoxIcon className="w-10 h-10" />
+                                    <div className="bg-white p-7 rounded-2xl border-2 border-gray-100 shadow-lg shadow-gray-900/5 space-y-5 group hover:border-blue-600 transition-all transform hover:-translate-y-1">
+                                        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                            <ArchiveBoxIcon className="w-8 h-8" />
                                         </div>
                                         <div>
-                                            <h4 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Hồ sơ dữ liệu (JSON)</h4>
-                                            <p className="text-sm text-gray-500 font-medium italic mt-3 leading-relaxed">Chúng tôi sẽ tổng hợp mọi lịch sử đơn hàng, địa chỉ và thông tin bảo mật vào một tệp tin duy nhất để bạn có thể tải về.</p>
+                                            <h4 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Hồ sơ dữ liệu (JSON)</h4>
+                                            <p className="text-xs text-gray-500 font-medium italic mt-3 leading-relaxed">Chúng tôi sẽ tổng hợp mọi lịch sử đơn hàng, địa chỉ và thông tin bảo mật vào một tệp tin duy nhất để bạn có thể tải về.</p>
                                         </div>
                                         <button 
                                             onClick={handleExportData}
-                                            className="w-full py-5 bg-black text-white rounded-[1.5rem] font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-2xl active:scale-95 hover:bg-blue-600"
+                                            className="w-full py-4 bg-black text-white rounded-xl font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-xl active:scale-95 hover:bg-blue-600"
                                         >
                                             YÊU CẦU TRÍCH XUẤT
                                         </button>
                                     </div>
-                                    <div className="bg-white p-10 rounded-[3rem] border-2 border-red-50 shadow-xl shadow-red-900/5 space-y-6 group hover:border-red-600 transition-all transform hover:-translate-y-1">
-                                        <div className="w-20 h-20 bg-red-50 text-red-600 rounded-[2rem] flex items-center justify-center shadow-inner group-hover:bg-red-600 group-hover:text-white transition-all">
-                                            <TrashIcon className="w-10 h-10" />
+                                    <div className="bg-white p-7 rounded-2xl border-2 border-red-50 shadow-lg shadow-red-900/5 space-y-5 group hover:border-red-600 transition-all transform hover:-translate-y-1">
+                                        <div className="w-16 h-16 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shadow-inner group-hover:bg-red-600 group-hover:text-white transition-all">
+                                            <TrashIcon className="w-8 h-8" />
                                         </div>
                                         <div>
-                                            <h4 className="text-2xl font-black text-red-600 uppercase tracking-tighter">Đóng tài khoản</h4>
-                                            <p className="text-sm text-gray-500 font-medium italic mt-3 leading-relaxed">Lưu ý: Hành động này không thể hoàn tác. Mọi điểm thưởng VIP và lịch sử mua sắm sẽ bị xóa sạch khỏi máy chủ.</p>
+                                            <h4 className="text-xl font-black text-red-600 uppercase tracking-tighter">Đóng tài khoản</h4>
+                                            <p className="text-xs text-gray-500 font-medium italic mt-3 leading-relaxed">Lưu ý: Hành động này không thể hoàn tác. Mọi điểm thưởng VIP và lịch sử mua sắm sẽ bị xóa sạch khỏi máy chủ.</p>
                                         </div>
                                         <button 
                                             onClick={handleDeleteAccount}
-                                            className="w-full py-5 border-2 border-red-600 text-red-600 rounded-[1.5rem] font-black uppercase text-[10px] tracking-[0.2em] hover:bg-red-600 hover:text-white transition-all active:scale-95"
+                                            className="w-full py-4 border-2 border-red-600 text-red-600 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-red-600 hover:text-white transition-all active:scale-95"
                                         >
                                             XỬ LÝ HỦY TÀI KHOẢN
                                         </button>

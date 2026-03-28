@@ -77,9 +77,9 @@ export default function AdminNewsletters() {
 
     return (
         <AdminLayout>
-            <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight">Quản lý Bản tin</h1>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Quản lý Bản tin</h1>
                     <p className="text-gray-500 font-medium">Giao diện quản trị và gửi nội dung tới khách hàng.</p>
                 </div>
                 <div className="flex bg-gray-100 p-1.5 rounded-2xl">
@@ -103,11 +103,11 @@ export default function AdminNewsletters() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
                 </div>
             ) : activeTab === 'list' ? (
-                <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-8 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center text-green-600">
-                                <UserGroupIcon className="w-6 h-6" />
+                            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-green-600">
+                                <UserGroupIcon className="w-5 h-5" />
                             </div>
                             <div>
                                 <h2 className="font-black text-gray-900 uppercase italic">Danh sách đăng ký</h2>
@@ -119,10 +119,10 @@ export default function AdminNewsletters() {
                         <table className="w-full">
                             <thead className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
                                 <tr>
-                                    <th className="px-8 py-5 text-left">Email người nhận</th>
-                                    <th className="px-8 py-5 text-left">Trạng thái</th>
-                                    <th className="px-8 py-5 text-left">Ngày tham gia</th>
-                                    <th className="px-8 py-5 text-right">Hành động</th>
+                                    <th className="px-6 py-4 text-left">Email người nhận</th>
+                                    <th className="px-6 py-4 text-left">Trạng thái</th>
+                                    <th className="px-6 py-4 text-left">Ngày tham gia</th>
+                                    <th className="px-6 py-4 text-right">Hành động</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -132,11 +132,11 @@ export default function AdminNewsletters() {
                                         <td className="px-8 py-5">
                                             {sub.isActive ? (
                                                 <span className="inline-flex items-center gap-1 text-[10px] font-black text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100 uppercase italic">
-                                                    <CheckCircleIcon className="w-3 h-3" /> Đang nhận tin
+                                                    <CheckCircleIcon className="w-5 h-5" /> Đang nhận tin
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center gap-1 text-[10px] font-black text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 uppercase italic">
-                                                    <XCircleIcon className="w-3 h-3" /> Đã hủy
+                                                    <XCircleIcon className="w-5 h-5" /> Đã hủy
                                                 </span>
                                             )}
                                         </td>
@@ -167,7 +167,7 @@ export default function AdminNewsletters() {
             ) : (
                 <div className="grid lg:grid-cols-5 gap-8">
                     <form onSubmit={handleSend} className="lg:col-span-3 space-y-6">
-                        <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-gray-100 space-y-8">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-8">
                             <div className="flex items-center justify-between px-3 py-4 bg-green-50 rounded-2xl border border-green-100">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-white font-black italic">
@@ -184,7 +184,7 @@ export default function AdminNewsletters() {
                                     value={newsletterContent.subject}
                                     onChange={(e) => setNewsletterContent({...newsletterContent, subject: e.target.value})}
                                     placeholder="Ví dụ: Ưu đãi cuối tuần lên đến 50%..."
-                                    className="w-full bg-gray-50/50 border-2 border-transparent focus:border-green-600 rounded-3xl px-8 py-5 font-black text-gray-900 outline-none transition-all placeholder:text-gray-300"
+                                    className="w-full bg-gray-50/50 border-2 border-transparent focus:border-green-600 rounded-xl px-6 py-4 font-black text-gray-900 outline-none transition-all placeholder:text-gray-300"
                                 />
                             </div>
                             <div className="space-y-3">
@@ -197,13 +197,13 @@ export default function AdminNewsletters() {
                                     value={newsletterContent.content}
                                     onChange={(e) => setNewsletterContent({...newsletterContent, content: e.target.value})}
                                     placeholder="Nội dung gửi tới khách hàng..."
-                                    className="w-full bg-gray-50/50 border-2 border-transparent focus:border-green-600 rounded-[2.5rem] px-8 py-6 font-bold text-gray-700 outline-none transition-all placeholder:text-gray-300 resize-none leading-relaxed"
+                                    className="w-full bg-gray-50/50 border-2 border-transparent focus:border-green-600 rounded-xl px-6 py-4 font-bold text-gray-700 outline-none transition-all placeholder:text-gray-300 resize-none leading-relaxed"
                                 />
                             </div>
                             <button 
                                 type="submit"
                                 disabled={sending}
-                                className="w-full bg-black hover:bg-green-600 text-white font-black py-6 rounded-[2rem] shadow-2xl flex items-center justify-center gap-4 transition-all uppercase tracking-widest disabled:opacity-50 active:scale-95"
+                                className="w-full bg-black hover:bg-green-600 text-white font-black py-4 rounded-xl shadow-2xl flex items-center justify-center gap-4 transition-all uppercase tracking-widest disabled:opacity-50 active:scale-95"
                             >
                                 {sending ? (
                                     <>
@@ -221,7 +221,7 @@ export default function AdminNewsletters() {
                     </form>
 
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-emerald-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+                        <div className="bg-emerald-900 rounded-xl p-6 text-white shadow-2xl relative overflow-hidden group">
                             <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform"></div>
                             <div className="relative z-10">
                                 <h3 className="text-xl font-black uppercase italic tracking-tighter mb-4">Mẹo gửi tin</h3>
@@ -242,7 +242,7 @@ export default function AdminNewsletters() {
                             </div>
                         </div>
 
-                        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm sticky top-10">
+                        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm sticky top-10">
                             <h4 className="font-black text-gray-900 uppercase tracking-widest text-[10px] mb-6 italic flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                                 Chế độ xem trước (Actual Email Layout)

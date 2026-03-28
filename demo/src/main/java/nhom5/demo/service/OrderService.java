@@ -13,7 +13,7 @@ public interface OrderService {
 
     Page<OrderResponse> getOrdersByUser(String username, Pageable pageable);
 
-    Page<OrderResponse> getAllOrders(Pageable pageable);
+    Page<OrderResponse> getAllOrders(String query, OrderStatusEnum status, Pageable pageable);
 
     OrderResponse updateOrderStatus(Long id, OrderStatusEnum status);
 

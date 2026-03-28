@@ -95,13 +95,13 @@ export default function Footer() {
                     <div>
                         <h4 className="text-[#1a3c31] font-black text-[10px] uppercase tracking-[0.3em] mb-10 flex items-center gap-3">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
-                            Hướng dẫn
+                            Hỗ trợ
                         </h4>
                         <ul className="space-y-5 text-[11px] font-black uppercase tracking-widest leading-none">
                             <li><Link to="/about" className="text-[#2d4a3e] hover:text-[#10b981] transition-colors">Về FreshFood</Link></li>
-                            <li><Link to="/farms" className="text-[#2d4a3e] hover:text-[#10b981] transition-colors">Hệ thống phân phối</Link></li>
-                            <li><Link to="/about" className="text-[#2d4a3e] hover:text-[#10b981] transition-colors">Hướng dẫn mua hàng</Link></li>
-                            <li><Link to="/about" className="text-[#2d4a3e] hover:text-[#10b981] transition-colors">Hệ thống cửa hàng</Link></li>
+                            <li><Link to="/contact" className="text-[#2d4a3e] hover:text-[#10b981] transition-colors">Liên hệ chúng tôi</Link></li>
+                            <li><Link to="/faq" className="text-[#2d4a3e] hover:text-[#10b981] transition-colors">Câu hỏi thường gặp</Link></li>
+                            <li><Link to="/buying-guide" className="text-[#2d4a3e] hover:text-[#10b981] transition-colors">Hướng dẫn mua hàng</Link></li>
                         </ul>
                     </div>
 

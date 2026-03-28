@@ -26,12 +26,20 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p WHERE (:isActive IS NULL OR p.isActive = :isActive) " +
             "AND (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
             "AND (:categoryId IS NULL OR p.category.id = :categoryId) " +
-            "AND (:farmId IS NULL OR p.farm.id = :farmId)")
+            "AND (:farmId IS NULL OR p.farm.id = :farmId) " +
+            "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
+            "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
+            "AND (:isNew IS NULL OR p.isNew = :isNew) " +
+            "AND (:isSale IS NULL OR (:isSale = true AND p.originalPrice > p.price))")
     Page<Product> searchProducts(
             @Param("name") String name,
             @Param("categoryId") Long categoryId,
             @Param("farmId") Long farmId,
             @Param("isActive") Boolean isActive,
+            @Param("minPrice") java.math.BigDecimal minPrice,
+            @Param("maxPrice") java.math.BigDecimal maxPrice,
+            @Param("isNew") Boolean isNew,
+            @Param("isSale") Boolean isSale,
             Pageable pageable);
 
     List<Product> findByIsActiveTrue();

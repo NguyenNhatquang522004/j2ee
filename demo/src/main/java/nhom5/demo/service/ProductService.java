@@ -14,7 +14,7 @@ public interface ProductService {
 
     ProductResponse getProductById(Long id);
 
-    Page<ProductResponse> searchProducts(String name, Long categoryId, Long farmId, Boolean isActive, Pageable pageable);
+    Page<ProductResponse> searchProducts(String name, Long categoryId, Long farmId, Boolean isActive, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice, Boolean isNew, Boolean isSale, Pageable pageable);
 
     Page<ProductResponse> getTopSellingProducts(Pageable pageable);
     void toggleProductStatus(Long id);

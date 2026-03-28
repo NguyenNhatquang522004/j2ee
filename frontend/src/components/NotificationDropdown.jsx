@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { BellIcon, CheckCircleIcon, InformationCircleIcon, ExclamationCircleIcon, TicketIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { BellIcon, CheckCircleIcon, InformationCircleIcon, ExclamationCircleIcon, TicketIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { notificationService } from '../api/services';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import toast from 'react-hot-toast';
 
 export default function NotificationDropdown() {
     const [notifications, setNotifications] = useState([]);
@@ -59,6 +60,32 @@ export default function NotificationDropdown() {
         }
     };
 
+    const deleteNotification = async (e, id) => {
+        e.stopPropagation();
+        try {
+            await notificationService.delete(id);
+            setNotifications(notifications.filter(n => n.id !== id));
+            // Reload count to be sure
+            const countRes = await notificationService.getUnreadCount();
+            setUnreadCount(countRes.data);
+            toast.success('Đã xóa thông báo');
+        } catch (error) {
+            toast.error('Không thể xóa thông báo');
+        }
+    };
+
+    const clearAll = async () => {
+        if (!window.confirm('Xóa tất cả thông báo?')) return;
+        try {
+            await notificationService.deleteAll();
+            setNotifications([]);
+            setUnreadCount(0);
+            toast.success('Đã xóa tất cả thông báo');
+        } catch (error) {
+            toast.error('Không thể xóa tất cả thông báo');
+        }
+    };
+
     const getIcon = (type) => {
         switch (type) {
             case 'SUCCESS': return <CheckCircleIcon className="w-5 h-5 text-green-500" />;
@@ -87,7 +114,18 @@ export default function NotificationDropdown() {
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-                        <h3 className="font-black text-gray-800 text-sm">Thông báo</h3>
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-black text-gray-800 text-sm">Thông báo</h3>
+                            {notifications.length > 0 && (
+                                <button 
+                                    onClick={clearAll}
+                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                    title="Xóa tất cả"
+                                >
+                                    <TrashIcon className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
                         {unreadCount > 0 && (
                             <button 
                                 onClick={async () => {
@@ -96,7 +134,7 @@ export default function NotificationDropdown() {
                                 }}
                                 className="text-[10px] font-bold text-green-600 hover:underline"
                             >
-                                Đánh dấu tất cả đã đọc
+                                Đọc tất cả
                             </button>
                         )}
                     </div>
@@ -121,9 +159,18 @@ export default function NotificationDropdown() {
                                                 {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
                                             </p>
                                         </div>
-                                        {!n.isRead && (
-                                            <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
-                                        )}
+                                        <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                                            {!n.isRead && (
+                                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                            )}
+                                            <button 
+                                                onClick={(e) => deleteNotification(e, n.id)}
+                                                className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-red-500 transition-all"
+                                                title="Xóa"
+                                            >
+                                                <XMarkIcon className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                     {n.link && (
                                         <Link 

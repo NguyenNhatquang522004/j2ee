@@ -13,7 +13,7 @@ public interface UserService {
 
     UserResponse updateAvatar(String username, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
 
-    Page<UserResponse> getAllUsers(Pageable pageable);
+    Page<UserResponse> getAllUsers(String query, nhom5.demo.enums.RoleEnum role, Boolean isActive, Pageable pageable);
 
     UserResponse getUserById(Long id);
 

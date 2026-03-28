@@ -35,6 +35,7 @@ export default function ProductDetail() {
     const [submittingReview, setSubmittingReview] = useState(false);
     const [reviewFiles, setReviewFiles] = useState([]);
     const [isLiked, setIsLiked] = useState(false);
+    const [canReview, setCanReview] = useState(false);
 
     useEffect(() => {
         if (user && id) {
@@ -76,7 +77,10 @@ export default function ProductDetail() {
             }
         };
         fetchData();
-    }, [id, navigate]);
+        if (user && id) {
+            reviewService.canReview(id).then(res => setCanReview(res.data)).catch(() => {});
+        }
+    }, [id, navigate, user]);
 
     const handleAddToCart = async () => {
         if (!user) { toast.error('Vui lòng đăng nhập'); return; }
@@ -237,64 +241,93 @@ export default function ProductDetail() {
             <section className="mb-10">
                 <h2 className="text-xl font-bold text-gray-800 mb-4">Đánh giá sản phẩm ({reviews.length})</h2>
 
-                {user && (
-                    <form onSubmit={handleReviewSubmit} className="card mb-6">
-                        <h3 className="font-semibold mb-3">Viết đánh giá của bạn</h3>
-                        <div className="flex items-center gap-1 mb-4">
-                            <span className="text-sm font-bold text-gray-600 mr-2 uppercase tracking-wider">Đánh giá của bạn:</span>
-                            {[1, 2, 3, 4, 5].map((s) => (
-                                <button
-                                    key={s} type="button"
-                                    onClick={() => setReviewForm({ ...reviewForm, rating: s })}
-                                    className="transition-transform active:scale-90"
-                                >
-                                    {s <= reviewForm.rating 
-                                        ? <StarIconSolid className="w-8 h-8 text-yellow-400" /> 
-                                        : <StarIconOutline className="w-8 h-8 text-gray-200" />
-                                    }
-                                </button>
-                            ))}
+                {user ? (
+                    canReview ? (
+                        <form onSubmit={handleReviewSubmit} className="card mb-6">
+                            <h3 className="font-semibold mb-3">Viết đánh giá của bạn</h3>
+                            <div className="flex items-center gap-1 mb-4">
+                                <span className="text-sm font-bold text-gray-600 mr-2 uppercase tracking-wider">Đánh giá của bạn:</span>
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                    <button
+                                        key={s} type="button"
+                                        onClick={() => setReviewForm({ ...reviewForm, rating: s })}
+                                        className="transition-transform active:scale-90"
+                                    >
+                                        {s <= reviewForm.rating 
+                                            ? <StarIconSolid className="w-8 h-8 text-yellow-400" /> 
+                                            : <StarIconOutline className="w-8 h-8 text-gray-200" />
+                                        }
+                                    </button>
+                                ))}
+                            </div>
+                            <textarea
+                                value={reviewForm.comment}
+                                onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                                placeholder="Nhận xét của bạn..."
+                                rows={4}
+                                className="input-field mb-4"
+                            />
+                            <div className="mb-4">
+                                <label className="flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-gray-100 p-4 rounded-xl border-2 border-dashed border-gray-200 transition-all group">
+                                    <PhotoIconOutline className="w-8 h-8 text-gray-400 group-hover:text-green-500 transition-colors" />
+                                    <div className="text-left">
+                                        <p className="text-sm font-black text-gray-700">Đính kèm ảnh/video</p>
+                                        <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest">Tối đa 5 tập tin • dung lượng 50MB</p>
+                                    </div>
+                                    <input 
+                                        type="file" 
+                                        multiple 
+                                        className="hidden" 
+                                        accept="image/*,video/*"
+                                        onChange={(e) => setReviewFiles(Array.from(e.target.files))}
+                                    />
+                                </label>
+                                {reviewFiles.length > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        {reviewFiles.map((f, i) => {
+                                            const url = URL.createObjectURL(f);
+                                            return (
+                                                <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border">
+                                                    {f.type.startsWith('image') ? (
+                                                        <img src={url} className="w-full h-full object-cover" alt="" />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-black flex items-center justify-center text-white"><VideoCameraIconOutline className="w-6 h-6" /></div>
+                                                    )}
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setReviewFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                                        className="absolute top-0 right-0 bg-red-500 text-white p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                            <button type="submit" disabled={submittingReview} className="btn-primary w-full py-4 text-base font-black uppercase tracking-widest shadow-xl shadow-green-100">
+                                {submittingReview ? 'ĐANG GỬI ĐÁNH GIÁ...' : 'GỬI ĐÁNH GIÁ NGAY'}
+                            </button>
+                        </form>
+                    ) : (
+                        <div className="bg-blue-50/50 border border-blue-100 rounded-[2rem] p-8 text-center mb-8">
+                            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <InformationCircleIcon className="w-8 h-8 text-blue-600" />
+                            </div>
+                            <h3 className="text-lg font-black text-blue-900 uppercase mb-2">Bạn chưa thể đánh giá sản phẩm này</h3>
+                            <p className="text-blue-700 font-medium max-w-sm mx-auto">
+                                Để đánh giá sản phẩm, hãy đảm bảo bạn đã mua và nhận hàng thành công nhé. Sự góp ý của bạn rất quan trọng với chúng mình!
+                            </p>
                         </div>
-                        <textarea
-                            value={reviewForm.comment}
-                            onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                            placeholder="Nhận xét của bạn..."
-                            rows={3}
-                            className="input-field mb-4"
-                        />
-                        <div className="mb-4">
-                            <label className="flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-gray-100 p-4 rounded-xl border-2 border-dashed border-gray-200 transition-all">
-                                <PhotoIconOutline className="w-8 h-8 text-gray-400" />
-                                <div className="text-left">
-                                    <p className="text-sm font-black text-gray-700">Đính kèm ảnh/video</p>
-                                    <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest">Tối đa 5 tập tin • dung lượng 50MB</p>
-                                </div>
-                                <input 
-                                    type="file" 
-                                    multiple 
-                                    className="hidden" 
-                                    accept="image/*,video/*"
-                                    onChange={(e) => setReviewFiles(Array.from(e.target.files))}
-                                />
-                            </label>
-                            {reviewFiles.length > 0 && (
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                    {reviewFiles.map((f, i) => (
-                                        <div key={i} className="relative group w-16 h-16 rounded-lg overflow-hidden border">
-                                            {f.type.startsWith('image') ? (
-                                                <img src={URL.createObjectURL(f)} className="w-full h-full object-cover" alt="" />
-                                            ) : (
-                                                <div className="w-full h-full bg-black flex items-center justify-center text-white"><VideoCameraIconOutline className="w-6 h-6" /></div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        <button type="submit" disabled={submittingReview} className="btn-primary w-full py-4 text-base font-black uppercase tracking-widest shadow-xl shadow-green-100">
-                            {submittingReview ? 'ĐANG GỬI ĐÁNH GIÁ...' : 'GỬI ĐÁNH GIÁ NGAY'}
+                    )
+                ) : (
+                    <div className="bg-gray-50 border border-gray-100 rounded-[2rem] p-8 text-center mb-8">
+                        <p className="text-gray-500 font-bold mb-4">Vui lòng đăng nhập để gửi đánh giá của bạn</p>
+                        <button onClick={() => navigate('/login')} className="bg-black text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 transition-all uppercase text-xs tracking-widest">
+                            Đăng nhập ngay
                         </button>
-                    </form>
+                    </div>
                 )}
 
                 {reviews.length === 0 ? (

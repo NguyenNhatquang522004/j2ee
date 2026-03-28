@@ -160,34 +160,34 @@ export default function AdminStaff() {
         <AdminLayout>
             <div className="p-8 bg-gray-50 min-h-screen">
                 <div className="max-w-7xl mx-auto">
-                    <div className="flex justify-between items-center mb-10">
+                    <div className="flex justify-between items-center mb-6">
                         <div>
                             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Quản Lý Nhân Sự</h1>
                             <p className="mt-2 text-gray-500 font-medium">Phân quyền và điều hành đội ngũ nhân viên</p>
                         </div>
                         <button 
-                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl shadow-lg shadow-green-100 transition-all flex items-center gap-2 font-bold active:scale-95"
+                        className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-green-100 transition-all flex items-center gap-2 font-bold active:scale-95"
                     >
                         <PlusIcon className="w-5 h-5" />
                         Thêm nhân sự mới
                     </button>
                 </div>
 
-                <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-8 border-b border-gray-50 flex flex-wrap gap-4 items-center justify-between bg-white/50 backdrop-blur-sm">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-6 border-b border-gray-50 flex flex-wrap gap-4 items-center justify-between bg-white/50 backdrop-blur-sm">
                         <div className="relative flex-1 max-w-md group">
                             <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
                             <input 
                                 type="text"
                                 placeholder="Tìm kiếm theo tên, username, email..."
-                                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:bg-white transition-all outline-none text-sm font-medium"
+                                className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-green-500/20 focus:bg-white transition-all outline-none text-sm font-medium"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <button 
                             onClick={fetchStaff}
-                            className="p-3.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-2xl transition-all"
+                            className="p-2.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
                         >
                             <ArrowPathIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                         </button>
@@ -197,11 +197,11 @@ export default function AdminStaff() {
                         <table className="w-full">
                             <thead>
                                 <tr className="bg-gray-50/50">
-                                    <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Thành viên</th>
-                                    <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Vai trò</th>
-                                    <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Quyền hạn</th>
-                                    <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Trạng thái</th>
-                                    <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Thao tác</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Thành viên</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Vai trò</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Quyền hạn</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Trạng thái</th>
+                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -216,63 +216,60 @@ export default function AdminStaff() {
                                 ) : (
                                     filteredStaff.map((user) => (
                                         <tr key={user.id} className="hover:bg-gray-50/80 transition-colors group">
-                                            <td className="px-8 py-6">
+                                            <td className="px-6 py-4">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center text-green-600 overflow-hidden shadow-inner border border-green-200/50">
+                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center text-green-600 overflow-hidden shadow-inner border border-green-200/50">
                                                         {user.avatarUrl ? (
                                                             <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
                                                         ) : (
-                                                            <ShieldCheckIcon className="w-6 h-6" />
+                                                            <ShieldCheckIcon className="w-5 h-5" />
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <div className="font-bold text-gray-900 group-hover:text-green-600 transition-colors">{user.fullName}</div>
-                                                        <div className="text-xs text-gray-400 font-medium">@{user.username} • {user.email}</div>
+                                                        <div className="font-bold text-sm text-gray-900 group-hover:text-green-600 transition-colors">{user.fullName}</div>
+                                                        <div className="text-[10px] text-gray-400 font-medium">@{user.username}</div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-6">
-                                                <span className={`px-4 py-1.5 rounded-xl text-xs font-bold ${
+                                            <td className="px-6 py-4">
+                                                <span className={`px-3 py-1 rounded-lg text-[10px] font-bold ${
                                                     user.role === 'ROLE_ADMIN' 
-                                                    ? 'bg-amber-50 text-amber-600 ring-1 ring-amber-200' 
-                                                    : 'bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200'
+                                                    ? 'bg-amber-50 text-amber-600 ring-1 ring-amber-100' 
+                                                    : 'bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100'
                                                 }`}>
                                                     {user.role === 'ROLE_ADMIN' ? 'QUẢN TRỊ' : 'NHÂN VIÊN'}
                                                 </span>
                                             </td>
-                                            <td className="px-8 py-6 max-w-xs">
+                                            <td className="px-6 py-4 max-w-xs">
                                                 <div className="flex flex-wrap gap-1">
                                                     {user.permissions?.slice(0, 3).map(p => (
-                                                        <span key={p} className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-lg text-gray-500 font-bold">{p}</span>
+                                                        <span key={p} className="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-bold">{p}</span>
                                                     ))}
-                                                    {user.permissions?.length > 3 && (
-                                                        <span className="text-[10px] text-green-600 font-bold">+{user.permissions.length - 3}</span>
-                                                    )}
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-6">
+                                            <td className="px-6 py-4">
                                                 {user.isActive ? (
-                                                    <span className="flex items-center gap-1.5 text-green-500 font-bold text-xs">
-                                                        <CheckCircleIcon className="w-4 h-4" /> Hoạt động
+                                                    <span className="flex items-center gap-1.5 text-green-500 font-bold text-[10px]">
+                                                        <CheckCircleIcon className="w-5 h-5" /> Active
                                                     </span>
                                                 ) : (
-                                                    <span className="flex items-center gap-1.5 text-red-500 font-bold text-xs">
-                                                        <XCircleIcon className="w-4 h-4" /> Đã khóa
+                                                    <span className="flex items-center gap-1.5 text-red-500 font-bold text-[10px]">
+                                                        <XCircleIcon className="w-5 h-5" /> Locked
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-8 py-6 text-right">
-                                                <div className="flex justify-end gap-2">
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-1.5">
                                                     <button 
                                                         onClick={() => handleEdit(user)}
-                                                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
+                                                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
                                                         title="Chỉnh sửa"
                                                     >
                                                         <PencilSquareIcon className="w-5 h-5" />
                                                     </button>
                                                     <button 
                                                         onClick={() => handleDelete(user)}
-                                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                                        className="p-2 text-gray-400 hover:text-red-50 hover:bg-red-50 rounded-lg transition-all"
                                                         title="Xoá"
                                                     >
                                                         <TrashIcon className="w-5 h-5" />
@@ -293,9 +290,9 @@ export default function AdminStaff() {
             {isAddModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)}></div>
-                    <div className="relative bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl animate-in fade-in zoom-in duration-300">
-                        <form onSubmit={handleAddSubmit} className="p-10">
-                            <div className="flex justify-between items-center mb-8">
+                    <div className="relative bg-white rounded-2xl w-full max-w-2xl shadow-2xl animate-in fade-in zoom-in duration-300">
+                        <form onSubmit={handleAddSubmit} className="p-6">
+                            <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h2 className="text-2xl font-black text-gray-900">Thêm Nhân Sự Mới</h2>
                                     <p className="text-gray-500 font-medium">Đăng ký tài khoản cho thành viên mới của đội ngũ</p>
@@ -308,14 +305,14 @@ export default function AdminStaff() {
                             <div className="space-y-6">
                                 <div>
                                     <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Tên đăng nhập</label>
-                                    <input 
-                                        type="text"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none"
-                                        value={formData.username}
-                                        onChange={(e) => setFormData({...formData, username: e.target.value})}
-                                        required
-                                        placeholder="ví dụ: nva_staff"
-                                    />
+                                        <input 
+                                            type="text"
+                                            className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none"
+                                            value={formData.username}
+                                            onChange={(e) => setFormData({...formData, username: e.target.value})}
+                                            required
+                                            placeholder="ví dụ: nva_staff"
+                                        />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
@@ -364,17 +361,17 @@ export default function AdminStaff() {
                                 </div>
                             </div>
 
-                            <div className="flex gap-4 mt-10">
+                            <div className="flex gap-4 mt-8">
                                 <button 
                                     type="button"
                                     onClick={() => setIsAddModalOpen(false)}
-                                    className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-2xl transition-all"
+                                    className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition-all"
                                 >
                                     Hủy bỏ
                                 </button>
                                 <button 
                                     type="submit"
-                                    className="flex-[2] py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-xl shadow-green-100 transition-all active:scale-95"
+                                    className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-xl shadow-green-100 transition-all active:scale-95"
                                 >
                                     Tạo tài khoản
                                 </button>
@@ -388,9 +385,9 @@ export default function AdminStaff() {
             {isEditModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)}></div>
-                    <div className="relative bg-white rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-300">
-                        <form onSubmit={handleEditSubmit} className="p-10">
-                            <div className="flex justify-between items-center mb-8">
+                    <div className="relative bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-300">
+                        <form onSubmit={handleEditSubmit} className="p-6">
+                            <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h2 className="text-2xl font-black text-gray-900">Cấu Hình Phân Quyền</h2>
                                     <p className="text-gray-500 font-medium">Thiết lập quyền hạn cụ thể cho {selectedUser?.fullName}</p>
@@ -431,7 +428,7 @@ export default function AdminStaff() {
                                         acc[curr.group].push(curr);
                                         return acc;
                                     }, {})).map(([group, perms]) => (
-                                        <div key={group} className="bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100">
+                                        <div key={group} className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
                                             <h4 className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-4">{group}</h4>
                                             <div className="space-y-4">
                                                 {perms.map(p => (
@@ -467,17 +464,17 @@ export default function AdminStaff() {
                                 </label>
                             </div>
 
-                            <div className="flex gap-4">
+                            <div className="flex gap-4 mt-6">
                                 <button 
                                     type="button"
                                     onClick={() => setIsEditModalOpen(false)}
-                                    className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-2xl transition-all"
+                                    className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition-all"
                                 >
                                     Hủy bỏ
                                 </button>
                                 <button 
                                     type="submit"
-                                    className="flex-[2] py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-xl shadow-green-100 transition-all active:scale-95"
+                                    className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-xl shadow-green-100 transition-all active:scale-95"
                                 >
                                     Lưu thay đổi
                                 </button>

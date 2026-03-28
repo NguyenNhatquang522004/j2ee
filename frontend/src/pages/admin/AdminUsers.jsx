@@ -19,11 +19,25 @@ export default function AdminUsers() {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [search, setSearch] = useState('');
+    const [roleFilter, setRoleFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [sortBy, setSortBy] = useState('createdAt');
+    const [direction, setDirection] = useState('desc');
 
-    const fetchUsers = useCallback(async (p = 0) => {
+    const fetchUsers = useCallback(async (p = 0, q = '', role = '', active = '', sort = 'createdAt', dir = 'desc') => {
         setLoading(true);
         try {
-            const res = await userService.getAll({ page: p, size: 10 });
+            const params = { 
+                page: p, 
+                size: 10,
+                sortBy: sort,
+                direction: dir
+            };
+            if (q) params.query = q;
+            if (role) params.role = role;
+            if (active !== '') params.isActive = active === 'true';
+
+            const res = await userService.getAll(params);
             setUsers(res.data.content || []);
             setTotalPages(res.data.totalPages || 1);
         } finally {
@@ -31,7 +45,9 @@ export default function AdminUsers() {
         }
     }, []);
 
-    useEffect(() => { fetchUsers(page); }, [page, fetchUsers]);
+    useEffect(() => { 
+        fetchUsers(page, search, roleFilter, statusFilter, sortBy, direction); 
+    }, [page, search, roleFilter, statusFilter, sortBy, direction, fetchUsers]);
 
     const handleToggle = async (id) => {
         setTogglingId(id);
@@ -52,33 +68,70 @@ export default function AdminUsers() {
 
     return (
         <AdminLayout>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight">Người dùng</h1>
-                    <p className="text-gray-500 font-medium">Quản lý tài khoản khách hàng và phân quyền.</p>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Người dùng</h1>
+                    <p className="text-gray-500 font-medium text-sm tracking-tight">Quản lý tài khoản khách hàng và phân quyền.</p>
                 </div>
-                <div className="relative group">
-                    <MagnifyingGlassIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" />
-                    <input 
-                        type="text"
-                        placeholder="Tìm theo tên, email..."
-                        className="pl-12 pr-6 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none w-full md:w-80 transition-all font-medium"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
+                <div className="flex flex-col lg:flex-row gap-2 flex-1 max-w-5xl lg:justify-end">
+                    <div className="relative flex-1 group">
+                        <MagnifyingGlassIcon className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" />
+                        <input 
+                            type="text"
+                            placeholder="Tìm kiếm tên, email, username..."
+                            className="bg-white border border-gray-100 rounded-xl px-10 py-2.5 font-medium text-xs outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 w-full transition-all"
+                            value={search}
+                            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 lg:flex gap-2">
+                        <select 
+                            value={roleFilter}
+                            onChange={(e) => { setRoleFilter(e.target.value); setPage(0); }}
+                            className="bg-white border border-gray-100 rounded-xl px-3 py-2.5 font-bold text-gray-600 outline-none focus:ring-4 focus:ring-green-500/10 text-[10px] uppercase min-w-[120px]"
+                        >
+                            <option value="">Role: All</option>
+                            <option value="ROLE_USER">Khách hàng</option>
+                            <option value="ROLE_ADMIN">Admin</option>
+                            <option value="ROLE_STAFF">Staff</option>
+                        </select>
+                        <select 
+                            value={statusFilter}
+                            onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
+                            className="bg-white border border-gray-100 rounded-xl px-3 py-2.5 font-bold text-gray-600 outline-none focus:ring-4 focus:ring-green-500/10 text-[10px] uppercase min-w-[120px]"
+                        >
+                            <option value="">Status: All</option>
+                            <option value="true">Active</option>
+                            <option value="false">Locked</option>
+                        </select>
+                        <select 
+                            value={`${sortBy}-${direction}`}
+                            onChange={(e) => {
+                                const [s, d] = e.target.value.split('-');
+                                setSortBy(s);
+                                setDirection(d);
+                                setPage(0);
+                            }}
+                            className="bg-white border border-gray-100 rounded-xl px-3 py-2.5 font-bold text-gray-600 outline-none focus:ring-4 focus:ring-green-500/10 text-[10px] uppercase"
+                        >
+                            <option value="createdAt-desc">Mới nhất</option>
+                            <option value="createdAt-asc">Cũ nhất</option>
+                            <option value="fullName-asc">Tên: A-Z</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
+            <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-gray-50/50">
-                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider">Thông tin</th>
-                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider">Liên hệ</th>
-                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider text-center">Vai trò</th>
-                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider text-center">Trạng thái</th>
-                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider text-center">Thao tác</th>
+                                    <th className="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-wider">Thông tin</th>
+                                    <th className="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-wider">Liên hệ</th>
+                                    <th className="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-wider text-center">Vai trò</th>
+                                    <th className="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-wider text-center">Trạng thái</th>
+                                    <th className="px-5 py-3 text-xs font-black text-gray-400 uppercase tracking-wider text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
@@ -94,53 +147,53 @@ export default function AdminUsers() {
                                 </tr>
                             ) : users.map((u) => (
                                 <tr key={u.id} className="hover:bg-green-50/30 transition-colors group">
-                                    <td className="px-6 py-4">
+                                    <td className="px-5 py-3">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center text-green-600 font-bold group-hover:scale-110 transition-transform overflow-hidden border border-green-100 shadow-inner">
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center text-green-600 font-bold group-hover:scale-110 transition-transform overflow-hidden border border-green-100 shadow-inner">
                                                 {u.avatarUrl ? (
                                                     <img src={u.avatarUrl} alt={u.fullName} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    (u.fullName?.charAt(0) || "").toUpperCase() || <UserIcon className="w-6 h-6" />
+                                                    (u.fullName?.charAt(0) || "").toUpperCase() || <UserIcon className="w-5 h-5" />
                                                 )}
                                             </div>
                                             <div>
-                                                <p className="font-black text-gray-900 leading-tight capitalize">{u.fullName}</p>
-                                                <p className="text-xs text-gray-500 font-bold tracking-tight">@{u.username}</p>
+                                                <p className="font-black text-gray-900 leading-tight capitalize text-sm">{u.fullName}</p>
+                                                <p className="text-[10px] text-gray-500 font-bold tracking-tight">@{u.username}</p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-5 py-3">
                                         <div className="space-y-1">
-                                            <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
-                                                <EnvelopeIcon className="w-3.5 h-3.5" /> {u.email}
+                                            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-600">
+                                                <EnvelopeIcon className="w-5 h-5" /> {u.email}
                                             </div>
                                             {u.phone && (
-                                                <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
-                                                    <PhoneIcon className="w-3.5 h-3.5" /> {u.phone}
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-600">
+                                                    <PhoneIcon className="w-5 h-5" /> {u.phone}
                                                 </div>
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-center">
+                                    <td className="px-5 py-3 text-center">
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                                             u.role?.includes('ADMIN') ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-gray-100 text-gray-600 border-gray-200'
                                         }`}>
-                                            {u.role?.includes('ADMIN') && <ShieldCheckIcon className="w-3 h-3" />}
+                                            {u.role?.includes('ADMIN') && <ShieldCheckIcon className="w-5 h-5" />}
                                             {u.role?.replace('ROLE_', '')}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-center">
+                                    <td className="px-5 py-3 text-center">
                                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                                             u.isActive ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'
                                         }`}>
                                             {u.isActive ? 'Hoạt động' : 'Đã khóa'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-center">
+                                    <td className="px-5 py-3 text-center">
                                         <button
                                             disabled={togglingId === u.id || u.role?.includes('ADMIN')}
                                             onClick={() => handleToggle(u.id)}
-                                            className={`p-2 rounded-xl transition-all ${
+                                            className={`p-1.5 rounded-lg transition-all ${
                                                 u.role?.includes('ADMIN')
                                                 ? 'text-gray-100 cursor-not-allowed' 
                                                 : u.isActive 
@@ -150,7 +203,7 @@ export default function AdminUsers() {
                                             title={u.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                                         >
                                             {togglingId === u.id ? (
-                                                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                                             ) : u.isActive ? (
                                                 <LockClosedIcon className="w-5 h-5" />
                                             ) : (

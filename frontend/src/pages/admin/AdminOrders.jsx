@@ -29,13 +29,26 @@ export default function AdminOrders() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [sortBy, setSortBy] = useState('createdAt');
+    const [direction, setDirection] = useState('desc');
     const [expanded, setExpanded] = useState(null);
     const [updatingId, setUpdatingId] = useState(null);
 
-    const fetchOrders = useCallback(async (p = 0) => {
+    const fetchOrders = useCallback(async (p = 0, q = '', status = '', sort = 'createdAt', dir = 'desc') => {
         setLoading(true);
         try {
-            const res = await orderService.getAll({ page: p, size: 10 });
+            const params = { 
+                page: p, 
+                size: 10,
+                sortBy: sort,
+                direction: dir
+            };
+            if (q) params.query = q;
+            if (status) params.status = status;
+            
+            const res = await orderService.getAll(params);
             setOrders(res.data.content || []);
             setTotalPages(res.data.totalPages || 1);
         } finally {
@@ -43,7 +56,9 @@ export default function AdminOrders() {
         }
     }, []);
 
-    useEffect(() => { fetchOrders(page); }, [page, fetchOrders]);
+    useEffect(() => { 
+        fetchOrders(page, search, statusFilter, sortBy, direction); 
+    }, [page, search, statusFilter, sortBy, direction, fetchOrders]);
 
     const handleStatusChange = async (orderId, newStatus) => {
         setUpdatingId(orderId);
@@ -66,21 +81,61 @@ export default function AdminOrders() {
 
     return (
         <AdminLayout>
-            <div className="mb-8">
-                <h1 className="text-4xl font-black text-gray-900 tracking-tight">Đơn hàng</h1>
-                <p className="text-gray-500 font-medium">Theo dõi và cập nhật trạng thái đơn hàng của khách.</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Đơn hàng</h1>
+                    <p className="text-sm text-gray-500 font-medium tracking-tight">Theo dõi và cập nhật trạng thái đơn hàng của khách.</p>
+                </div>
+                <div className="flex flex-col lg:flex-row gap-2 flex-1 max-w-3xl lg:justify-end">
+                    <div className="relative flex-1 group">
+                        <UserIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" />
+                        <input
+                            value={search}
+                            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                            placeholder="Mã đơn, tên khách, số điện thoại..."
+                            className="w-full pl-10 pr-5 py-2.5 bg-white border border-gray-100 rounded-xl shadow-sm outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-medium text-xs"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 lg:flex gap-2">
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
+                            className="bg-white border border-gray-100 rounded-xl px-4 py-2.5 font-bold text-gray-600 outline-none focus:ring-4 focus:ring-green-500/10 text-[10px] uppercase"
+                        >
+                            <option value="">Status: All</option>
+                            {ORDER_STATUSES.map(s => (
+                                <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={`${sortBy}-${direction}`}
+                            onChange={(e) => {
+                                const [s, d] = e.target.value.split('-');
+                                setSortBy(s);
+                                setDirection(d);
+                                setPage(0);
+                            }}
+                            className="bg-white border border-gray-100 rounded-xl px-4 py-2.5 font-bold text-gray-600 outline-none focus:ring-4 focus:ring-green-500/10 text-[10px] uppercase"
+                        >
+                            <option value="createdAt-desc">Mới nhất</option>
+                            <option value="createdAt-asc">Cũ nhất</option>
+                            <option value="finalAmount-desc">Giá: ↓</option>
+                            <option value="finalAmount-asc">Giá: ↑</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
+            <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-gray-50/50">
-                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider">Mã đơn</th>
-                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider">Khách hàng</th>
-                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider">Tổng tiền</th>
-                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider text-center">Trạng thái</th>
-                                <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider text-center">Thao tác</th>
+                                <th className="px-4 py-2.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">Mã đơn</th>
+                                <th className="px-4 py-2.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">Khách hàng</th>
+                                <th className="px-4 py-2.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">Tổng tiền</th>
+                                <th className="px-4 py-2.5 text-[10px] font-black text-gray-400 uppercase tracking-wider text-center">Trạng thái</th>
+                                <th className="px-4 py-2.5 text-[10px] font-black text-gray-400 uppercase tracking-wider text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
@@ -100,36 +155,36 @@ export default function AdminOrders() {
                                 return (
                                     <React.Fragment key={o.id}>
                                         <tr className={`hover:bg-green-50/30 transition-all group ${isExp ? 'bg-green-50/50' : ''}`}>
-                                            <td className="px-6 py-5">
+                                            <td className="px-4 py-2">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-green-100 group-hover:text-green-600 transition-colors">
+                                                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-green-100 group-hover:text-green-600 transition-colors">
                                                         <ClipboardDocumentListIcon className="w-5 h-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="font-black text-gray-900 leading-none">#{o.id}</p>
-                                                        <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase leading-none">{fmtDate(o.createdAt)}</p>
+                                                        <p className="font-black text-gray-900 leading-none text-sm">#{o.id}</p>
+                                                        <p className="text-[9px] text-gray-400 font-bold mt-1 uppercase leading-none">{fmtDate(o.createdAt)}</p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5 text-gray-800 font-black">
-                                                <div className="flex items-center gap-2">
-                                                    <UserIcon className="w-4 h-4 text-gray-400" />
+                                            <td className="px-4 py-2 text-gray-800 font-black text-sm">
+                                                <div className="flex items-center gap-1.5">
+                                                    <UserIcon className="w-5 h-5 text-gray-400" />
                                                     {o.username || o.userId}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5">
-                                                <p className="text-lg font-black text-green-700 leading-none">{fmt(o.finalAmount)}₫</p>
+                                            <td className="px-4 py-2">
+                                                <p className="text-sm font-black text-green-700 leading-none">{fmt(o.finalAmount)}₫</p>
                                                 {o.discountAmount > 0 && (
-                                                    <p className="text-[10px] text-red-500 font-bold mt-1 uppercase leading-none italic">Giảm -{fmt(o.discountAmount)}</p>
+                                                    <p className="text-[9px] text-red-500 font-bold mt-1 uppercase leading-none italic">Giảm -{fmt(o.discountAmount)}</p>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-5 text-center">
+                                            <td className="px-4 py-2 text-center">
                                                 <div className="inline-block relative">
                                                     <select
                                                         value={o.status}
                                                         disabled={updatingId === o.id || o.status === 'DELIVERED' || o.status === 'CANCELLED'}
                                                         onChange={(e) => handleStatusChange(o.id, e.target.value)}
-                                                        className={`appearance-none pl-3 pr-8 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border cursor-pointer outline-none focus:ring-4 focus:ring-current/10 transition-all ${st.cls}`}
+                                                        className={`appearance-none pl-2.5 pr-7 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border cursor-pointer outline-none focus:ring-4 focus:ring-current/10 transition-all ${st.cls}`}
                                                     >
                                                         {ORDER_STATUSES.map((s) => {
                                                             // Logic: Cannot move back to PENDING/CONFIRMED if already SHIPPING/DELIVERED
@@ -145,13 +200,13 @@ export default function AdminOrders() {
                                                             );
                                                         })}
                                                     </select>
-                                                    <ChevronDownIcon className="w-3 h-3 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
+                                                    <ChevronDownIcon className="w-2.5 h-2.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50" />
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5 text-center">
+                                            <td className="px-4 py-2 text-center">
                                                 <button
                                                     onClick={() => setExpanded(isExp ? null : o.id)}
-                                                    className={`p-2 rounded-xl transition-all ${isExp ? 'bg-green-600 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-100'}`}
+                                                    className={`p-1.5 rounded-lg transition-all ${isExp ? 'bg-green-600 text-white shadow-sm' : 'text-gray-400 hover:bg-gray-100'}`}
                                                 >
                                                     {isExp ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
                                                 </button>
@@ -159,58 +214,58 @@ export default function AdminOrders() {
                                         </tr>
                                         {isExp && (
                                             <tr>
-                                                <td colSpan={5} className="px-8 py-6 bg-white/50 border-y border-gray-100 animate-in slide-in-from-top-2 duration-300">
-                                                    <div className="grid md:grid-cols-2 gap-8">
-                                                        <div className="space-y-4">
-                                                            <h3 className="text-sm font-black text-gray-900 border-l-4 border-green-500 pl-3">Thông tin nhận hàng</h3>
+                                                <td colSpan={5} className="px-6 py-4 bg-white/50 border-y border-gray-100 animate-in slide-in-from-top-2 duration-300">
+                                                    <div className="grid md:grid-cols-2 gap-6">
+                                                        <div className="space-y-3">
+                                                            <h3 className="text-xs font-black text-gray-900 border-l-4 border-green-500 pl-2">Thông tin nhận hàng</h3>
                                                             {o.shippingAddress ? (
-                                                                <div className="bg-gray-50 rounded-2xl p-4 flex gap-3">
+                                                                <div className="bg-gray-50 rounded-xl p-3 flex gap-2.5">
                                                                     <MapPinIcon className="w-5 h-5 text-green-600 shrink-0" />
-                                                                    <p className="text-sm text-gray-600 font-medium leading-relaxed">{o.shippingAddress}</p>
+                                                                    <p className="text-xs text-gray-600 font-medium leading-relaxed">{o.shippingAddress}</p>
                                                                 </div>
-                                                            ) : <p className="text-sm text-gray-400 italic">Không có địa chỉ</p>}
-                                                            <div className="flex gap-4">
-                                                                <div className="bg-gray-50 rounded-2xl p-4 flex-1">
-                                                                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Thanh toán {o.isPaid ? '✅' : '❌'}</p>
-                                                                    <p className={`text-sm font-black ${o.isPaid ? 'text-green-600' : 'text-red-600'}`}>
+                                                            ) : <p className="text-xs text-gray-400 italic">Không có địa chỉ</p>}
+                                                            <div className="flex gap-3">
+                                                                <div className="bg-gray-50 rounded-xl p-3 flex-1">
+                                                                    <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Thanh toán {o.isPaid ? '✅' : '❌'}</p>
+                                                                    <p className={`text-xs font-black ${o.isPaid ? 'text-green-600' : 'text-red-600'}`}>
                                                                         {o.paymentMethod === 'COD' ? 'Khi nhận hàng (COD)' : 
                                                                          o.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' :
                                                                          o.paymentMethod === 'MOMO' ? 'Ví MoMo' : 'VNPay'}
                                                                         {o.isPaid ? ' (Đã trả)' : ' (Chưa trả)'}
                                                                     </p>
                                                                 </div>
-                                                                <div className="bg-gray-50 rounded-2xl p-4 flex-1">
-                                                                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Liên hệ</p>
-                                                                    <p className="text-sm text-gray-800 font-black">{o.phone || 'N/A'}</p>
+                                                                <div className="bg-gray-50 rounded-xl p-3 flex-1">
+                                                                    <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Liên hệ</p>
+                                                                    <p className="text-xs text-gray-800 font-black">{o.phone || 'N/A'}</p>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div className="space-y-4">
-                                                            <h3 className="text-sm font-black text-gray-900 border-l-4 border-green-500 pl-3">Chi tiết sản phẩm</h3>
-                                                            <div className="bg-gray-50 rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
+                                                        <div className="space-y-3">
+                                                            <h3 className="text-xs font-black text-gray-900 border-l-4 border-green-500 pl-2">Chi tiết sản phẩm</h3>
+                                                            <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-100 shadow-sm">
                                                                 <table className="w-full">
                                                                     <thead className="bg-gray-100/50">
-                                                                        <tr className="text-[10px] text-gray-500 font-black uppercase tracking-tight">
-                                                                            <th className="px-4 py-2 text-left">Sản phẩm</th>
-                                                                            <th className="px-4 py-2 text-right">Giá</th>
-                                                                            <th className="px-4 py-2 text-center">SL</th>
-                                                                            <th className="px-4 py-2 text-right">Tổng</th>
+                                                                        <tr className="text-[9px] text-gray-500 font-black uppercase tracking-tight">
+                                                                            <th className="px-4 py-1.5 text-left">Sản phẩm</th>
+                                                                            <th className="px-4 py-1.5 text-right">Giá</th>
+                                                                            <th className="px-4 py-1.5 text-center">SL</th>
+                                                                            <th className="px-4 py-1.5 text-right">Tổng</th>
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody className="divide-y divide-gray-100">
                                                                         {o.orderItems?.map((item, idx) => (
-                                                                            <tr key={idx} className="text-xs">
-                                                                                <td className="px-4 py-3 font-black text-gray-800 truncate max-w-[120px]">{item.productName}</td>
-                                                                                <td className="px-4 py-3 text-right text-gray-500">{fmt(item.unitPrice)}</td>
-                                                                                <td className="px-4 py-3 text-center font-bold">{item.quantity}</td>
-                                                                                <td className="px-4 py-3 text-right font-black text-green-700">{fmt(item.subtotal)}</td>
+                                                                            <tr key={idx} className="text-[11px]">
+                                                                                <td className="px-4 py-2 font-black text-gray-800 truncate max-w-[120px]">{item.productName}</td>
+                                                                                <td className="px-4 py-2 text-right text-gray-500">{fmt(item.unitPrice)}</td>
+                                                                                <td className="px-4 py-2 text-center font-bold">{item.quantity}</td>
+                                                                                <td className="px-4 py-2 text-right font-black text-green-700">{fmt(item.subtotal)}</td>
                                                                             </tr>
                                                                         ))}
                                                                     </tbody>
                                                                     <tfoot className="bg-green-50/50">
                                                                         <tr>
-                                                                            <td colSpan={3} className="px-4 py-3 text-right text-[10px] font-black uppercase text-gray-500">Tạm tính</td>
-                                                                            <td className="px-4 py-3 text-right font-black text-green-700">{fmt(o.totalAmount)}₫</td>
+                                                                            <td colSpan={3} className="px-4 py-2 text-right text-[9px] font-black uppercase text-gray-500">Tạm tính</td>
+                                                                            <td className="px-4 py-2 text-right font-black text-green-700 text-xs">{fmt(o.totalAmount)}₫</td>
                                                                         </tr>
                                                                     </tfoot>
                                                                 </table>
@@ -228,14 +283,14 @@ export default function AdminOrders() {
                 </div>
 
                 {totalPages > 1 && (
-                    <div className="px-6 py-4 bg-gray-50/50 flex items-center justify-between">
-                        <p className="text-sm font-bold text-gray-500">Trang {page + 1} / {totalPages}</p>
-                        <div className="flex gap-2">
+                    <div className="px-5 py-3 bg-gray-50/50 flex items-center justify-between">
+                        <p className="text-xs font-bold text-gray-500">Trang {page + 1} / {totalPages}</p>
+                        <div className="flex gap-1.5">
                             {Array.from({ length: totalPages }, (_, i) => (
                                 <button key={i} onClick={() => setPage(i)}
-                                    className={`w-10 h-10 rounded-xl text-sm font-black transition-all ${
+                                    className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
                                         page === i 
-                                        ? 'bg-green-600 text-white shadow-lg shadow-green-200' 
+                                        ? 'bg-green-600 text-white shadow-sm' 
                                         : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-100'
                                     }`}
                                 >

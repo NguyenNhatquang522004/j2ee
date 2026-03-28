@@ -17,7 +17,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     Page<Review> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
-    List<Review> findByUserId(Long userId);
+    Page<Review> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     boolean existsByProductIdAndUserIdAndStatusIsNot(Long productId, Long userId, nhom5.demo.enums.ReviewStatusEnum status);
 

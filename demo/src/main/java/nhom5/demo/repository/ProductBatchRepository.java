@@ -69,4 +69,8 @@ public interface ProductBatchRepository extends JpaRepository<ProductBatch, Long
 
     @Query("SELECT b FROM ProductBatch b WHERE b.product.id = :productId ORDER BY b.expiryDate ASC")
     List<ProductBatch> findByProductIdOrderByExpiryDateAsc(@Param("productId") Long productId);
+
+    @Query("SELECT b FROM ProductBatch b WHERE " +
+           "(:query IS NULL OR b.batchCode LIKE %:query% OR b.product.name LIKE %:query%)")
+    Page<ProductBatch> searchBatches(@Param("query") String query, Pageable pageable);
 }

@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import AdminLayout from '../../components/AdminLayout';
 
 export default function AdminAudit() {
     const [logs, setLogs] = useState([]);
@@ -54,12 +55,12 @@ export default function AdminAudit() {
     );
 
     return (
-        <div className="p-8 bg-gray-50 min-h-screen">
-            <div className="max-w-7xl mx-auto">
-                <div className="flex justify-between items-center mb-10">
+        <AdminLayout>
+            <div className="max-w-7xl mx-auto p-6">
+                <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Nhật Ký Hệ Thống</h1>
-                        <p className="mt-2 text-gray-500 font-medium">Giám sát mọi hoạt động quản trị trên nền tảng</p>
+                        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Nhật Ký Hệ Thống</h1>
+                        <p className="mt-1.5 text-sm text-gray-500 font-medium">Giám sát mọi hoạt động quản trị trên nền tảng</p>
                     </div>
                     <button 
                         onClick={() => { setPage(0); fetchLogs(); }}
@@ -69,20 +70,19 @@ export default function AdminAudit() {
                     </button>
                 </div>
 
-                <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-8 border-b border-gray-50 flex flex-wrap gap-4 items-center justify-between bg-white/50 backdrop-blur-sm">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-6 border-b border-gray-50 flex flex-wrap gap-4 items-center justify-between bg-white/50 backdrop-blur-sm">
                         <div className="relative flex-1 max-w-md group">
                             <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
                             <input 
                                 type="text"
                                 placeholder="Tìm kiếm hành động, admin, tài nguyên..."
-                                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:bg-white transition-all outline-none text-sm font-medium"
+                                className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-green-500/20 focus:bg-white transition-all outline-none text-sm font-medium"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <div className="flex gap-2">
-                             {/* Stats or Filter chips can go here */}
                              <span className="px-4 py-2 bg-green-50 text-green-700 text-xs font-bold rounded-xl border border-green-100">
                                 Total: {logs.length} hiển thị
                              </span>
@@ -93,11 +93,11 @@ export default function AdminAudit() {
                         <table className="w-full">
                             <thead>
                                 <tr className="bg-gray-50/50">
-                                    <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Thời gian</th>
-                                    <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Quản trị viên</th>
-                                    <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Hành động</th>
-                                    <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Tài nguyên</th>
-                                    <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Chi tiết</th>
+                                    <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Thời gian</th>
+                                    <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Quản trị viên</th>
+                                    <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Hành động</th>
+                                    <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Tài nguyên</th>
+                                    <th className="px-5 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Chi tiết</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -122,9 +122,9 @@ export default function AdminAudit() {
                                 ) : (
                                     filteredLogs.map((log) => (
                                         <tr key={log.id} className="hover:bg-gray-50/80 transition-colors group">
-                                            <td className="px-8 py-5">
+                                            <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-3">
-                                                    <ClockIcon className="w-4 h-4 text-gray-300" />
+                                                    <ClockIcon className="w-5 h-5 text-gray-300" />
                                                     <div className="text-sm font-bold text-gray-700">
                                                         {format(new Date(log.createdAt), 'HH:mm:ss', { locale: vi })}
                                                     </div>
@@ -133,27 +133,27 @@ export default function AdminAudit() {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-5">
+                                            <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                                                        <UserIcon className="w-4 h-4 text-gray-500" />
+                                                        <UserIcon className="w-5 h-5 text-gray-500" />
                                                     </div>
                                                     <span className="text-sm font-black text-gray-900">@{log.adminUsername}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-5">
+                                            <td className="px-5 py-3.5">
                                                 <span className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-wider ring-1 ${getActionColor(log.action)}`}>
                                                     {log.action}
                                                 </span>
                                             </td>
-                                            <td className="px-8 py-5">
+                                            <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
-                                                    <CubeIcon className="w-4 h-4 text-gray-400" />
+                                                    <CubeIcon className="w-5 h-5 text-gray-400" />
                                                     {log.resourceType}
                                                     <span className="text-[10px] text-gray-400 px-1.5 py-0.5 bg-gray-50 rounded border border-gray-100">#{log.resourceId}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-5">
+                                            <td className="px-5 py-3.5">
                                                 <p className="text-xs text-gray-500 font-medium line-clamp-1 italic">
                                                     "{log.details}"
                                                 </p>
@@ -165,7 +165,7 @@ export default function AdminAudit() {
                         </table>
                     </div>
 
-                    <div className="p-8 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between">
+                    <div className="p-5 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between">
                         <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
                             Trang {page + 1} / {totalPages || 1}
                         </p>
@@ -188,6 +188,6 @@ export default function AdminAudit() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminLayout>
     );
 }

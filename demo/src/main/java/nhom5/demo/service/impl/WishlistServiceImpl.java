@@ -23,6 +23,8 @@ public class WishlistServiceImpl implements WishlistService {
     private final WishlistItemRepository wishlistItemRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final nhom5.demo.repository.ProductBatchRepository batchRepository;
+    private final nhom5.demo.repository.ReviewRepository reviewRepository;
 
     @Override
     @Transactional
@@ -80,6 +82,9 @@ public class WishlistServiceImpl implements WishlistService {
     }
 
     private ProductResponse toProductResponse(Product product) {
+        Long totalStock = batchRepository.sumRemainingQuantityByProductId(product.getId());
+        Double avgRating = reviewRepository.findAverageRatingByProductId(product.getId());
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -89,7 +94,8 @@ public class WishlistServiceImpl implements WishlistService {
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .farmName(product.getFarm() != null ? product.getFarm().getName() : null)
                 .farmProvince(product.getFarm() != null ? product.getFarm().getProvince() : null)
-                .totalStock(0)
+                .totalStock(totalStock != null ? totalStock.intValue() : 0)
+                .averageRating(avgRating != null ? avgRating : 0.0)
                 .unit(product.getUnit())
                 .build();
     }

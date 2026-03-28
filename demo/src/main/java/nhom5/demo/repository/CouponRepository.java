@@ -9,16 +9,20 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface CouponRepository extends JpaRepository<Coupon, Long> {
 
     Optional<Coupon> findByCode(String code);
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    
     Optional<Coupon> findByCodeAndIsActiveTrue(String code);
+    
+    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Coupon c WHERE c.code = :code AND c.isActive = true")
+    Optional<Coupon> findByCodeAndIsActiveTrueWithLock(@Param("code") String code);
 
     Page<Coupon> findByIsPrivateFalse(Pageable pageable);
     List<Coupon> findByIsPrivateFalse();
