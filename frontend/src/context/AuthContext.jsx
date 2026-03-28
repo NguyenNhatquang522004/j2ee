@@ -22,9 +22,7 @@ export function AuthProvider({ children }) {
 
     const login = async (credentials) => {
         const { data } = await authService.login(credentials);
-        if (data.requiresTwoFactor) {
-            return data; // Return data so Login.jsx knows it needs 2FA
-        }
+        if (data.requiresTwoFactor) return data;
         localStorage.setItem('token', data.accessToken);
         localStorage.setItem('user', JSON.stringify(data));
         setUser(data);
@@ -41,6 +39,11 @@ export function AuthProvider({ children }) {
 
     const register = async (formData) => {
         const { data } = await authService.register(formData);
+        if (data.accessToken) {
+            localStorage.setItem('token', data.accessToken);
+            localStorage.setItem('user', JSON.stringify(data));
+            setUser(data);
+        }
         return data;
     };
 

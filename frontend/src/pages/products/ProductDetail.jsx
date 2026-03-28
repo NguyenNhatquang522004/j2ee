@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { productService, reviewService, wishlistService } from '../../api/services';
+import { productService, reviewService, wishlistService, flashSaleService } from '../../api/services';
+import { BoltIcon } from '@heroicons/react/24/outline';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout';
@@ -36,6 +37,9 @@ export default function ProductDetail() {
     const [reviewFiles, setReviewFiles] = useState([]);
     const [isLiked, setIsLiked] = useState(false);
     const [canReview, setCanReview] = useState(false);
+    const [flashSaleItem, setFlashSaleItem] = useState(null);
+    const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+    const [flashSaleEndTime, setFlashSaleEndTime] = useState(null);
 
     useEffect(() => {
         if (user && id) {
@@ -69,6 +73,16 @@ export default function ProductDetail() {
                 ]);
                 setProduct(pRes.data);
                 setReviews(rRes.data.content || rRes.data);
+
+                // Check flash sale for this product
+                const fsRes = await flashSaleService.getActive();
+                if (fsRes.data) {
+                    const item = fsRes.data.items.find(it => it.product.id === parseInt(id));
+                    if (item) {
+                        setFlashSaleItem(item);
+                        setFlashSaleEndTime(fsRes.data.endTime);
+                    }
+                }
             } catch {
                 toast.error('Không thể tải sản phẩm');
                 navigate('/products');
@@ -81,6 +95,27 @@ export default function ProductDetail() {
             reviewService.canReview(id).then(res => setCanReview(res.data)).catch(() => {});
         }
     }, [id, navigate, user]);
+
+    useEffect(() => {
+        if (!flashSaleEndTime) return;
+        const timer = setInterval(() => {
+            const now = new Date().getTime();
+            const end = new Date(flashSaleEndTime).getTime();
+            const diff = end - now;
+            if (diff <= 0) {
+                clearInterval(timer);
+                setFlashSaleItem(null);
+                setFlashSaleEndTime(null);
+                return;
+            }
+            setTimeLeft({
+                hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+                seconds: Math.floor((diff % (1000 * 60)) / 1000)
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [flashSaleEndTime]);
 
     const handleAddToCart = async () => {
         if (!user) { toast.error('Vui lòng đăng nhập'); return; }
@@ -164,17 +199,70 @@ export default function ProductDetail() {
                         )}
                     </p>
 
-                    <div className="flex items-baseline gap-4 mb-4">
-                        <div className="text-4xl font-black text-green-700">
-                            {product.price?.toLocaleString('vi-VN')}đ
-                            <span className="text-lg font-bold text-gray-400">/{product.unit}</span>
-                        </div>
-                        {product.originalPrice > product.price && (
-                            <div className="text-xl font-bold text-gray-300 line-through italic">
-                                {product.originalPrice.toLocaleString('vi-VN')}đ
+                    {flashSaleItem && (
+                        <div className="bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 p-[2px] rounded-3xl mb-6 shadow-xl shadow-red-100 animate-in slide-in-from-top-4 duration-700">
+                            <div className="bg-white rounded-[1.4rem] overflow-hidden">
+                                <div className="bg-red-600 px-6 py-3 flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-white">
+                                        <BoltIcon className="w-5 h-5 animate-pulse" />
+                                        <span className="font-black uppercase tracking-widest text-xs">Flash Sale Đang diễn ra</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-black text-white/70 uppercase">Kết thúc trong:</span>
+                                        <div className="flex items-center gap-1 font-black text-white text-sm">
+                                            <span className="bg-white/20 px-2 py-0.5 rounded-lg">{timeLeft.hours.toString().padStart(2, '0')}</span>
+                                            <span>:</span>
+                                            <span className="bg-white/20 px-2 py-0.5 rounded-lg">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+                                            <span>:</span>
+                                            <span className="bg-white/20 px-2 py-0.5 rounded-lg">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="px-6 py-4 flex items-center justify-between bg-gray-50/50">
+                                    <div>
+                                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1">Giá sốc độc quyền</p>
+                                        <div className="flex items-baseline gap-3">
+                                            <span className="text-3xl font-black text-red-600">{flashSaleItem.flashSalePrice?.toLocaleString()}đ</span>
+                                            <span className="text-gray-300 line-through text-sm font-bold italic">{product.price.toLocaleString()}đ</span>
+                                            <span className="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg animate-bounce">
+                                                -{Math.round((product.price - flashSaleItem.flashSalePrice) / product.price * 100)}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden mb-2 shadow-inner border border-gray-100">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-red-600 to-orange-400 shadow-lg"
+                                                style={{ width: `${Math.min((flashSaleItem.soldQuantity / flashSaleItem.quantityLimit) * 100, 100)}%` }}
+                                            />
+                                        </div>
+                                        <p className="text-[10px] font-black text-red-600 uppercase tracking-tighter italic">
+                                            {flashSaleItem.soldQuantity >= flashSaleItem.quantityLimit ? 'Đã hết hàng sale' : `Đã bán ${flashSaleItem.soldQuantity}/${flashSaleItem.quantityLimit}`}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
+ 
+                    {!flashSaleItem && (
+                        <div className="flex items-baseline gap-4 mb-4">
+                            <div className="text-4xl font-black text-green-700">
+                                {product.price?.toLocaleString('vi-VN')}đ
+                                <span className="text-lg font-bold text-gray-400">/{product.unit}</span>
+                            </div>
+                            {product.originalPrice > product.price && (
+                                <div className="flex items-center gap-3">
+                                    <div className="text-xl font-bold text-gray-300 line-through italic">
+                                        {product.originalPrice.toLocaleString('vi-VN')}đ
+                                    </div>
+                                    <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-xl shadow-lg border border-white/20">
+                                        -{Math.round((product.originalPrice - product.price) / product.originalPrice * 100)}%
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {product.averageRating > 0 && (
                         <div className="flex items-center gap-3 mb-6 bg-yellow-50 w-fit px-4 py-2 rounded-xl border border-yellow-100">

@@ -30,6 +30,7 @@ public class CartServiceImpl implements CartService {
     private final ProductRepository productRepository;
     private final ProductBatchRepository batchRepository;
     private final UserRepository userRepository;
+    private final nhom5.demo.repository.FlashSaleItemRepository flashSaleItemRepository;
 
     @Override
     @Transactional
@@ -139,14 +140,24 @@ public class CartServiceImpl implements CartService {
         List<CartResponse.CartItemResponse> items = cartItems.stream()
                 .map(item -> {
                     long stock = batchRepository.sumRemainingQuantityByProductId(item.getProduct().getId());
-                    BigDecimal subtotal = item.getProduct().getPrice()
-                            .multiply(BigDecimal.valueOf(item.getQuantity()));
+                    // Check Flash Sale for price display
+                    BigDecimal unitPrice = item.getProduct().getPrice();
+                    java.util.Optional<nhom5.demo.entity.FlashSaleItem> fsItemOpt = flashSaleItemRepository.findActiveByProductId(item.getProduct().getId(), java.time.LocalDateTime.now());
+                    
+                    if (fsItemOpt.isPresent()) {
+                        nhom5.demo.entity.FlashSaleItem fsItem = fsItemOpt.get();
+                        if (fsItem.getSoldQuantity() + item.getQuantity() <= fsItem.getQuantityLimit()) {
+                            unitPrice = fsItem.getFlashSalePrice();
+                        }
+                    }
+
+                    BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
                     return CartResponse.CartItemResponse.builder()
                             .cartItemId(item.getId())
                             .productId(item.getProduct().getId())
                             .productName(item.getProduct().getName())
                             .productImageUrl(item.getProduct().getImageUrl())
-                            .unitPrice(item.getProduct().getPrice())
+                            .unitPrice(unitPrice)
                             .quantity(item.getQuantity())
                             .subtotal(subtotal)
                             .availableStock((int) stock)

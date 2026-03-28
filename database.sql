@@ -63,7 +63,7 @@ CREATE TABLE `admin_audit_logs` (
   `resource_id` varchar(255) DEFAULT NULL,
   `resource_type` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -72,7 +72,7 @@ CREATE TABLE `admin_audit_logs` (
 
 LOCK TABLES `admin_audit_logs` WRITE;
 /*!40000 ALTER TABLE `admin_audit_logs` DISABLE KEYS */;
-INSERT INTO `admin_audit_logs` VALUES (1,'ADMIN_UPDATE_USER','admin','2026-03-28 00:08:40.220296','Updated staff/user: admin',NULL,'2','User');
+INSERT INTO `admin_audit_logs` VALUES (1,'ADMIN_UPDATE_USER','admin','2026-03-28 00:08:40.220296','Updated staff/user: admin',NULL,'2','User'),(2,'UPDATE','admin','2026-03-28 14:34:15.404683','Modified: GIAM100K',NULL,'4','COUPON');
 /*!40000 ALTER TABLE `admin_audit_logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -94,7 +94,7 @@ CREATE TABLE `cart_items` (
   CONSTRAINT `FK1re40cjegsfvw58xrkdp6bac6` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`),
   CONSTRAINT `FKpcttvuq4mxppo8sxggjtn5i2c` FOREIGN KEY (`cart_id`) REFERENCES `carts` (`id`),
   CONSTRAINT `cart_items_chk_1` CHECK ((`quantity` >= 1))
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -103,7 +103,7 @@ CREATE TABLE `cart_items` (
 
 LOCK TABLES `cart_items` WRITE;
 /*!40000 ALTER TABLE `cart_items` DISABLE KEYS */;
-INSERT INTO `cart_items` VALUES (6,1,1,2);
+INSERT INTO `cart_items` VALUES (7,1,1,18);
 /*!40000 ALTER TABLE `cart_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -166,6 +166,35 @@ INSERT INTO `categories` VALUES (1,'2026-03-25 20:53:56.307947','Các loại rau
 UNLOCK TABLES;
 
 --
+-- Table structure for table `contact_messages`
+--
+
+DROP TABLE IF EXISTS `contact_messages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `contact_messages` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `content` text NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  `email` varchar(255) NOT NULL,
+  `is_read` bit(1) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `subject` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `contact_messages`
+--
+
+LOCK TABLES `contact_messages` WRITE;
+/*!40000 ALTER TABLE `contact_messages` DISABLE KEYS */;
+INSERT INTO `contact_messages` VALUES (1,'ok','2026-03-28 11:18:00.188886','thanhtoan06092004@gmail.com',_binary '','DANG THANH TOAN','Hỗ trợ đơn hàng');
+/*!40000 ALTER TABLE `contact_messages` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `coupon_assigned_users`
 --
 
@@ -225,7 +254,7 @@ CREATE TABLE `coupons` (
 
 LOCK TABLES `coupons` WRITE;
 /*!40000 ALTER TABLE `coupons` DISABLE KEYS */;
-INSERT INTO `coupons` VALUES (1,'GIAM50K','2026-03-26 21:28:15.372813','Giam 50k cho don tu 100k',100,'2026-04-26',_binary '',50000.00,100000.00,10,1,0),(2,'TOAN','2026-03-27 14:49:21.364513','Giảm 100k',100,'2026-09-27',_binary '',100000.00,0.00,5,0,0),(3,'TOANN','2026-03-27 16:18:03.333912','giam gia',100,'2026-04-27',_binary '',50000.00,100000.00,20,0,0),(4,'GIAM100K','2026-03-27 16:25:46.332772','giam 100k mung sinh nhat',100,'2026-03-27',_binary '',100000.00,999989.00,1,0,0),(5,'HVHV','2026-03-27 17:03:39.858194','ok',99,'2026-04-26',_binary '',50000.00,100000.00,1,0,1),(6,'OKOK','2026-03-27 17:10:37.507046','ok',20,'2026-04-26',_binary '',100000.00,100000.00,1,0,1),(7,'CHGC','2026-03-27 17:14:06.233459','ok',10,'2026-04-26',_binary '',100000.00,1000000.00,1,0,1),(8,'GXGH','2026-03-27 17:16:51.296456','ok',100,'2026-04-26',_binary '',50000.00,100000.00,1,0,1),(9,'GVHG','2026-03-27 17:21:19.439321','',10,'2026-04-26',_binary '',99999.00,0.00,1,0,1);
+INSERT INTO `coupons` VALUES (1,'GIAM50K','2026-03-26 21:28:15.372813','Giam 50k cho don tu 100k',100,'2026-04-26',_binary '',50000.00,100000.00,10,1,0),(2,'TOAN','2026-03-27 14:49:21.364513','Giảm 100k',100,'2026-09-27',_binary '',100000.00,0.00,5,0,0),(3,'TOANN','2026-03-27 16:18:03.333912','giam gia',100,'2026-04-27',_binary '',50000.00,100000.00,20,0,0),(4,'GIAM100K','2026-03-27 16:25:46.332772','giam 100k mung sinh nhat',100,'2026-03-28',_binary '',100000.00,100000.00,1,0,0),(5,'HVHV','2026-03-27 17:03:39.858194','ok',99,'2026-04-26',_binary '',50000.00,100000.00,1,0,1),(6,'OKOK','2026-03-27 17:10:37.507046','ok',20,'2026-04-26',_binary '',100000.00,100000.00,1,0,1),(7,'CHGC','2026-03-27 17:14:06.233459','ok',10,'2026-04-26',_binary '',100000.00,1000000.00,1,0,1),(8,'GXGH','2026-03-27 17:16:51.296456','ok',100,'2026-04-26',_binary '',50000.00,100000.00,1,0,1),(9,'GVHG','2026-03-27 17:21:19.439321','',10,'2026-04-26',_binary '',99999.00,0.00,1,0,1);
 /*!40000 ALTER TABLE `coupons` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -267,6 +296,68 @@ LOCK TABLES `farms` WRITE;
 /*!40000 ALTER TABLE `farms` DISABLE KEYS */;
 INSERT INTO `farms` VALUES (1,'123 Đường Mai Anh Đào, Phường 8','VIETGAP','VG-DL-2024-001',NULL,'','','2026-03-25 20:53:56.334057','Chuyên cung cấp rau củ đạt chuẩn VietGAP tại Đà Lạt.','https://tse3.mm.bing.net/th/id/OIP.FtAZOLThYZNuIcwzoSoNjwHaFj?pid=Api&P=0&h=180',_binary '',NULL,NULL,'Nông trại Đà Lạt sạch','TOAN','Lâm Đồng','2026-03-26 08:05:20.121805'),(2,'Xã Tản Lĩnh, Huyện Ba Vì','ORGANIC','OR-BV-2024-055',NULL,'','','2026-03-25 20:53:56.340578','Trang trại nông nghiệp hữu cơ lớn nhất khu vực miền Bắc.','https://tse1.mm.bing.net/th/id/OIP.PChnvZCaBNo3k2rrx5mjtQHaEK?pid=Api&P=0&h=180',_binary '',NULL,NULL,'Trang trại Ba Vì Organic','','Hà Nội','2026-03-26 08:06:06.249348');
 /*!40000 ALTER TABLE `farms` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `flash_sale_items`
+--
+
+DROP TABLE IF EXISTS `flash_sale_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `flash_sale_items` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `flash_sale_price` decimal(15,2) NOT NULL,
+  `quantity_limit` int NOT NULL,
+  `sold_quantity` int NOT NULL,
+  `flash_sale_id` bigint NOT NULL,
+  `product_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FKmr5agn0eu29xqqog30yspa3e3` (`flash_sale_id`),
+  KEY `FK5p9e16gsvvhlc28cjyvju7m99` (`product_id`),
+  CONSTRAINT `FK5p9e16gsvvhlc28cjyvju7m99` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`),
+  CONSTRAINT `FKmr5agn0eu29xqqog30yspa3e3` FOREIGN KEY (`flash_sale_id`) REFERENCES `flash_sales` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `flash_sale_items`
+--
+
+LOCK TABLES `flash_sale_items` WRITE;
+/*!40000 ALTER TABLE `flash_sale_items` DISABLE KEYS */;
+INSERT INTO `flash_sale_items` VALUES (1,100000.00,10,0,1,18);
+/*!40000 ALTER TABLE `flash_sale_items` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `flash_sales`
+--
+
+DROP TABLE IF EXISTS `flash_sales`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `flash_sales` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `end_time` datetime(6) NOT NULL,
+  `is_active` bit(1) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `start_time` datetime(6) NOT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `flash_sales`
+--
+
+LOCK TABLES `flash_sales` WRITE;
+/*!40000 ALTER TABLE `flash_sales` DISABLE KEYS */;
+INSERT INTO `flash_sales` VALUES (1,'2026-03-28 12:42:26.197218','','2026-03-30 10:10:00.000000',_binary '','Săn Sale ','2026-03-28 10:10:00.000000','2026-03-28 12:42:26.197245');
+/*!40000 ALTER TABLE `flash_sales` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -345,7 +436,7 @@ CREATE TABLE `notifications` (
   KEY `idx_noti_user` (`user_id`),
   KEY `idx_noti_created` (`created_at`),
   CONSTRAINT `FK9y21adhxn0ayjhfocscqox7bh` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -354,7 +445,7 @@ CREATE TABLE `notifications` (
 
 LOCK TABLES `notifications` WRITE;
 /*!40000 ALTER TABLE `notifications` DISABLE KEYS */;
-INSERT INTO `notifications` VALUES (1,'2026-03-27 17:22:59.844408',_binary '\0','/coupons','Bạn vừa nhận được một mã giảm giá cá nhân: OKOK','COUPON',1),(2,'2026-03-27 17:23:36.281264',_binary '','/coupons','Bạn vừa nhận được một mã giảm giá cá nhân: OKOK','COUPON',1),(3,'2026-03-28 00:11:50.416169',_binary '\0',NULL,'Đăng nhập thành công','LOGIN',2),(4,'2026-03-28 00:15:39.726832',_binary '\0',NULL,'Đăng nhập thành công','LOGIN',2),(5,'2026-03-28 00:23:01.508737',_binary '\0',NULL,'Đăng nhập thành công','LOGIN',2),(6,'2026-03-28 00:28:45.158099',_binary '\0',NULL,'Đăng nhập thành công','LOGIN',2),(7,'2026-03-28 07:35:17.957294',_binary '\0',NULL,'Đăng nhập thành công','LOGIN',2);
+INSERT INTO `notifications` VALUES (1,'2026-03-27 17:22:59.844408',_binary '\0','/coupons','Bạn vừa nhận được một mã giảm giá cá nhân: OKOK','COUPON',1),(2,'2026-03-27 17:23:36.281264',_binary '','/coupons','Bạn vừa nhận được một mã giảm giá cá nhân: OKOK','COUPON',1),(3,'2026-03-28 00:11:50.416169',_binary '',NULL,'Đăng nhập thành công','LOGIN',2),(4,'2026-03-28 00:15:39.726832',_binary '',NULL,'Đăng nhập thành công','LOGIN',2),(5,'2026-03-28 00:23:01.508737',_binary '',NULL,'Đăng nhập thành công','LOGIN',2),(6,'2026-03-28 00:28:45.158099',_binary '',NULL,'Đăng nhập thành công','LOGIN',2),(7,'2026-03-28 07:35:17.957294',_binary '',NULL,'Đăng nhập thành công','LOGIN',2),(8,'2026-03-28 10:12:25.077590',_binary '',NULL,'Đăng nhập thành công','LOGIN',2),(9,'2026-03-28 11:16:48.279215',_binary '',NULL,'Đăng nhập thành công','LOGIN',2),(10,'2026-03-28 12:00:14.877776',_binary '',NULL,'Đăng nhập thành công','LOGIN',2);
 /*!40000 ALTER TABLE `notifications` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -374,6 +465,7 @@ CREATE TABLE `order_items` (
   `product_id` bigint NOT NULL,
   `product_image_url` varchar(255) DEFAULT NULL,
   `product_name` varchar(255) DEFAULT NULL,
+  `flash_sale_item_id` bigint DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_order_item_order` (`order_id`),
   KEY `idx_order_item_product` (`product_id`),
@@ -389,7 +481,7 @@ CREATE TABLE `order_items` (
 
 LOCK TABLES `order_items` WRITE;
 /*!40000 ALTER TABLE `order_items` DISABLE KEYS */;
-INSERT INTO `order_items` VALUES (1,1,25000.00,25000.00,1,2,NULL,NULL),(2,1,150000.00,150000.00,2,3,'https://tse4.mm.bing.net/th/id/OIP.m6sDYIcLZZyYTJZRfm2fMwHaFN?pid=Api&P=0&h=180','Thịt ba chỉ CP'),(3,1,150000.00,150000.00,3,3,'https://tse4.mm.bing.net/th/id/OIP.m6sDYIcLZZyYTJZRfm2fMwHaFN?pid=Api&P=0&h=180','Thịt ba chỉ CP');
+INSERT INTO `order_items` VALUES (1,1,25000.00,25000.00,1,2,NULL,NULL,NULL),(2,1,150000.00,150000.00,2,3,'https://tse4.mm.bing.net/th/id/OIP.m6sDYIcLZZyYTJZRfm2fMwHaFN?pid=Api&P=0&h=180','Thịt ba chỉ CP',NULL),(3,1,150000.00,150000.00,3,3,'https://tse4.mm.bing.net/th/id/OIP.m6sDYIcLZZyYTJZRfm2fMwHaFN?pid=Api&P=0&h=180','Thịt ba chỉ CP',NULL);
 /*!40000 ALTER TABLE `order_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -710,7 +802,7 @@ CREATE TABLE `wishlist_items` (
   KEY `FKqxj7lncd242b59fb78rqegyxj` (`product_id`),
   CONSTRAINT `FKmmj2k1i459yu449k3h1vx5abp` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   CONSTRAINT `FKqxj7lncd242b59fb78rqegyxj` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -719,7 +811,7 @@ CREATE TABLE `wishlist_items` (
 
 LOCK TABLES `wishlist_items` WRITE;
 /*!40000 ALTER TABLE `wishlist_items` DISABLE KEYS */;
-INSERT INTO `wishlist_items` VALUES (1,1,1),(3,2,1),(2,3,1);
+INSERT INTO `wishlist_items` VALUES (1,1,1),(3,2,1),(2,3,1),(4,18,1);
 /*!40000 ALTER TABLE `wishlist_items` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -732,4 +824,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-28  8:13:47
+-- Dump completed on 2026-03-28 14:45:13

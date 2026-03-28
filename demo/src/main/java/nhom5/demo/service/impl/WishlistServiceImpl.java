@@ -25,6 +25,7 @@ public class WishlistServiceImpl implements WishlistService {
     private final ProductRepository productRepository;
     private final nhom5.demo.repository.ProductBatchRepository batchRepository;
     private final nhom5.demo.repository.ReviewRepository reviewRepository;
+    private final nhom5.demo.repository.FlashSaleItemRepository flashSaleItemRepository;
 
     @Override
     @Transactional
@@ -45,7 +46,8 @@ public class WishlistServiceImpl implements WishlistService {
     @Transactional
     public void removeFromWishlist(String username, Long productId) {
         User user = findUserByUsername(username);
-        wishlistItemRepository.deleteByUserIdAndProductId(user.getId(), productId);
+        wishlistItemRepository.findByUserIdAndProductId(user.getId(), productId)
+                .ifPresent(wishlistItemRepository::delete);
     }
 
     @Override
@@ -85,18 +87,36 @@ public class WishlistServiceImpl implements WishlistService {
         Long totalStock = batchRepository.sumRemainingQuantityByProductId(product.getId());
         Double avgRating = reviewRepository.findAverageRatingByProductId(product.getId());
 
+        // Check Flash Sale for price display
+        java.math.BigDecimal fsPrice = null;
+        java.time.LocalDateTime fsEndDate = null;
+        java.util.Optional<nhom5.demo.entity.FlashSaleItem> fsItemOpt = flashSaleItemRepository.findActiveByProductId(product.getId(), java.time.LocalDateTime.now());
+        
+        if (fsItemOpt.isPresent()) {
+            nhom5.demo.entity.FlashSaleItem fsItem = fsItemOpt.get();
+            if (fsItem.getSoldQuantity() < fsItem.getQuantityLimit()) {
+                fsPrice = fsItem.getFlashSalePrice();
+                fsEndDate = fsItem.getFlashSale().getEndTime();
+            }
+        }
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .description(product.getDescription())
                 .price(product.getPrice())
+                .originalPrice(product.getOriginalPrice())
                 .imageUrl(product.getImageUrl())
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .farmName(product.getFarm() != null ? product.getFarm().getName() : null)
                 .farmProvince(product.getFarm() != null ? product.getFarm().getProvince() : null)
+                .isActive(product.getIsActive())
+                .isNew(product.getIsNew())
                 .totalStock(totalStock != null ? totalStock.intValue() : 0)
                 .averageRating(avgRating != null ? avgRating : 0.0)
                 .unit(product.getUnit())
+                .flashSalePrice(fsPrice)
+                .flashSaleEndDate(fsEndDate)
                 .build();
     }
 }

@@ -22,7 +22,8 @@ import {
     NewspaperIcon,
     ClockIcon,
     ChatBubbleLeftRightIcon,
-    InformationCircleIcon
+    InformationCircleIcon,
+    BoltIcon
 } from '@heroicons/react/24/outline';
 
 const MENU_ITEMS = [
@@ -34,6 +35,7 @@ const MENU_ITEMS = [
     { name: 'Trang trại', path: '/admin/farms', icon: HomeIcon, permission: 'manage:farms' },
     { name: 'Đơn hàng', path: '/admin/orders', icon: ClipboardDocumentListIcon, permission: 'manage:orders' },
     { name: 'Mã giảm giá', path: '/admin/coupons', icon: TicketIcon, permission: 'manage:promotions' },
+    { name: 'Flash Sale', path: '/admin/flash-sales', icon: BoltIcon, permission: 'manage:promotions' },
     { name: 'Đánh giá', path: '/admin/reviews', icon: UserIcon, permission: 'manage:reviews' },
     { name: 'Nhân sự', path: '/admin/staff', icon: ShieldCheckIcon, permission: 'manage:users' },
     { name: 'Nhật ký', path: '/admin/audit', icon: ClockIcon, permission: 'view:reports' },
@@ -44,11 +46,15 @@ const MENU_ITEMS = [
     { name: 'Hướng dẫn', path: '/admin/guide', icon: InformationCircleIcon, permission: 'view:reports' },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ onClose }) {
     const { pathname } = useLocation();
     const { logout, hasPermission } = useAuth();
     const navigate = useNavigate();
     const [unreadContacts, setUnreadContacts] = useState(0);
+
+    const handleItemClick = () => {
+        if (onClose) onClose();
+    };
 
     useEffect(() => {
         if (hasPermission('manage:users')) {
@@ -78,9 +84,9 @@ export default function AdminSidebar() {
     });
 
     return (
-        <aside className="w-60 bg-white border-r h-screen sticky top-0 flex flex-col shadow-[rgba(0,0,0,0.05)_5px_0px_15px]">
+        <aside className="h-full bg-white border-r flex flex-col shadow-[rgba(0,0,0,0.05)_5px_0px_15px]">
             <div className="p-5 border-b">
-                <Link to="/" className="flex items-center gap-2 group">
+                <Link to="/" onClick={handleItemClick} className="flex items-center gap-2 group">
                     <span className="text-green-600 group-hover:scale-110 transition-transform duration-300">
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -99,6 +105,7 @@ export default function AdminSidebar() {
                         <Link 
                             key={item.path} 
                             to={item.path}
+                            onClick={handleItemClick}
                             className={`flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all duration-200 group ${
                                 isActive 
                                 ? 'bg-green-600 text-white shadow-lg shadow-green-100' 

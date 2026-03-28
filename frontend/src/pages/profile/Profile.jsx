@@ -404,9 +404,9 @@ export default function Profile() {
 
                 <div className="bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden min-h-[600px] flex flex-col md:flex-row">
                     {/* Left: Navigation Sidebar */}
-                    <aside className="w-full md:w-80 bg-gray-50/50 border-r border-gray-100 p-8 flex flex-col gap-8">
-                        <div className="flex flex-col items-center text-center">
-                            <div className="w-24 h-24 rounded-[2rem] bg-gray-100 flex items-center justify-center text-gray-400 text-3xl font-black shadow-xl mb-4 relative group overflow-hidden border-2 border-white">
+                    <aside className="w-full md:w-80 bg-gray-50/50 border-r border-gray-100 p-4 md:p-8 flex flex-col gap-6 md:gap-8 overflow-hidden">
+                        <div className="flex md:flex-col items-center text-center md:text-center gap-4 md:gap-0">
+                            <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-[2rem] bg-gray-100 flex items-center justify-center text-gray-400 text-xl md:text-3xl font-black shadow-lg md:shadow-xl relative group overflow-hidden border-2 border-white shrink-0">
                                 {user.avatarUrl ? (
                                     <img src={user.avatarUrl} className="w-full h-full object-cover" alt="" />
                                 ) : (
@@ -417,35 +417,30 @@ export default function Profile() {
                                     <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={saving} />
                                 </label>
                             </div>
-                            <h2 className="font-black text-gray-900 leading-tight">{user.fullName}</h2>
-                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 italic">Thành viên thân thiết</span>
+                            <div className="text-left md:text-center">
+                                <h2 className="font-black text-gray-900 leading-tight text-sm md:text-base">{user.fullName}</h2>
+                                <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 italic block">Thành viên thân thiết</span>
+                            </div>
                         </div>
 
-                        <nav className="space-y-2">
-                            <button onClick={() => setActiveTab('personal')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all ${activeTab === 'personal' ? 'bg-black text-white shadow-xl scale-105' : 'text-gray-400 hover:bg-gray-100'}`}>
-                                <UserCircleIcon className="w-5 h-5" />
-                                Hồ sơ cá nhân
-                            </button>
-                            <button onClick={() => setActiveTab('notifications')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all ${activeTab === 'notifications' ? 'bg-black text-white shadow-xl scale-105' : 'text-gray-400 hover:bg-gray-100'}`}>
-                                <BellIcon className="w-5 h-5" />
-                                Thông báo
-                            </button>
-                            <button onClick={() => setActiveTab('security')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all ${activeTab === 'security' ? 'bg-black text-white shadow-xl scale-105' : 'text-gray-400 hover:bg-gray-100'}`}>
-                                <ShieldCheckIcon className="w-5 h-5" />
-                                Bảo mật & 2FA
-                            </button>
-                            <button onClick={() => setActiveTab('addresses')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all ${activeTab === 'addresses' ? 'bg-black text-white shadow-xl scale-105' : 'text-gray-400 hover:bg-gray-100'}`}>
-                                <MapPinIcon className="w-5 h-5" />
-                                Sổ địa chỉ
-                            </button>
-                            <button onClick={() => setActiveTab('reviews')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all ${activeTab === 'reviews' ? 'bg-black text-white shadow-xl scale-105' : 'text-gray-400 hover:bg-gray-100'}`}>
-                                <StarIcon className="w-5 h-5" />
-                                Đánh giá của tôi
-                            </button>
-                            <button onClick={() => setActiveTab('privacy')} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all ${activeTab === 'privacy' ? 'bg-black text-white shadow-xl scale-105' : 'text-gray-400 hover:bg-gray-100'}`}>
-                                <LockClosedIcon className="w-5 h-5" />
-                                Quyền riêng tư
-                            </button>
+                        <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                            {[
+                                { id: 'personal', icon: UserCircleIcon, label: 'Hồ sơ' },
+                                { id: 'notifications', icon: BellIcon, label: 'Thông báo' },
+                                { id: 'security', icon: ShieldCheckIcon, label: 'Bảo mật' },
+                                { id: 'addresses', icon: MapPinIcon, label: 'Địa chỉ' },
+                                { id: 'reviews', icon: StarIcon, label: 'Đánh giá' },
+                                { id: 'privacy', icon: LockClosedIcon, label: 'Riêng tư' },
+                            ].map((tab) => (
+                                <button 
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)} 
+                                    className={`flex items-center gap-3 px-5 py-3 md:px-6 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[9px] md:text-[10px] tracking-widest transition-all whitespace-nowrap shrink-0 ${activeTab === tab.id ? 'bg-black text-white shadow-xl scale-105' : 'text-gray-400 hover:bg-gray-100'}`}
+                                >
+                                    <tab.icon className="w-4 h-4 md:w-5 md:h-5" />
+                                    {tab.label}
+                                </button>
+                            ))}
                         </nav>
 
                         {/* Membership Card - Premium Layout */}

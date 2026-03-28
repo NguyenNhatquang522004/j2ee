@@ -190,3 +190,13 @@ export const contactService = {
     delete: (id) => api.delete(`/contacts/${id}`),
     getUnreadCount: () => api.get('/contacts/unread/count'),
 };
+
+// Flash Sale
+export const flashSaleService = {
+    getActive: () => api.get('/flash-sales/active'),
+    getUpcoming: () => api.get('/flash-sales/upcoming'),
+    getAll: () => api.get('/flash-sales'),
+    create: (data) => api.post('/flash-sales', data),
+    delete: (id) => api.delete(`/flash-sales/${id}`),
+    toggle: (id) => api.patch(`/flash-sales/${id}/toggle`),
+};

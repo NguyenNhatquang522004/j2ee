@@ -1,6 +1,9 @@
 package nhom5.demo.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import nhom5.demo.dto.request.ProductRequest;
 import nhom5.demo.dto.response.ProductResponse;
 import nhom5.demo.entity.Category;
@@ -30,6 +33,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductBatchRepository batchRepository;
     private final ReviewRepository reviewRepository;
     private final AuditService auditService;
+    private final nhom5.demo.repository.FlashSaleItemRepository flashSaleItemRepository;
 
     @Override
     @Transactional
@@ -145,6 +149,19 @@ public class ProductServiceImpl implements ProductService {
         Long totalStock = batchRepository.sumRemainingQuantityByProductId(product.getId());
         Double avgRating = reviewRepository.findAverageRatingByProductId(product.getId());
 
+        // Check Flash Sale for price display
+        BigDecimal fsPrice = null;
+        java.time.LocalDateTime fsEndDate = null;
+        java.util.Optional<nhom5.demo.entity.FlashSaleItem> fsItemOpt = flashSaleItemRepository.findActiveByProductId(product.getId(), java.time.LocalDateTime.now());
+        
+        if (fsItemOpt.isPresent()) {
+            nhom5.demo.entity.FlashSaleItem fsItem = fsItemOpt.get();
+            if (fsItem.getSoldQuantity() < fsItem.getQuantityLimit()) {
+                fsPrice = fsItem.getFlashSalePrice();
+                fsEndDate = fsItem.getFlashSale().getEndTime();
+            }
+        }
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -155,6 +172,8 @@ public class ProductServiceImpl implements ProductService {
                 .isActive(product.getIsActive())
                 .isNew(product.getIsNew())
                 .originalPrice(product.getOriginalPrice())
+                .flashSalePrice(fsPrice)
+                .flashSaleEndDate(fsEndDate)
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .farmId(product.getFarm() != null ? product.getFarm().getId() : null)

@@ -2,6 +2,39 @@
 
 Tất cả các cập nhật quan trọng cho dự án FreshFood sẽ được liệt kê tại đây.
 
+## [v1.7.0] - 2026-03-28
+
+### 📊 Quản trị Thông minh & Trải nghiệm (Smart Admin & UX)
+- **Bảng điều khiển (Dashboard) Nâng cao**: Tích hợp biểu đồ doanh thu thời gian thực (CSS/SVG Charts), hệ thống phím tắt "Quick Actions" và danh sách nhiệm vụ ưu tiên dựa trên dữ liệu thật từ Backend.
+- **Nâng cấp Thư viện Media**: Bổ sung tính năng phân tích dung lượng lưu trữ (Storage Analytics), sửa lỗi hiển thị video lightbox và tối ưu hóa hiển thị metadata tệp tin.
+- **Giao diện Responsive 100%**: Thiết kế lại toàn bộ khung quản trị (`AdminLayout`) cho trải nghiệm mobile hoàn hảo với Sidebar trượt, Drawer và bảng dữ liệu hỗ trợ cuộn ngang thông minh.
+- **Cải thiện Quản lý Nhân sự**: Sửa lỗi nút thêm mới và nâng cấp logic tìm kiếm (Search) đa nền tảng, xử lý tốt các trường hợp dữ liệu rỗng hoặc khoảng trắng.
+
+### 🛠️ Tối ưu hóa & Sửa lỗi (Performance & Fixes)
+- **Unified Padding System**: Loại bỏ hiện tượng "padding chồng padding" và chuẩn hóa màu nền cho toàn bộ khu vực Admin.
+- **Fix ReferenceErrors**: Khắc phục triệt để các lỗi thiếu Import biểu tượng (`PlusIcon`, `ChartBarIcon`) và lỗi biến `useState` không xác định.
+- **Table UX**: Áp dụng `min-width` cho bảng dữ liệu trong các container cuộn ngang, ngăn chặn việc xô lệch thông tin trên màn hình nhỏ.
+ 
+## [v1.6.0] - 2026-03-29
+ 
++### 🚀 Tính năng & Trải nghiệm (Features & UX)
++- **Hệ thống So sánh Sản phẩm (Compare)**: Hoàn thiện tính năng so sánh trực quan đa sản phẩm (Giá, Tồn kho, Chứng chỉ, Trang trại).
++- **Đồng bộ Flash Sale**: Thống nhất nhãn giảm giá đỏ và giá ưu tiên trên toàn bộ hệ thống (Home, Product List, Wishlist).
++- **Global API Logging**: Tích hợp log tự động cho mọi yêu cầu/phản hồi API trong Console, hỗ trợ kiểm soát dữ liệu thời gian thực.
++
++### 🛡️ Bảo mật & Tin cậy (Security & Reliability)
++- **Tối ưu CSRF cho SPA**: Chuyển sang cơ chế Stateless API Exclusion cho `/api/v1/**`, khắc phục lỗi "bấm 2 lần mới được" mà vẫn đảm bảo an toàn tuyệt đối qua JWT Header.
++- **Củng cố Wishlist API**: Đồng bộ dữ liệu `isNew`, `totalStock`, `farmName` và `originalPrice` giúp giao diện Wishlist đồng nhất với cửa hàng chính.
++- **Repository Transactions**: Bổ sung `@Modifying` và `@Transactional` cho các phương thức xoá tập trung (Cart, Wishlist), đảm bảo dữ liệu được cập nhật ngay lập tức.
++
+ ## [v1.5.0] - 2026-03-28
+ 
+### 🔔 Thông báo & Tính ổn định Hệ thống (Notifications & Reliability)
+- **Hệ thống Thông báo Admin (Real-time Badge)**: Tích hợp huy hiệu thông báo số lượng tin nhắn liên hệ chưa đọc trực tiếp trên thanh Sidebar của Admin (Pulsing Red Badge).
+- **Tối ưu hóa Giao dịch (Transactional Optimization)**: Khắc phục triệt để lỗi `500 Internal Server Error` khi kiểm tra mã giảm giá (Coupon validation) bằng cách tách biệt logic đọc và logic ghi (Locks).
+- **Ổn định Giao diện Quản trị**: Sửa lỗi `ReferenceError` gây trắng trang tại các trang quản lý **Sản phẩm** (Products) và **Người dùng** (Users).
+- **Xử lý Dữ liệu Boolean**: Chuẩn hóa ánh xạ kiểu dữ liệu `bit(1)` giữa MySQL và Java `Boolean` (Object) để tăng độ tương thích và tránh lỗi truy vấn.
+
 ## [v1.2.0] - 2026-03-27
 
 ### ✨ Cập nhật chính

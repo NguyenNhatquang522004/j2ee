@@ -84,47 +84,53 @@ export default function Cart() {
 
 function CartItem({ item, onUpdate, onRemove }) {
     return (
-        <div className="card flex items-center gap-4">
-            <div className="w-16 h-16 bg-green-50 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border border-green-100">
-                {item.productImageUrl ? (
-                    <img src={item.productImageUrl} alt={item.productName} className="h-full w-full object-cover" />
-                ) : (
-                    <ShoppingCartIcon className="w-8 h-8 text-green-200" />
-                )}
+        <div className="card flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+                <div className="w-20 h-20 sm:w-16 sm:h-16 bg-green-50 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border border-green-100 shadow-sm">
+                    {item.productImageUrl ? (
+                        <img src={item.productImageUrl} alt={item.productName} className="h-full w-full object-cover" />
+                    ) : (
+                        <ShoppingCartIcon className="w-8 h-8 text-green-200" />
+                    )}
+                </div>
+                <div className="flex-1">
+                    <Link to={`/products/${item.productId}`} className="font-bold text-gray-800 hover:text-green-700 transition-colors line-clamp-2">
+                        {item.productName}
+                    </Link>
+                    <p className="text-sm text-gray-500 font-medium">{item.unitPrice?.toLocaleString('vi-VN')}đ/đơn vị</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Kho: {item.availableStock}</p>
+                </div>
             </div>
-            <div className="flex-1">
-                <Link to={`/products/${item.productId}`} className="font-semibold text-gray-800 hover:text-green-700">
-                    {item.productName}
-                </Link>
-                <p className="text-sm text-gray-500">{item.unitPrice?.toLocaleString('vi-VN')}đ/đơn vị</p>
-                <p className="text-xs text-gray-400">Còn: {item.availableStock}</p>
-            </div>
-            <div className="flex items-center gap-2">
+            
+            <div className="flex items-center justify-between w-full sm:w-auto sm:gap-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-50">
                 <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
                     <button
                         onClick={() => { if (item.quantity > 1) onUpdate(item.cartItemId, item.quantity - 1); }}
-                        className="p-2 hover:bg-gray-50 text-gray-500"
+                        className="p-2 hover:bg-gray-50 text-gray-500 transition-colors"
                     >
                         <MinusIcon className="w-4 h-4" />
                     </button>
-                    <span className="px-3 py-1 font-bold text-gray-800 min-w-[40px] text-center">{item.quantity}</span>
+                    <span className="px-3 py-1 font-black text-gray-800 min-w-[40px] text-center text-sm">{item.quantity}</span>
                     <button
                         onClick={() => { if (item.quantity < item.availableStock) onUpdate(item.cartItemId, item.quantity + 1); }}
-                        className="p-2 hover:bg-gray-50 text-gray-500"
+                        className="p-2 hover:bg-gray-50 text-gray-500 transition-colors"
                     >
                         <PlusIcon className="w-4 h-4" />
                     </button>
                 </div>
-                <span className="font-bold text-green-700 w-28 text-right">
-                    {item.subtotal?.toLocaleString('vi-VN')}đ
-                </span>
-                <button
-                    onClick={() => onRemove(item.cartItemId)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                    title="Xóa"
-                >
-                    <TrashIcon className="w-5 h-5" />
-                </button>
+                
+                <div className="flex items-center gap-4">
+                    <span className="font-extrabold text-green-700 text-lg w-auto sm:w-28 text-right">
+                        {item.subtotal?.toLocaleString('vi-VN')}đ
+                    </span>
+                    <button
+                        onClick={() => onRemove(item.cartItemId)}
+                        className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm hover:shadow-md"
+                        title="Xóa khỏi giỏ"
+                    >
+                        <TrashIcon className="w-5 h-5" />
+                    </button>
+                </div>
             </div>
         </div>
     );
