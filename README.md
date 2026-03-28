@@ -21,6 +21,33 @@ FreshFood là một nền tảng thương mại điện tử hiện đại, chuy
 - **Audit Logs**: Nhật ký hoạt động quản trị viên đạt tiêu chuẩn audit doanh nghiệp.
 - **CI/CD Pipeline**: Tự động Build & Test qua **GitHub Actions**.
 
+## 🛠️ Hướng dẫn cài đặt nhanh (Quick Start)
+
+Lưu ý: Bạn cần cài đặt [Docker](https://www.docker.com/) và [Docker Compose](https://docs.docker.com/compose/) trên máy.
+
+1.  **Clone dự án:**
+    ```bash
+    git clone https://github.com/NguyenNhatquang522004/j2ee.git
+    cd j2ee
+    ```
+
+2.  **Cấu hình biến môi trường:**
+    Sao chép file mẫu `.env.example` thành `.env` và điền các thông tin cần thiết (Cloudinary, JWT Secret...):
+    ```bash
+    cp .env.example .env
+    ```
+
+3.  **Khởi chạy toàn bộ hệ thống bằng Docker:**
+    ```bash
+    docker-compose up -d --build
+    ```
+
+4.  **Truy cập ứng dụng:**
+    - **Frontend:** [http://localhost](http://localhost) (Cổng 80)
+    - **Backend API:** [http://localhost:8080/api-docs](http://localhost:8080/api-docs) (Swagger UI)
+    - **MailHog (Kiểm tra Email):** [http://localhost:8025](http://localhost:8025)
+    - **Meilisearch UI:** [http://localhost:7700](http://localhost:7700)
+
 ## 💻 Công nghệ sử dụng
 
 ### Backend
@@ -31,12 +58,28 @@ FreshFood là một nền tảng thương mại điện tử hiện đại, chuy
 - **Sentry**: Error Tracking & Performance Monitoring.
 - **Logstash/Logback**: Structured JSON Logging.
 
-### Infrastructure & DevOps
-- **Docker & Docker Compose**: Đóng gói toàn bộ stack (App, Redis, Meilisearch, MailHog).
-- **GitHub Actions**: Tự động hóa quy trình CI (Lint, Test, Build Docker).
-- **MailHog**: Môi trường giả lập SMTP để kiểm thử email.
+### Frontend
+- **React 18 + Vite**: Thư viện UI hiện đại và tốc độ build cực nhanh.
+- **Tailwind CSS**: Framework styling tiện lợi, tối ưu.
+- **Lucide React**: Hệ thống Icon phong phú.
+- **Framer Motion**: Animation mượt mà, cao cấp.
 
-© 2026 FreshFood Project. Bảo lưu mọi quyền.
+### Infrastructure & DevOps
+- **Docker & Docker Compose**: Container hóa toàn bộ stack (App, Redis, Meilisearch, MailHog).
+- **GitHub Actions**: Tự động hóa quy trình CI (Lint, Test, Build Docker).
+- **MailHog**: Môi trường giả lập SMTP để kiểm thử email nhanh chóng.
+
+## 📂 Cấu trúc thư mục
+
+```text
+j2ee/
+├── demo/            # Mã nguồn Backend (Spring Boot)
+├── frontend/        # Mã nguồn Frontend (React + Vite)
+├── ai-service/      # Dịch vụ AI (Python/Flask - Mock)
+├── docs/            # Hệ thống tài liệu dự án
+├── docker-compose.yml # Cấu hình chạy Docker Stack
+└── .env.example     # File mẫu cấu hình biến môi trường
+```
 
 ## 👥 Đội ngũ phát triển
 
@@ -58,6 +101,13 @@ Chi tiết về dự án có thể tham khảo trong thư mục `/docs`:
 - [Bảo mật & Phân quyền](./docs/SECURITY.md)
 - [Triển khai Docker](./docs/DEPLOYMENT.md)
 - [Nhật ký thay đổi](./docs/CHANGELOG.md)
+
+---
+### 🤖 AI Freshness Service (Phụ trợ)
+Dịch vụ PythonFlask sử dụng YOLOv8 để phân tích độ tươi của thực phẩm qua hình ảnh.
+1.  Truy cập thư mục `/ai-service`.
+2.  Làm theo hướng dẫn trong [ai-service/README.md](file:///d:/j2ee/ai-service/README.md) để cài đặt Python và tải Model.
+3.  Server AI sẽ chạy tại `http://localhost:5001`.
 
 ---
 © 2026 FreshFood Project. Bảo lưu mọi quyền.

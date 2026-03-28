@@ -3,9 +3,9 @@
 Tài liệu này cung cấp cái nhìn tổng quan về các điểm cuối (Endpoints) của hệ thống FreshFood.
 
 ## 🔗 Thông tin chung
-- **Base URL (Local)**: `http://localhost:5050/api/v1`
+- **Base URL (Local)**: `http://localhost:8080/api/v1`
 - **Xác thực**: Sử dụng Bearer Token (JWT) trong header `Authorization`.
-- **Swagger UI**: [http://localhost:5050/swagger-ui.html](http://localhost:5050/swagger-ui.html)
+- **Swagger UI**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 
 ## 📂 Các nhóm API chính
 

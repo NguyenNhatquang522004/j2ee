@@ -27,9 +27,14 @@ Dự án FreshFood bao gồm các thực thể cốt lõi sau:
 - **`Order`**: Thông tin đơn hàng (Tổng cộng, Trạng thái, Phương thức thanh toán).
 - **`OrderItem`**: Chi tiết các sản phẩm và số lượng trong từng đơn hàng.
 
-### ⭐ Tương tác (`reviews`, `review_media`)
+### ⭐ Tương tác & Bảo mật (`reviews`, `coupons`, `admin_audit_logs`)
 - **`Review`**: Nhận xét khách hàng, điểm đánh giá (1-5), trạng thái duyệt và phản hồi của Admin.
-- **`ReviewMedia`**: Danh sách link ảnh/video đi kèm từng đánh giá sản phẩm.
+- **`Coupon`**: Quản lý mã giảm giá công khai và mã tặng riêng từng cá nhân (Private Voucher).
+- **`AdminAuditLog`**: Ghi lại mọi hành động thay đổi dữ liệu nhạy cảm của Admin (RBAC/Audit Trail).
+
+### 🔔 Thông báo & Đăng ký (`notifications`, `newsletter_subscribers`)
+- **`Notification`**: Ghi nhận các thông báo về đơn hàng, đăng nhập và voucher cho người dùng.
+- **`NewsletterSubscriber`**: Quản lý danh sách email đăng ký nhận bản tin từ `FreshFood`.
 
 ## 📏 Quy chuẩn Dữ liệu
 - **`created_at`** và **`updated_at`**: Tự động ghi nhận thời gian qua các Annotation JPA.

@@ -4,16 +4,13 @@ Tài liệu này hướng dẫn cách sao lưu và phục hồi dữ liệu cho 
 
 ## 🗄️ Sao lưu Cơ sở dữ liệu (Database Backup)
 
-### 📂 H2 Database (Phát triển)
-Dữ liệu được lưu trữ trong file: `~/freshfood.mv.db`.
-- **Cách sao lưu**: Chỉ cần copy file này vào một thư mục an toàn khi ứng dụng không hoạt động.
-
-### 🐘 MySQL Database (Dự kiến Sản xuất)
-- **Công cụ**: Sử dụng `mysqldump`.
-- **Lệnh thực hiện**:
+### 🐳 MySQL trong Docker (Standard)
+Dữ liệu được lưu trữ trong database `clean_food_db` bên trong container.
+- **Cách sao lưu (Từ máy host)**:
     ```bash
-    mysqldump -u [username] -p [database_name] > backup_[date].sql
+    docker exec freshfood-api mysqldump -u root clean_food_db > backup_$(date +%F).sql
     ```
+- **Lưu ý**: Lệnh này trích xuất schema và dữ liệu trực tiếp từ container đang chạy.
 
 ## 📸 Sao lưu Media (Cloudinary)
 Hình ảnh và video không được lưu trong DB gốc mà lưu trữ trên Cloudinary.

@@ -7,11 +7,14 @@ Tài liệu này mô tả sơ đồ hệ thống và cấu trúc thành phần c
 FreshFood được thiết kế theo kiến trúc **Monolithic** hiện đại với các thành phần decoupled:
 1.  **Frontend (Client)**: Ứng dụng React 18+ (Vite) xử lý giao diện, logic trạng thái và tương tác người dùng qua Context API.
 2.  **Backend (Server)**: Java 21 + Spring Boot 3 cung cấp RESTful API và xử lý nghiệp vụ, bảo mật.
-3.  **Database (Persistence Layer)**: H2 (Dev) / MySQL (Prod) để lưu trữ dữ liệu bền vững.
+3.  **Database (Persistence Layer)**: MySQL (Dockerized) để lưu trữ dữ liệu bền vững.
+
 4.  **External Services**:
     -   **Cloudinary**: Xử lý và lưu trữ hình ảnh/video (Asset Management).
     -   **SMTP Server**: Gửi Email OTP và thông báo.
     -   **AI Scan**: Xử lý phân tích thực phẩm bằng mô hình học máy tích hợp.
+    -   **Sentry**: Theo dõi lỗi (Error Tracking) và hiệu năng hệ thống theo thời gian thực.
+    -   **MailHog**: Máy chủ SMTP giả lập cho việc kiểm thử email trong Docker.
 
 ## 📂 Phân cấp Gói (Package Structure)
 

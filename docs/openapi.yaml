@@ -7,7 +7,7 @@ info:
     name: FreshFood Team
     url: https://github.com/thanhtoan2004
 servers:
-  - url: http://localhost:5050/api/v1
+  - url: http://localhost:8080/api/v1
     description: Máy chủ phát triển (Local)
 tags:
   - name: Authentication
