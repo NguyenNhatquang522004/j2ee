@@ -15,12 +15,15 @@ import {
     HomeIcon,
     ArchiveBoxIcon,
     ChevronDownIcon,
-    Bars4Icon
+    Bars4Icon,
+    TicketIcon,
+    BellIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
+import NotificationDropdown from './NotificationDropdown';
 
 export default function Navbar() {
-    const { user, logout, isAdmin } = useAuth();
+    const { user, logout, isAdmin, isManagement } = useAuth();
     const { itemCount } = useCart();
     const [wishlistCount, setWishlistCount] = useState(0);
     const navigate = useNavigate();
@@ -52,12 +55,12 @@ export default function Navbar() {
         navigate('/login');
     };
 
-    // Redirect admin to dashboard if they accidentally hit the home page
+    // Redirect management to dashboard if they accidentally hit the home page
     useEffect(() => {
-        if (isAdmin && window.location.pathname === '/') {
+        if (isManagement && window.location.pathname === '/') {
             navigate('/admin');
         }
-    }, [isAdmin, navigate]);
+    }, [isManagement, navigate]);
 
     return (
         <header className="sticky top-0 z-50 glass-header">
@@ -77,7 +80,7 @@ export default function Navbar() {
                         </Link>
 
                         <nav className="hidden md:flex items-center gap-6">
-                            {!isAdmin ? (
+                            {!isManagement ? (
                                 <>
                                     <Link to="/products" className="nav-link">Sản phẩm</Link>
                                     
@@ -99,7 +102,7 @@ export default function Navbar() {
                                                     {categories.map((cat) => (
                                                         <Link 
                                                             key={cat.id} 
-                                                            to={`/products?category=${cat.id}`} 
+                                                            to={`/products?categoryId=${cat.id}`} 
                                                             className="flex items-center justify-between px-5 py-3 hover:bg-green-50 text-gray-600 hover:text-green-700 transition-all group/item"
                                                         >
                                                             <div className="flex items-center gap-3">
@@ -129,16 +132,16 @@ export default function Navbar() {
                                         
                                         <div className="absolute top-full left-0 w-72 pt-2 opacity-0 translate-y-2 pointer-events-none group-hover/farm:opacity-100 group-hover/farm:translate-y-0 group-hover/farm:pointer-events-auto transition-all duration-300 z-[100]">
                                             <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden py-3 ring-1 ring-black/5">
-                                                <Link to="/farms" className="flex items-center gap-3 px-5 py-3 hover:bg-green-50 text-gray-600 hover:text-green-700 transition-all font-bold text-sm">
+                                                <Link to="/" className="flex items-center gap-3 px-5 py-3 hover:bg-green-50 text-gray-600 hover:text-green-700 transition-all font-bold text-sm">
                                                     <HomeIcon className="w-5 h-5 text-gray-400" />
-                                                    Tất cả trang trại
+                                                    Trang trại tự nhiên
                                                 </Link>
                                                 <div className="h-px bg-gray-50 my-1 mx-5"></div>
                                                 <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
                                                     {farms.map((farm) => (
                                                         <Link 
                                                             key={farm.id} 
-                                                            to={`/farms/${farm.id}`} 
+                                                            to={`/products?farmId=${farm.id}`} 
                                                             className="flex items-center gap-4 px-5 py-3 hover:bg-green-50 text-gray-600 hover:text-green-700 transition-all group/item"
                                                         >
                                                             <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm flex-shrink-0 bg-gray-100">
@@ -162,6 +165,10 @@ export default function Navbar() {
                                         <BeakerIcon className="w-4 h-4" />
                                         <span>AI Scan</span>
                                     </Link>
+                                    <Link to="/coupons" className="nav-link flex items-center gap-1.5">
+                                        <TicketIcon className="w-4 h-4" />
+                                        <span>Khuyến mãi</span>
+                                    </Link>
                                 </>
                             ) : (
                                 <Link to="/admin" className="nav-link text-green-700 font-bold bg-green-50 px-3 py-1 rounded-full border border-green-100 hover:bg-green-100 transition-all flex items-center gap-1.5">
@@ -176,7 +183,8 @@ export default function Navbar() {
                     <div className="flex items-center gap-4">
                         {user ? (
                             <div className="flex items-center gap-4">
-                                {!isAdmin && (
+                                <NotificationDropdown />
+                                {!isManagement && (
                                     <>
                                         <Link to="/wishlist" className="relative p-2 text-gray-600 hover:text-red-500 transition-colors group">
                                             {wishlistCount > 0 ? (
@@ -205,7 +213,7 @@ export default function Navbar() {
                                 <div className="h-8 w-px bg-gray-200"></div>
 
                                 <div className="flex items-center gap-3">
-                                    {!isAdmin && (
+                                    {!isManagement && (
                                         <Link to="/orders" className="relative p-2 text-gray-600 hover:text-green-600 transition-colors group" title="Đơn hàng của tôi">
                                             <ArchiveBoxIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
                                         </Link>
@@ -245,12 +253,12 @@ export default function Navbar() {
             {/* Mobile Nav */}
             {isMenuOpen && (
                 <div className="md:hidden bg-white border-b border-gray-100 px-4 py-4 space-y-3 shadow-xl">
-                    {!isAdmin ? (
+                    {!isManagement ? (
                         <>
                             <Link to="/products" className="block font-bold text-gray-800 hover:text-green-600">Sản phẩm</Link>
                             <div className="pl-4 space-y-2 border-l-2 border-green-100">
                                 {categories.map(cat => (
-                                    <Link key={cat.id} to={`/products?category=${cat.id}`} className="flex items-center gap-3 p-1 hover:bg-green-50 rounded-lg">
+                                    <Link key={cat.id} to={`/products?categoryId=${cat.id}`} className="flex items-center gap-3 p-1 hover:bg-green-50 rounded-lg">
                                         <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100 shadow-sm">
                                             {cat.imageUrl ? (
                                                 <img src={cat.imageUrl} alt="" className="w-full h-full object-cover" />
@@ -262,15 +270,16 @@ export default function Navbar() {
                                     </Link>
                                 ))}
                             </div>
-                            <Link to="/farms" className="block font-bold text-gray-800 hover:text-green-600">Trang trại</Link>
+                            <Link to="/" className="block font-bold text-gray-800 hover:text-green-600">Trang trại tự nhiên</Link>
                             <div className="pl-4 space-y-2 border-l-2 border-green-100">
                                 {farms.map(farm => (
-                                    <Link key={farm.id} to={`/farms/${farm.id}`} className="block text-sm font-medium text-gray-500 hover:text-green-600">
+                                    <Link key={farm.id} to={`/products?farmId=${farm.id}`} className="block text-sm font-medium text-gray-500 hover:text-green-600">
                                         • {farm.name}
                                     </Link>
                                 ))}
                             </div>
                             <Link to="/ai-scan" className="block font-bold text-gray-800 hover:text-green-600">AI Scan</Link>
+                            <Link to="/coupons" className="block font-bold text-gray-800 hover:text-green-600">Khuyến mãi</Link>
                             {user && <Link to="/orders" className="block font-bold text-gray-800 hover:text-green-600">Đơn hàng của tôi</Link>}
                         </>
                     ) : (

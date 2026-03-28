@@ -96,8 +96,12 @@ export default function AdminUsers() {
                                 <tr key={u.id} className="hover:bg-green-50/30 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center text-green-600 font-bold group-hover:scale-110 transition-transform">
-                                                {u.fullName?.charAt(0) || <UserIcon className="w-6 h-6" />}
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center text-green-600 font-bold group-hover:scale-110 transition-transform overflow-hidden border border-green-100 shadow-inner">
+                                                {u.avatarUrl ? (
+                                                    <img src={u.avatarUrl} alt={u.fullName} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    (u.fullName?.charAt(0) || "").toUpperCase() || <UserIcon className="w-6 h-6" />
+                                                )}
                                             </div>
                                             <div>
                                                 <p className="font-black text-gray-900 leading-tight capitalize">{u.fullName}</p>
@@ -119,10 +123,10 @@ export default function AdminUsers() {
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
-                                            u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-gray-100 text-gray-600 border-gray-200'
+                                            u.role?.includes('ADMIN') ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-gray-100 text-gray-600 border-gray-200'
                                         }`}>
-                                            {u.role === 'ADMIN' && <ShieldCheckIcon className="w-3 h-3" />}
-                                            {u.role}
+                                            {u.role?.includes('ADMIN') && <ShieldCheckIcon className="w-3 h-3" />}
+                                            {u.role?.replace('ROLE_', '')}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">
@@ -134,16 +138,16 @@ export default function AdminUsers() {
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <button
-                                            disabled={togglingId === u.id || u.role === 'ADMIN'}
+                                            disabled={togglingId === u.id || u.role?.includes('ADMIN')}
                                             onClick={() => handleToggle(u.id)}
                                             className={`p-2 rounded-xl transition-all ${
-                                                u.role === 'ADMIN' 
-                                                ? 'text-gray-200 cursor-not-allowed' 
+                                                u.role?.includes('ADMIN')
+                                                ? 'text-gray-100 cursor-not-allowed' 
                                                 : u.isActive 
                                                     ? 'text-red-500 hover:bg-red-50 bg-red-50/30' 
                                                     : 'text-green-600 hover:bg-green-50 bg-green-50/30'
                                             }`}
-                                            title={u.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khóa'}
+                                            title={u.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                                         >
                                             {togglingId === u.id ? (
                                                 <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>

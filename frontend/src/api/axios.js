@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:5050/api/v1',
+    baseURL: '/api/v1',
     headers: { 'Content-Type': 'application/json' },
+    withCredentials: true, // Required for CSRF cookies (XSRF-TOKEN)
 });
 
 api.interceptors.request.use((config) => {

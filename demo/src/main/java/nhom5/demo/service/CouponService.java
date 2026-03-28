@@ -11,4 +11,6 @@ public interface CouponService {
     Coupon updateCoupon(Long id, Coupon coupon);
     void deleteCoupon(Long id);
     Coupon validateCoupon(String code, Double orderAmount);
+    void giftCoupon(String email, Coupon coupon);
+    List<Coupon> getMyCoupons();
 }

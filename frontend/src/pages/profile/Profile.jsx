@@ -70,7 +70,9 @@ export default function Profile() {
         try {
             setSaving(true);
             await twoFactorService.changeMethod(method);
-            setUserData({ ...user, twoFactorMethod: method });
+            const updatedUser = { ...user, twoFactorMethod: method };
+            setUserData(updatedUser);
+            setUser({ ...authUser, ...updatedUser });
             toast.success(`Đã chuyển sang xác thực qua ${method === 'EMAIL' ? 'Email' : 'ứng dụng'}`);
         } catch (err) {
             toast.error('Không thể thay đổi phương thức');
@@ -111,7 +113,8 @@ export default function Profile() {
             }
             toast.success('Đã kích hoạt 2FA thành công');
             setShowTwoFactorSetup(false);
-            loadData();
+            setTwoFactorCode('');
+            setTimeout(loadData, 500); // Slight delay to ensure DB sync before refresh
         } catch (err) {
             toast.error(err.response?.data?.message || 'Mã xác thực không đúng');
         } finally {
@@ -125,7 +128,8 @@ export default function Profile() {
             await twoFactorService.disable({ code: twoFactorCode });
             toast.success('Đã tắt 2FA');
             setShowTwoFactorDisable(false);
-            loadData();
+            setTwoFactorCode('');
+            setTimeout(loadData, 500);
         } catch (err) {
             toast.error(err.response?.data?.message || 'Mã xác thực không đúng');
         } finally {
@@ -761,11 +765,11 @@ export default function Profile() {
                                                             maxLength="6"
                                                             value={twoFactorCode}
                                                             onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
-                                                            className="w-full text-center text-4xl font-black tracking-[1.5rem] py-6 border-4 border-gray-100 rounded-[2rem] focus:border-black shadow-inner outline-none transition-all placeholder:tracking-normal placeholder:text-gray-200"
+                                                            className="w-full text-center text-4xl font-black tracking-[1rem] py-6 border-4 border-gray-100 rounded-[2rem] focus:border-black shadow-inner outline-none transition-all placeholder:tracking-normal placeholder:text-gray-200"
                                                             placeholder="000000"
                                                             autoFocus
                                                         />
-                                                        <div className="flex gap-4">
+                                                        <div className="flex flex-col sm:flex-row gap-4">
                                                             <button
                                                                 onClick={confirmTwoFactorEnable}
                                                                 disabled={twoFactorCode.length !== 6 || saving}
@@ -773,7 +777,7 @@ export default function Profile() {
                                                             >
                                                                 {saving ? 'XÁC MINH...' : 'KÍCH HOẠT NGAY'}
                                                             </button>
-                                                            <button onClick={() => setSetupStep(1)} className="px-8 border-2 border-gray-100 rounded-2xl font-black uppercase text-[10px] tracking-widest text-gray-400 hover:border-gray-300 hover:text-gray-900 transition-all">QUAY LẠI</button>
+                                                            <button onClick={() => setSetupStep(1)} className="px-8 py-5 border-2 border-gray-100 rounded-2xl font-black uppercase text-[10px] tracking-widest text-gray-400 hover:border-gray-300 hover:text-gray-900 transition-all">QUAY LẠI</button>
                                                         </div>
                                                     </div>
                                                 </div>

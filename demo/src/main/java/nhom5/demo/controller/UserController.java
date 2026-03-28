@@ -1,94 +1,78 @@
 package nhom5.demo.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import nhom5.demo.constant.AppConstants;
-import nhom5.demo.dto.request.RegisterRequest;
 import nhom5.demo.dto.response.ApiResponse;
 import nhom5.demo.dto.response.UserResponse;
 import nhom5.demo.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Users", description = "Quản lý người dùng")
-@SecurityRequirement(name = "bearerAuth")
 @RestController
-@RequestMapping(AppConstants.USER_PATH)
-@RequiredArgsConstructor
+@RequestMapping("/api/v1/users")
 public class UserController {
 
     private final UserService userService;
 
-    @Operation(summary = "Xem thông tin cá nhân")
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserResponse>> getProfile(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        UserResponse data = userService.getProfile(userDetails.getUsername());
-        return ResponseEntity.ok(ApiResponse.success(data));
+    public ResponseEntity<ApiResponse<UserResponse>> getProfile(@AuthenticationPrincipal UserDetails ud) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getProfile(ud.getUsername())));
     }
 
-    @Operation(summary = "Cập nhật thông tin cá nhân")
     @PutMapping("/me")
-    public ResponseEntity<ApiResponse<UserResponse>> updateProfile(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody nhom5.demo.dto.request.UserUpdateRequest request) {
-        UserResponse data = userService.updateProfile(userDetails.getUsername(), request);
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin thành công", data));
+    public ResponseEntity<ApiResponse<UserResponse>> updateProfile(@AuthenticationPrincipal UserDetails ud, @RequestBody nhom5.demo.dto.request.UserUpdateRequest r) {
+        return ResponseEntity.ok(ApiResponse.success(userService.updateProfile(ud.getUsername(), r)));
     }
 
-    @Operation(summary = "Cập nhật ảnh đại diện")
-    @PostMapping("/me/avatar")
-    public ResponseEntity<ApiResponse<UserResponse>> updateAvatar(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
-        UserResponse data = userService.updateAvatar(userDetails.getUsername(), file);
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật ảnh đại diện thành công", data));
+    @PostMapping("/me/logout-all")
+    public ResponseEntity<ApiResponse<Void>> logoutAll(@AuthenticationPrincipal UserDetails ud) {
+        userService.logoutAllDevices(ud.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "Danh sách tất cả người dùng (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping
-    public ResponseEntity<ApiResponse<Page<UserResponse>>> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction) {
-        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<UserResponse> data = userService.getAllUsers(pageable);
-        return ResponseEntity.ok(ApiResponse.success(data));
+    @PreAuthorize("hasAuthority('manage:users')")
+    @GetMapping("/staff")
+    public ResponseEntity<ApiResponse<Page<UserResponse>>> getStaff(@RequestParam(defaultValue="0") int p, @RequestParam(defaultValue="10") int s) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getStaff(PageRequest.of(p, s))));
     }
 
-    @Operation(summary = "Chi tiết người dùng (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Long id) {
+    @PreAuthorize("hasAuthority('manage:users')")
+    @PostMapping("/staff/create")
+    public ResponseEntity<ApiResponse<UserResponse>> postStaff(@RequestBody nhom5.demo.dto.request.RegisterRequest r) {
+        return ResponseEntity.status(210).body(ApiResponse.created(userService.createStaff(r, nhom5.demo.enums.RoleEnum.ROLE_STAFF)));
+    }
+
+    @PreAuthorize("hasAuthority('manage:users')")
+    @PatchMapping("/{id:\\d+}/toggle-status")
+    public ResponseEntity<ApiResponse<Void>> patchStatus(@PathVariable Long id) {
+        userService.toggleUserStatus(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @PreAuthorize("hasAuthority('manage:users')")
+    @GetMapping("/{id:\\d+}")
+    public ResponseEntity<ApiResponse<UserResponse>> getOne(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(userService.getUserById(id)));
     }
 
-    @Operation(summary = "Khoá / mở khoá tài khoản người dùng (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/{id}/toggle-status")
-    public ResponseEntity<ApiResponse<Void>> toggleStatus(@PathVariable Long id) {
-        userService.toggleUserStatus(id);
-        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật trạng thái tài khoản", null));
+    @PreAuthorize("hasAuthority('manage:users')")
+    @PutMapping("/{id:\\d+}/admin")
+    public ResponseEntity<ApiResponse<UserResponse>> putAdmin(@PathVariable Long id, @RequestBody nhom5.demo.dto.request.AdminUserUpdateRequest r) {
+        return ResponseEntity.ok(ApiResponse.success(userService.adminUpdateUser(id, r)));
     }
 
-    @Operation(summary = "Xoá người dùng (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+    @PreAuthorize("hasAuthority('manage:users')")
+    @DeleteMapping("/{id:\\d+}")
+    public ResponseEntity<ApiResponse<Void>> delOne(@PathVariable Long id) {
         userService.deleteUser(id);
-        return ResponseEntity.ok(ApiResponse.success("Đã xoá người dùng", null));
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

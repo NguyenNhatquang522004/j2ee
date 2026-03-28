@@ -36,12 +36,13 @@ public class OrderItem {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    /** Đơn giá tại thời điểm đặt hàng - không thay đổi theo giá hiện tại. */
     @NotNull
+    @Min(0)
     @Column(name = "unit_price", nullable = false, precision = 15, scale = 2)
     private BigDecimal unitPrice;
 
     @NotNull
+    @Min(0)
     @Column(name = "subtotal", nullable = false, precision = 15, scale = 2)
     private BigDecimal subtotal;
 

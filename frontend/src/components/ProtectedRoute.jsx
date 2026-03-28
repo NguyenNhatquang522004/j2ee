@@ -6,12 +6,17 @@ export function PrivateRoute({ children }) {
     return user ? children : <Navigate to="/login" replace />;
 }
 
-export function AdminRoute({ children }) {
-    const { user, isAdmin } = useAuth();
+export function AdminRoute({ children, permission }) {
+    const { user, isManagement, hasPermission } = useAuth();
     const { pathname } = useLocation();
 
     if (!user) return <Navigate to="/login" replace />;
-    if (!isAdmin) return <Navigate to="/" replace />;
+    if (!isManagement) return <Navigate to="/" replace />;
+    
+    // Check specific permission if required
+    if (permission && !hasPermission(permission)) {
+        return <Navigate to="/" replace />;
+    }
 
     // Enforce 2FA for admins if required but not enabled
     // EXCEPTION: Allow access to /admin/settings so they can actually set it up

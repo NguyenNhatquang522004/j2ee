@@ -12,6 +12,8 @@ import nhom5.demo.repository.FarmRepository;
 import nhom5.demo.repository.ProductBatchRepository;
 import nhom5.demo.repository.ProductRepository;
 import nhom5.demo.repository.ReviewRepository;
+import nhom5.demo.security.SecurityUtils;
+import nhom5.demo.service.AuditService;
 import nhom5.demo.service.ProductService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +29,7 @@ public class ProductServiceImpl implements ProductService {
     private final FarmRepository farmRepository;
     private final ProductBatchRepository batchRepository;
     private final ReviewRepository reviewRepository;
+    private final AuditService auditService;
 
     @Override
     @Transactional
@@ -37,8 +40,8 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Farm", "id", request.getFarmId()));
 
         Product product = Product.builder()
-                .name(request.getName())
-                .description(request.getDescription())
+                .name(SecurityUtils.sanitize(request.getName()))
+                .description(SecurityUtils.sanitize(request.getDescription()))
                 .price(request.getPrice())
                 .unit(request.getUnit())
                 .imageUrl(request.getImageUrl())
@@ -49,7 +52,9 @@ public class ProductServiceImpl implements ProductService {
                 .originalPrice(request.getOriginalPrice())
                 .build();
 
-        return toResponse(productRepository.save(product));
+        Product savedProduct = productRepository.save(product);
+        auditService.log(SecurityUtils.getCurrentUsername(), "CREATE", "Product", savedProduct.getId().toString(), "Created product: " + savedProduct.getName());
+        return toResponse(savedProduct);
     }
 
     @Override
@@ -62,8 +67,8 @@ public class ProductServiceImpl implements ProductService {
         Farm farm = farmRepository.findById(request.getFarmId())
                 .orElseThrow(() -> new ResourceNotFoundException("Farm", "id", request.getFarmId()));
 
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
+        product.setName(SecurityUtils.sanitize(request.getName()));
+        product.setDescription(SecurityUtils.sanitize(request.getDescription()));
         product.setPrice(request.getPrice());
         product.setUnit(request.getUnit());
         product.setImageUrl(request.getImageUrl());
@@ -75,7 +80,9 @@ public class ProductServiceImpl implements ProductService {
             product.setIsNew(request.getIsNew());
         product.setOriginalPrice(request.getOriginalPrice());
 
-        return toResponse(productRepository.save(product));
+        Product savedProduct = productRepository.save(product);
+        auditService.log(SecurityUtils.getCurrentUsername(), "UPDATE", "Product", savedProduct.getId().toString(), "Updated product: " + savedProduct.getName());
+        return toResponse(savedProduct);
     }
 
     @Override
@@ -85,6 +92,7 @@ public class ProductServiceImpl implements ProductService {
             throw new ResourceNotFoundException("Product", "id", id);
         }
         productRepository.deleteById(id);
+        auditService.log(SecurityUtils.getCurrentUsername(), "DELETE", "Product", id.toString(), "Deleted product with ID: " + id);
     }
 
     @Override
@@ -124,6 +132,8 @@ public class ProductServiceImpl implements ProductService {
         Product product = findById(id);
         product.setIsActive(!product.getIsActive());
         productRepository.save(product);
+        auditService.log(SecurityUtils.getCurrentUsername(), "TOGGLE_STATUS", "Product", id.toString(), 
+                "Toggled product status for ID: " + id + " to " + product.getIsActive());
     }
 
     private Product findById(Long id) {

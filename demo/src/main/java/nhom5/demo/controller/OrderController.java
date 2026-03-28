@@ -60,7 +60,7 @@ public class OrderController {
     }
 
     @Operation(summary = "Tất cả đơn hàng (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('manage:orders')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(
             @RequestParam(defaultValue = "0") int page,
@@ -71,7 +71,7 @@ public class OrderController {
     }
 
     @Operation(summary = "Cập nhật trạng thái đơn hàng (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('manage:orders')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<OrderResponse>> updateStatus(
             @PathVariable Long id,

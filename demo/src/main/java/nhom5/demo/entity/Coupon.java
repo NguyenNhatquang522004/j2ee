@@ -1,6 +1,7 @@
 package nhom5.demo.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -45,10 +46,12 @@ public class Coupon {
     private Integer discountPercent = 0;
 
     /** Số tiền giảm giá tối đa */
+    @Min(0)
     @Column(name = "max_discount_amount", precision = 15, scale = 2)
     private BigDecimal maxDiscountAmount;
 
     /** Giá trị đơn hàng tối thiểu để áp dụng coupon */
+    @Min(0)
     @Column(name = "min_order_amount", precision = 15, scale = 2)
     @Builder.Default
     private BigDecimal minOrderAmount = BigDecimal.ZERO;
@@ -56,6 +59,7 @@ public class Coupon {
     @Column(name = "expiry_date", nullable = false)
     private LocalDate expiryDate;
 
+    @Min(1)
     @Column(name = "usage_limit")
     private Integer usageLimit;
 
@@ -63,15 +67,38 @@ public class Coupon {
     @Builder.Default
     private Integer usedCount = 0;
 
+    @JsonProperty("isActive")
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    @JsonProperty("isPrivate")
+    @Column(name = "is_private", nullable = false)
+    @Builder.Default
+    private Boolean isPrivate = false;
+
+    // Explicitly add accessors to ensure Jackson and Lombok match perfectly
+    public Boolean getIsPrivate() { return isPrivate; }
+    public void setIsPrivate(Boolean isPrivate) { this.isPrivate = isPrivate; }
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     // ====== Relationships ======
+    @JsonIgnore
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "coupon_assigned_users",
+        joinColumns = @JoinColumn(name = "coupon_id"),
+        inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    @Builder.Default
+    private java.util.Set<User> assignedUsers = new java.util.HashSet<>();
+
     @JsonIgnore
     @OneToMany(mappedBy = "coupon", fetch = FetchType.LAZY)
     @Builder.Default

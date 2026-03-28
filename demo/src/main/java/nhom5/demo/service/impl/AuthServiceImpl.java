@@ -17,6 +17,7 @@ import nhom5.demo.repository.UserRepository;
 import nhom5.demo.security.JwtTokenProvider;
 import nhom5.demo.service.AuthService;
 import nhom5.demo.service.MailService;
+import nhom5.demo.service.NotificationService;
 import nhom5.demo.service.SettingService;
 import nhom5.demo.service.TwoFactorService;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -40,6 +41,7 @@ public class AuthServiceImpl implements AuthService {
     private final MailService mailService;
     private final TwoFactorService twoFactorService;
     private final SettingService settingService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -69,26 +71,56 @@ public class AuthServiceImpl implements AuthService {
         Cart cart = Cart.builder().user(user).build();
         cartRepository.save(cart);
 
-        String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername());
+        String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername(), user.getTokenVersion());
+        
+        // Thông báo tạo tài khoản
+        notificationService.createNotification(user, "Chào mừng bạn đến với FreshFood! Tài khoản của bạn đã sẵn sàng.", "SUCCESS", "/profile");
+        
         return buildAuthResponse(user, token);
     }
 
     @Override
+    @Transactional
     public AuthResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
-
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new BusinessException("Người dùng không tồn tại"));
 
         if (!user.getIsActive()) {
-            throw new BusinessException("Tài khoản của bạn đã bị khoá");
+            throw new BusinessException("Tài khoản của bạn đã bị khoá bởi Quản trị viên");
+        }
+
+        if (user.getLockUntil() != null && user.getLockUntil().isAfter(LocalDateTime.now())) {
+            throw new BusinessException("Tài khoản bị tạm khoá do nhập sai quá nhiều. Hãy thử lại sau " + 
+                java.time.Duration.between(LocalDateTime.now(), user.getLockUntil()).toMinutes() + " phút.");
+        }
+
+        try {
+            authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+            
+            // Success: Reset failed attempts
+            user.setFailedLoginAttempts(0);
+            user.setLockUntil(null);
+            userRepository.save(user);
+
+        } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            // Failure: Increment counter
+            int attempts = (user.getFailedLoginAttempts() != null ? user.getFailedLoginAttempts() : 0) + 1;
+            user.setFailedLoginAttempts(attempts);
+            
+            if (attempts >= 5) {
+                user.setLockUntil(LocalDateTime.now().plusMinutes(30)); // Lock for 30 mins
+                userRepository.save(user);
+                throw new BusinessException("Tài khoản đã bị khoá 30 phút do nhập sai mật khẩu 5 lần.");
+            }
+            
+            userRepository.save(user);
+            throw new BusinessException("Mật khẩu không chính xác. Bạn còn " + (5 - attempts) + " lần thử.");
         }
 
         // Check 2FA
         boolean enfored2FA = "true".equalsIgnoreCase(settingService.getSettingValue("2FA_ENFORCED", "false"));
-        boolean isAdmin = user.getRole() == RoleEnum.ROLE_ADMIN;
-
+        
         if (Boolean.TRUE.equals(user.getIsTwoFactorEnabled())) {
             if ("EMAIL".equals(user.getTwoFactorMethod())) {
                 String code = String.format("%06d", new java.util.Random().nextInt(1000000));
@@ -114,7 +146,11 @@ public class AuthServiceImpl implements AuthService {
         // This is to avoid locking them out of the setup profile page.
         // We will warn them in the UI instead.
 
-        String token = jwtTokenProvider.generateToken(authentication);
+        String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername(), user.getTokenVersion());
+        
+        // Notify login
+        notificationService.createNotification(user, "Đăng nhập thành công", "LOGIN", null);
+        
         return buildAuthResponse(user, token);
     }
 
@@ -145,7 +181,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (verified) {
-            String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername());
+            String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername(), user.getTokenVersion());
             return buildAuthResponse(user, token);
         } else {
             throw new BusinessException("Mã xác thực không hợp lệ hoặc đã hết hạn");
@@ -156,7 +192,9 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BusinessException("Email không được tìm thấy trong hệ thống"));
+                .orElse(null); // Silent fail to prevent email enumeration
+
+        if (user == null) return;
 
         String token = java.util.UUID.randomUUID().toString();
         user.setResetToken(token);
@@ -179,6 +217,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
+        user.setTokenVersion(user.getTokenVersion() + 1); // Invalidate all current sessions
         userRepository.save(user);
     }
 
@@ -224,7 +263,11 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("Tài khoản của bạn đã bị khoá");
         }
 
-        String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername());
+        String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername(), user.getTokenVersion());
+        
+        // Thông báo đăng nhập mạng xã hội
+        notificationService.createNotification(user, "Bạn đã đăng nhập thành công qua " + request.getProvider(), "LOGIN", null);
+        
         return buildAuthResponse(user, token);
     }
 

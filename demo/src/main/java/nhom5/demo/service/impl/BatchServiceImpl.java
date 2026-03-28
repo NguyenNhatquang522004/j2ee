@@ -37,8 +37,19 @@ public class BatchServiceImpl implements BatchService {
         if (batchRepository.existsByBatchCode(request.getBatchCode())) {
             throw new BusinessException("Mã lô '" + request.getBatchCode() + "' đã tồn tại");
         }
+
+        // Kiểm tra logic ngày tháng cho lô hàng mới
+        if (request.getProductionDate() != null && request.getProductionDate().isAfter(LocalDate.now())) {
+            throw new BusinessException("Ngày sản xuất không thể ở tương lai");
+        }
+        if (request.getProductionDate() != null && request.getImportDate().isBefore(request.getProductionDate())) {
+            throw new BusinessException("Ngày nhập hàng không thể trước ngày sản xuất");
+        }
+        if (request.getExpiryDate().isBefore(request.getImportDate()) || request.getExpiryDate().isEqual(request.getImportDate())) {
+            throw new BusinessException("Ngày hết hạn phải sau ngày nhập hàng");
+        }
         if (request.getExpiryDate().isBefore(LocalDate.now())) {
-            throw new BusinessException("Ngày hết hạn phải sau ngày hôm nay");
+            throw new BusinessException("Lô hàng này đã hết hạn, không thể nhập kho");
         }
 
         ProductBatch batch = ProductBatch.builder()
@@ -70,8 +81,16 @@ public class BatchServiceImpl implements BatchService {
                 && batchRepository.existsByBatchCode(request.getBatchCode())) {
             throw new BusinessException("Mã lô '" + request.getBatchCode() + "' đã tồn tại");
         }
-        if (request.getExpiryDate().isBefore(LocalDate.now())) {
-            throw new BusinessException("Ngày hết hạn phải sau ngày hôm nay");
+
+        // Kiểm tra logic ngày tháng khi cập nhật lô hàng
+        if (request.getProductionDate() != null && request.getProductionDate().isAfter(LocalDate.now())) {
+            throw new BusinessException("Ngày sản xuất không thể ở tương lai");
+        }
+        if (request.getProductionDate() != null && request.getImportDate().isBefore(request.getProductionDate())) {
+            throw new BusinessException("Ngày nhập hàng không thể trước ngày sản xuất");
+        }
+        if (request.getExpiryDate().isBefore(request.getImportDate()) || request.getExpiryDate().isEqual(request.getImportDate())) {
+            throw new BusinessException("Ngày hết hạn phải sau ngày nhập hàng");
         }
 
         int quantityDelta = request.getQuantity() - batch.getQuantity();

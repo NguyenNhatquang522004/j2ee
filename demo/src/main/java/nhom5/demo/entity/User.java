@@ -27,6 +27,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
 
     @Id
@@ -126,6 +127,23 @@ public class User {
 
     @Column(name = "email_2fa_code_expiry")
     private LocalDateTime email2faCodeExpiry;
+
+    @Column(name = "token_version", nullable = false)
+    @Builder.Default
+    private Integer tokenVersion = 0;
+
+    @Column(name = "failed_login_attempts")
+    @Builder.Default
+    private Integer failedLoginAttempts = 0;
+
+    @Column(name = "lock_until")
+    private LocalDateTime lockUntil;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_permissions", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "permission")
+    @Builder.Default
+    private java.util.Set<String> customPermissions = new java.util.HashSet<>();
 
     // ====== Relationships ======
     @JsonIgnore

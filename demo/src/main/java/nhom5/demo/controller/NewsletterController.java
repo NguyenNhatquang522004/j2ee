@@ -31,14 +31,14 @@ public class NewsletterController {
     }
 
     @Operation(summary = "Lấy danh sách người đăng ký (Admin)")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:newsletters')")
     @org.springframework.web.bind.annotation.GetMapping("/all")
     public ResponseEntity<ApiResponse<java.util.List<nhom5.demo.entity.NewsletterSubscriber>>> getAllSubscribers() {
         return ResponseEntity.ok(ApiResponse.success(newsletterService.getAllSubscribers()));
     }
 
     @Operation(summary = "Gửi bản tin cho tất cả người đăng ký (Admin)")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:newsletters')")
     @PostMapping("/send")
     public ResponseEntity<ApiResponse<Void>> sendNewsletter(
             @Valid @RequestBody nhom5.demo.dto.request.SendNewsletterRequest request) {
@@ -47,7 +47,7 @@ public class NewsletterController {
     }
 
     @Operation(summary = "Xóa người đăng ký (Admin)")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:newsletters')")
     @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteSubscriber(@org.springframework.web.bind.annotation.PathVariable Long id) {
         newsletterService.deleteSubscriber(id);

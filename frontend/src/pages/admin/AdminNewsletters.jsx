@@ -141,7 +141,7 @@ export default function AdminNewsletters() {
                                             )}
                                         </td>
                                         <td className="px-8 py-5 text-sm font-medium text-gray-400 italic">
-                                            {new Date(sub.createdAt).toLocaleDateString('vi-VN')}
+                                            {sub.createdAt ? new Date(sub.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
                                         </td>
                                         <td className="px-8 py-5 text-right">
                                             <button 

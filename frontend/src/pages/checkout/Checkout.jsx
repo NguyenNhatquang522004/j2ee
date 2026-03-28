@@ -204,8 +204,7 @@ export default function Checkout() {
                                     onChange={handleChange}
                                     rows={3}
                                     required
-                                    disabled={selectedAddressId !== 'new'}
-                                    className={`w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-medium text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none ${selectedAddressId !== 'new' ? 'opacity-70 cursor-not-allowed' : 'focus:bg-white'}`}
+                                    className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-medium text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none focus:bg-white"
                                     placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"
                                 />
                             </div>

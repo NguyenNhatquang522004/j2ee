@@ -15,27 +15,32 @@ import {
     ShieldCheckIcon, 
     Cog8ToothIcon,
     BellIcon,
-    PhotoIcon
+    PhotoIcon,
+    TicketIcon,
+    NewspaperIcon,
+    ClockIcon
 } from '@heroicons/react/24/outline';
 
 const MENU_ITEMS = [
-    { name: 'Tổng quan', path: '/admin', icon: ChartBarIcon },
-    { name: 'Người dùng', path: '/admin/users', icon: UserGroupIcon },
-    { name: 'Sản phẩm', path: '/admin/products', icon: ShoppingBagIcon },
-    { name: 'Danh mục', path: '/admin/categories', icon: TagIcon },
-    { name: 'Lô hàng', path: '/admin/batches', icon: PuzzlePieceIcon },
-    { name: 'Trang trại', path: '/admin/farms', icon: HomeIcon },
-    { name: 'Đơn hàng', path: '/admin/orders', icon: ClipboardDocumentListIcon },
-    { name: 'Mã giảm giá', path: '/admin/coupons', icon: TagIcon },
-    { name: 'Đánh giá', path: '/admin/reviews', icon: UserIcon },
-    { name: 'Thư viện', path: '/admin/media', icon: PhotoIcon },
-    { name: 'Bản tin', path: '/admin/newsletters', icon: BellIcon },
-    { name: 'Cài đặt', path: '/admin/settings', icon: Cog8ToothIcon },
+    { name: 'Tổng quan', path: '/admin', icon: ChartBarIcon, permission: 'view:reports' },
+    { name: 'Người dùng', path: '/admin/users', icon: UserGroupIcon, permission: 'manage:users' },
+    { name: 'Sản phẩm', path: '/admin/products', icon: ShoppingBagIcon, permission: 'manage:products' },
+    { name: 'Danh mục', path: '/admin/categories', icon: TagIcon, permission: 'manage:categories' },
+    { name: 'Lô hàng', path: '/admin/batches', icon: PuzzlePieceIcon, permission: 'manage:batches' },
+    { name: 'Trang trại', path: '/admin/farms', icon: HomeIcon, permission: 'manage:farms' },
+    { name: 'Đơn hàng', path: '/admin/orders', icon: ClipboardDocumentListIcon, permission: 'manage:orders' },
+    { name: 'Mã giảm giá', path: '/admin/coupons', icon: TicketIcon, permission: 'manage:promotions' },
+    { name: 'Đánh giá', path: '/admin/reviews', icon: UserIcon, permission: 'manage:reviews' },
+    { name: 'Nhân sự', path: '/admin/staff', icon: ShieldCheckIcon, permission: 'manage:users' },
+    { name: 'Nhật ký', path: '/admin/audit', icon: ClockIcon, permission: 'view:reports' },
+    { name: 'Thư viện', path: '/admin/media', icon: PhotoIcon, permission: 'manage:products' },
+    { name: 'Bản tin', path: '/admin/newsletters', icon: NewspaperIcon, permission: 'manage:newsletters' },
+    { name: 'Cài đặt', path: '/admin/settings', icon: Cog8ToothIcon, permission: 'manage:settings' },
 ];
 
 export default function AdminSidebar() {
     const { pathname } = useLocation();
-    const { logout } = useAuth();
+    const { logout, hasPermission } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -43,6 +48,12 @@ export default function AdminSidebar() {
         toast.success('Đã đăng xuất thành công');
         navigate('/login');
     };
+
+    const filteredMenu = MENU_ITEMS.filter(item => {
+        if (item.path === '/admin') return true; // Everyone in management can see Dashboard
+        if (item.path === '/admin/settings') return true; // Settings for profile/security
+        return hasPermission(item.permission);
+    });
 
     return (
         <aside className="w-64 bg-white border-r h-screen sticky top-0 flex flex-col shadow-[rgba(0,0,0,0.05)_5px_0px_15px]">
@@ -60,7 +71,7 @@ export default function AdminSidebar() {
             </div>
 
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                {MENU_ITEMS.map((item) => {
+                {filteredMenu.map((item) => {
                     const isActive = pathname === item.path;
                     return (
                         <Link 

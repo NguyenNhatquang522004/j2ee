@@ -12,6 +12,7 @@ import nhom5.demo.repository.OrderItemRepository;
 import nhom5.demo.repository.ProductRepository;
 import nhom5.demo.repository.ReviewRepository;
 import nhom5.demo.repository.UserRepository;
+import nhom5.demo.security.SecurityUtils;
 import nhom5.demo.service.ReviewService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,7 +49,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review review = Review.builder()
                 .rating(request.getRating())
-                .comment(request.getComment())
+                .comment(SecurityUtils.sanitize(request.getComment()))
                 .product(product)
                 .user(user)
                 .status(nhom5.demo.enums.ReviewStatusEnum.PENDING)
@@ -90,7 +91,7 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Review", "id", id));
         review.setStatus(status);
-        review.setAdminReply(adminReply);
+        review.setAdminReply(SecurityUtils.sanitize(adminReply));
         return toResponse(reviewRepository.save(review));
     }
 

@@ -27,17 +27,18 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(Authentication authentication) {
+    public String generateToken(Authentication authentication, Integer tokenVersion) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        return generateTokenFromUsername(userDetails.getUsername());
+        return generateTokenFromUsername(userDetails.getUsername(), tokenVersion);
     }
 
-    public String generateTokenFromUsername(String username) {
+    public String generateTokenFromUsername(String username, Integer tokenVersion) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
         return Jwts.builder()
                 .subject(username)
+                .claim("tv", tokenVersion)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
@@ -45,12 +46,19 @@ public class JwtTokenProvider {
     }
 
     public String getUsernameFromToken(String token) {
+        return getPayload(token).getSubject();
+    }
+
+    public Integer getTokenVersionFromToken(String token) {
+        return getPayload(token).get("tv", Integer.class);
+    }
+
+    private Claims getPayload(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+                .getPayload();
     }
 
     public boolean validateToken(String token) {

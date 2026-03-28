@@ -1,0 +1,99 @@
+services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: freshfood-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - freshfood-network
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: freshfood-search
+    ports:
+      - "7700:7700"
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-freshfood_super_secret_master_key_123}
+      - MEILI_ENV=production
+    volumes:
+      - meili_data:/meili_data
+    restart: unless-stopped
+    networks:
+      - freshfood-network
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: freshfood-mail
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # UI
+    restart: unless-stopped
+    networks:
+      - freshfood-network
+
+  freshfood-backend:
+    build: 
+      context: ./demo
+    container_name: freshfood-api
+    ports:
+      - "8080:8080"
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_PORT=8080
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-jdbc:mysql://host.docker.internal:3306/clean_food_db?createDatabaseIfNotExist=true&useSSL=false}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME:-root}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD:-}
+      - REDIS_HOST=freshfood-redis
+      - REDIS_PORT=6379
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_TRACES_SAMPLE_RATE=1.0
+      - MEILI_SERVER_URL=http://meilisearch:7700
+      - MEILI_API_KEY=${MEILI_MASTER_KEY}
+      - SPRING_MAIL_HOST=${SPRING_MAIL_HOST:-smtp.gmail.com}
+      - SPRING_MAIL_PORT=${SPRING_MAIL_PORT:-587}
+      - SPRING_MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED=true
+      - JWT_SECRET=${JWT_SECRET}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    depends_on:
+      redis:
+        condition: service_healthy
+      meilisearch:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - freshfood-network
+
+  freshfood-frontend:
+    build:
+      context: ./frontend
+    container_name: freshfood-ui
+    networks:
+      - freshfood-network
+    ports:
+      - "80:80"
+    depends_on:
+      - freshfood-backend
+    restart: unless-stopped
+
+networks:
+  freshfood-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+  meili_data:

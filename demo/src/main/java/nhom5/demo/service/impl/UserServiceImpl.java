@@ -18,8 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final nhom5.demo.repository.CartRepository cartRepository;
     private final PasswordEncoder passwordEncoder;
     private final com.cloudinary.Cloudinary cloudinary;
+    private final nhom5.demo.service.AuditService auditService;
 
     @Override
     @Transactional
@@ -88,11 +90,78 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public void logoutAllDevices(String username) {
+        User user = findByUsername(username);
+        user.setTokenVersion(user.getTokenVersion() + 1);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException("User", "id", id);
         }
         userRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getStaff(Pageable pageable) {
+        return userRepository.findByRoleIn(
+            java.util.Arrays.asList(nhom5.demo.enums.RoleEnum.ROLE_ADMIN, nhom5.demo.enums.RoleEnum.ROLE_STAFF),
+            pageable
+        ).map(this::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse adminUpdateUser(Long id, nhom5.demo.dto.request.AdminUserUpdateRequest request) {
+        User user = findById(id);
+        
+        if (request.getFullName() != null) user.setFullName(request.getFullName());
+        if (request.getEmail() != null) user.setEmail(request.getEmail());
+        if (request.getPhone() != null) user.setPhone(request.getPhone());
+        if (request.getAddress() != null) user.setAddress(request.getAddress());
+        if (request.getRole() != null) user.setRole(request.getRole());
+        if (request.getIsActive() != null) user.setIsActive(request.getIsActive());
+        if (request.getCustomPermissions() != null) {
+            user.getCustomPermissions().clear();
+            user.getCustomPermissions().addAll(request.getCustomPermissions());
+        }
+        
+        User savedUser = userRepository.save(user);
+        auditService.log(nhom5.demo.security.SecurityUtils.getCurrentUsername(), "ADMIN_UPDATE_USER", "User", id.toString(), "Updated staff/user: " + user.getUsername());
+        return toResponse(savedUser);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse createStaff(nhom5.demo.dto.request.RegisterRequest request, nhom5.demo.enums.RoleEnum role) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+             throw new BusinessException("Tên đăng nhập '" + request.getUsername() + "' đã tồn tại");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+             throw new BusinessException("Email '" + request.getEmail() + "' đã được sử dụng");
+        }
+
+        User user = User.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .fullName(request.getFullName())
+                .phone(request.getPhone())
+                .address(request.getAddress())
+                .role(role)
+                .isActive(true)
+                .provider("LOCAL")
+                .build();
+
+        userRepository.save(user);
+        cartRepository.save(nhom5.demo.entity.Cart.builder().user(user).build());
+
+        auditService.log(nhom5.demo.security.SecurityUtils.getCurrentUsername(), "ADMIN_CREATE_STAFF", "User", user.getId().toString(), "Created personnel: " + user.getUsername() + " with role " + role);
+        return toResponse(user);
     }
 
     private User findByUsername(String username) {
@@ -124,6 +193,18 @@ public class UserServiceImpl implements UserService {
                 .isActive(user.getIsActive())
                 .isTwoFactorEnabled(user.getIsTwoFactorEnabled())
                 .createdAt(user.getCreatedAt())
+                .permissions(combinePermissions(user))
                 .build();
+    }
+
+    private java.util.Set<String> combinePermissions(User user) {
+        java.util.Set<String> all = new java.util.HashSet<>();
+        if (user.getRole() != null && user.getRole().getPermissions() != null) {
+            all.addAll(user.getRole().getPermissions());
+        }
+        if (user.getCustomPermissions() != null) {
+            all.addAll(user.getCustomPermissions());
+        }
+        return all;
     }
 }

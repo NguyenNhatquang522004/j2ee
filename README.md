@@ -10,32 +10,33 @@ FreshFood là một nền tảng thương mại điện tử hiện đại, chuy
 - **Danh sách yêu thích (Wishlist)**: Lưu lại các sản phẩm quan tâm để mua sau.
 - **Đánh giá đa phương tiện**: Người dùng có thể đánh giá sản phẩm kèm theo hình ảnh/video thực tế (Lưu trữ qua Cloudinary).
 - **Trang cá nhân**: Quản lý thông tin cá nhân, ảnh đại diện, địa chỉ nhận hàng và lịch sử đơn hàng.
-- **AI Scan**: Sử dụng trí tuệ nhân tạo để phân tích hình ảnh sản phẩm (Gợi ý công thức, thông tin dinh dưỡng).
-- **Bảo mật 2 lớp (2FA)**: Bảo vệ tài khoản qua Google Authenticator hoặc Email OTP.
+- [AI Scan](./docs/ARCHITECTURE.md): Sử dụng trí tuệ nhân tạo để phân tích sản phẩm.
+- **Giám sát & Log**: Tích hợp **Sentry** (Theo dõi lỗi) và **Structured JSON Logging**.
+- **Tìm kiếm nâng cao**: Tích hợp **Meilisearch** cho tốc độ tìm kiếm cực nhanh.
 
 ### 🛡️ Dành cho Quản trị (Admin Dashboard)
 - **Quản lý Sản phẩm & Danh mục**: Thêm mới, cập nhật trạng thái và tồn kho.
-- **Quản lý Đơn hàng**: Theo dõi và cập nhật trạng thái giao hàng.
-- **Quản lý Trang trại & Lô hàng**: Theo dõi nguồn gốc thực phẩm qua từng lô hàng cụ thể.
-- **Thư viện Media**: Quản lý tập trung hình ảnh/video trên Cloudinary.
-- **Duyệt Đánh giá**: Kiểm duyệt và phản hồi các nhận xét từ khách hàng.
-- **Bản tin (Newsletter)**: Gửi thông tin khuyến mãi đến danh sách người dùng đăng ký.
+- **Quản lý Nhân sự**: Hệ thống phân quyền cụ thể cho từng nhân viên (RBAC).
+- **Hệ thống Mã giảm giá**: Quản lý Voucher công khai/riêng tư và logic tặng quà cá nhân.
+- **Audit Logs**: Nhật ký hoạt động quản trị viên đạt tiêu chuẩn audit doanh nghiệp.
+- **CI/CD Pipeline**: Tự động Build & Test qua **GitHub Actions**.
 
 ## 💻 Công nghệ sử dụng
 
 ### Backend
-- **Java Spring Boot 3**: Framework chính cho backend (REST API).
-- **Spring Security & JWT**: Cơ chế xác thực và phân quyền mạnh mẽ.
-- **Spring Data JPA**: Giao tiếp với cơ sở dữ liệu (MySQL/H2).
-- **Cloudinary SDK**: Lưu trữ và tối ưu hóa hình ảnh/video.
-- **Spring Mail**: Gửi mã OTP và thông báo hệ thống.
+- **Java Spring Boot 21**: Framework chính (REST API).
+- **Security Grade 3**: Đạt chuẩn Enterprise với CSRF Strict Match, Sliding Window Rate Limit và Pessimistic Locking.
+- **Spring Security (RBAC + Custom Perms)**: Phân quyền theo Role và tùy chỉnh cho từng nhân sự.
+- **Redis & Meilisearch**: Cache, Rate Limiting và Search Engine.
+- **Sentry**: Error Tracking & Performance Monitoring.
+- **Logstash/Logback**: Structured JSON Logging.
 
-### Frontend
-- **React.js (Vite)**: Thư viện xây dựng giao diện người dùng nhanh chóng.
-- **Tailwind CSS**: Framework CSS cho giao diện hiện đại, responsive.
-- **Context API**: Quản lý trạng thái toàn cục (User, Cart, Wishlist).
-- **Axios**: Kết nối và gọi API từ backend.
-- **Heroicons**: Bộ icon vector sắc nét và đồng bộ.
+### Infrastructure & DevOps
+- **Docker & Docker Compose**: Đóng gói toàn bộ stack (App, Redis, Meilisearch, MailHog).
+- **GitHub Actions**: Tự động hóa quy trình CI (Lint, Test, Build Docker).
+- **MailHog**: Môi trường giả lập SMTP để kiểm thử email.
+
+© 2026 FreshFood Project. Bảo lưu mọi quyền.
 
 ## 👥 Đội ngũ phát triển
 
@@ -54,8 +55,8 @@ Chi tiết về dự án có thể tham khảo trong thư mục `/docs`:
 - [Kiến trúc hệ thống](./docs/ARCHITECTURE.md)
 - [Hướng dẫn API](./docs/API-DOCS.md)
 - [Cơ sở dữ liệu](./docs/DATABASE.md)
-- [Bảo mật & 2FA](./docs/SECURITY.md)
-- [Triển khai hệ thống](./docs/DEPLOYMENT.md)
+- [Bảo mật & Phân quyền](./docs/SECURITY.md)
+- [Triển khai Docker](./docs/DEPLOYMENT.md)
 - [Nhật ký thay đổi](./docs/CHANGELOG.md)
 
 ---
