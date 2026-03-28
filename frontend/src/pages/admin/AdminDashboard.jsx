@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { dashboardService, orderService } from '../../api/services';
 import AdminLayout from '../../components/AdminLayout';
-import { 
-    ShoppingBagIcon, 
-    UserGroupIcon, 
-    CurrencyDollarIcon, 
-    ArchiveBoxIcon, 
+import {
+    ShoppingBagIcon,
+    UserGroupIcon,
+    CurrencyDollarIcon,
+    ArchiveBoxIcon,
     ChevronRightIcon,
     ArrowUpIcon,
     ArrowDownIcon,
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
                 <StatCard title="Doanh thu tháng (VNĐ)" value={fmt(stats?.revenueThisMonth || 0)} icon={CurrencyDollarIcon} color="bg-green-100" trend="up" trendValue="8" />
                 <StatCard title="Người dùng" value={fmt(stats?.totalUsers || 0)} icon={UserGroupIcon} color="bg-teal-100" trend="up" trendValue="15" />
                 <StatCard title="Sản phẩm" value={fmt(stats?.totalProducts || 0)} icon={ShoppingBagIcon} color="bg-lime-100" trend="down" trendValue="2" />
-                <StatCard title="Bản tin" value={fmt(stats?.totalSubscribers || 0)} icon={BellIcon} color="bg-orange-100" trend="up" trendValue="5" />
+                <StatCard title="Người đăng kí bản tin" value={fmt(stats?.totalSubscribers || 0)} icon={BellIcon} color="bg-orange-100" trend="up" trendValue="5" />
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">

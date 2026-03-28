@@ -34,8 +34,11 @@ import AdminTwoFactor from './pages/admin/AdminTwoFactor';
 import AdminNewsletters from './pages/admin/AdminNewsletters';
 import AdminMediaLibrary from './pages/admin/AdminMediaLibrary';
 import AdminReviews from './pages/admin/AdminReviews';
+import AdminStaff from './pages/admin/AdminStaff';
+import AdminAudit from './pages/admin/AdminAudit';
 import Maintenance from './pages/other/Maintenance';
 import Legal from './pages/other/Legal';
+import CouponList from './pages/coupons/CouponList';
 
 export default function App() {
   return (
@@ -63,6 +66,7 @@ export default function App() {
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/compare" element={<Compare />} />
             <Route path="/farms" element={<FarmList />} />
+            <Route path="/coupons" element={<CouponList />} />
             <Route path="/about" element={<Legal />} />
             <Route path="/privacy" element={<Legal />} />
             <Route path="/terms" element={<Legal />} />
@@ -79,17 +83,19 @@ export default function App() {
 
             {/* Admin routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
-            <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
-            <Route path="/admin/batches" element={<AdminRoute><AdminBatches /></AdminRoute>} />
-            <Route path="/admin/farms" element={<AdminRoute><AdminFarms /></AdminRoute>} />
-            <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
-            <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+            <Route path="/admin/products" element={<AdminRoute permission="manage:products"><AdminProducts /></AdminRoute>} />
+            <Route path="/admin/categories" element={<AdminRoute permission="manage:categories"><AdminCategories /></AdminRoute>} />
+            <Route path="/admin/batches" element={<AdminRoute permission="manage:batches"><AdminBatches /></AdminRoute>} />
+            <Route path="/admin/farms" element={<AdminRoute permission="manage:farms"><AdminFarms /></AdminRoute>} />
+            <Route path="/admin/orders" element={<AdminRoute permission="manage:orders"><AdminOrders /></AdminRoute>} />
+            <Route path="/admin/users" element={<AdminRoute permission="manage:users"><AdminUsers /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-            <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
-            <Route path="/admin/newsletters" element={<AdminRoute><AdminNewsletters /></AdminRoute>} />
-            <Route path="/admin/media" element={<AdminRoute><AdminMediaLibrary /></AdminRoute>} />
-            <Route path="/admin/reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
+            <Route path="/admin/coupons" element={<AdminRoute permission="manage:promotions"><AdminCoupons /></AdminRoute>} />
+            <Route path="/admin/newsletters" element={<AdminRoute permission="manage:newsletters"><AdminNewsletters /></AdminRoute>} />
+            <Route path="/admin/media" element={<AdminRoute permission="manage:products"><AdminMediaLibrary /></AdminRoute>} />
+            <Route path="/admin/reviews" element={<AdminRoute permission="manage:reviews"><AdminReviews /></AdminRoute>} />
+            <Route path="/admin/staff" element={<AdminRoute permission="manage:users"><AdminStaff /></AdminRoute>} />
+            <Route path="/admin/audit" element={<AdminRoute permission="view:reports"><AdminAudit /></AdminRoute>} />
             <Route path="/admin/2fa" element={<AdminRoute><Navigate to="/admin/settings?tab=security" replace /></AdminRoute>} />
             <Route path="/admin/profile" element={<AdminRoute><Navigate to="/admin/settings?tab=profile" replace /></AdminRoute>} />
 

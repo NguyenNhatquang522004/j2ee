@@ -19,7 +19,11 @@ public class RegisterRequest {
     private String email;
 
     @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, max = 100, message = "Mật khẩu phải từ 6-100 ký tự")
+    @Size(min = 8, max = 100, message = "Mật khẩu phải từ 8-100 ký tự")
+    @jakarta.validation.constraints.Pattern(
+        regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{8,}$",
+        message = "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt"
+    )
     private String password;
 
     private String fullName;

@@ -27,8 +27,8 @@ public class NewsletterSubscriber {
     private String email;
 
     @CreationTimestamp
-    @Column(name = "subscribed_at", updatable = false)
-    private LocalDateTime subscribedAt;
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
     
     @Column(name = "is_active")
     @Builder.Default

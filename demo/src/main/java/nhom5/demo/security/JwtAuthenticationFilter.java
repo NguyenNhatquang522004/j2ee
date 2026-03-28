@@ -36,13 +36,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
             String username = jwtTokenProvider.getUsernameFromToken(token);
+            Integer tokenVersion = jwtTokenProvider.getTokenVersionFromToken(token);
+            
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails,
-                    null, userDetails.getAuthorities());
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (userDetails instanceof CustomUserDetails customUserDetails) {
+                if (tokenVersion != null && tokenVersion.equals(customUserDetails.getTokenVersion())) {
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    log.warn("Invalid token version for user: {}. Token: {}, Expected: {}", 
+                            username, tokenVersion, customUserDetails.getTokenVersion());
+                }
+            }
         }
 
         filterChain.doFilter(request, response);

@@ -80,6 +80,7 @@ public class ProductController {
 
     @Operation(summary = "Tạo sản phẩm mới (Admin)")
     @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:products')")
     @PostMapping
     public ResponseEntity<ApiResponse<ProductResponse>> create(
             @Valid @RequestBody ProductRequest request) {
@@ -89,6 +90,7 @@ public class ProductController {
 
     @Operation(summary = "Cập nhật sản phẩm (Admin)")
     @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:products')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductResponse>> update(
             @PathVariable Long id,
@@ -98,6 +100,7 @@ public class ProductController {
 
     @Operation(summary = "Xoá sản phẩm (Admin)")
     @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:products')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         productService.deleteProduct(id);
@@ -106,7 +109,7 @@ public class ProductController {
 
     @Operation(summary = "Bật/tắt trạng thái sản phẩm (Admin)")
     @SecurityRequirement(name = "bearerAuth")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:products')")
     @PatchMapping("/{id}/toggle-status")
     public ResponseEntity<ApiResponse<Void>> toggleStatus(@PathVariable Long id) {
         productService.toggleProductStatus(id);

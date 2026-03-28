@@ -12,6 +12,7 @@ import nhom5.demo.service.CouponService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -24,8 +25,7 @@ public class CouponController {
 
     private final CouponService couponService;
 
-    @Operation(summary = "Tất cả mã giảm giá (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Tất cả mã giảm giá")
     @GetMapping
     public ResponseEntity<ApiResponse<List<Coupon>>> getAllCoupons() {
         return ResponseEntity.ok(ApiResponse.success(couponService.getAllCoupons()));
@@ -58,6 +58,24 @@ public class CouponController {
     public ResponseEntity<ApiResponse<Void>> deleteCoupon(@PathVariable Long id) {
         couponService.deleteCoupon(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa thành công", null));
+    }
+
+    @Operation(summary = "Tặng mã giảm giá cho người dùng (Admin)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/send-personal-gift")
+    public ResponseEntity<ApiResponse<Void>> giftCoupon(@RequestBody java.util.Map<String, Object> body) {
+        String email = (String) body.get("email");
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        Coupon couponDetails = mapper.convertValue(body.get("coupon"), Coupon.class);
+        couponService.giftCoupon(email, couponDetails);
+        return ResponseEntity.ok(ApiResponse.success("Đã tặng mã giảm giá thành công", null));
+    }
+
+    @Operation(summary = "Lấy voucher cá nhân của tôi")
+    @GetMapping("/my-vouchers")
+    public ResponseEntity<ApiResponse<List<Coupon>>> getMyCoupons() {
+        return ResponseEntity.ok(ApiResponse.success(couponService.getMyCoupons()));
     }
 
     @Operation(summary = "Kiểm tra mã giảm giá (Public/Authenticated)")

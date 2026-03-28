@@ -126,6 +126,7 @@ public class MailServiceImpl implements MailService {
     @Async
     public void sendGenericEmail(String toEmail, String subject, String content) {
         try {
+            log.info("Preparing to send newsletter to: {}", toEmail);
             Context context = new Context();
             context.setVariable("subject", subject);
             context.setVariable("content", content); // Already HTML string from Admin
@@ -133,6 +134,7 @@ public class MailServiceImpl implements MailService {
 
             String html = templateEngine.process("email-layout", context);
             sendHtmlEmail(toEmail, subject, html);
+            log.info("Newsletter sent successfully to: {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send generic email to {}: {}", toEmail, e.getMessage());
         }
@@ -142,6 +144,7 @@ public class MailServiceImpl implements MailService {
     @Async
     public void send2faEmail(String toEmail, String code) {
         try {
+            log.info("Sending 2FA code to: {}", toEmail);
             Context context = new Context();
             context.setVariable("code", code);
             context.setVariable("template", "email-2fa-code");
@@ -156,7 +159,15 @@ public class MailServiceImpl implements MailService {
     private void sendHtmlEmail(String to, String subject, String html) throws MessagingException, java.io.UnsupportedEncodingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-        helper.setFrom(fromAddress, fromName);
+        
+        // Gmail fallback: if using Gmail SMTP, the 'from' should ideally match authorized address
+        String effectiveFrom = fromAddress;
+        if (fromEmail != null && fromEmail.contains("@gmail.com") && !fromAddress.equals(fromEmail)) {
+            effectiveFrom = fromEmail;
+            log.warn("Detected Gmail server, overriding 'From' address to authenticated user: {}", effectiveFrom);
+        }
+        
+        helper.setFrom(effectiveFrom, fromName);
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(html, true);

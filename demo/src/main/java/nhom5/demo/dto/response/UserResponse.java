@@ -27,5 +27,6 @@ public class UserResponse {
     private RoleEnum role;
     private Boolean isActive;
     private Boolean isTwoFactorEnabled;
+    private java.util.Set<String> permissions;
     private java.time.LocalDateTime createdAt;
 }

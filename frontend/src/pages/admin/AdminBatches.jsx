@@ -81,6 +81,21 @@ export default function AdminBatches() {
 
     const handleSave = async (e) => {
         e.preventDefault();
+
+        // Validation logic
+        if (form.productionDate && form.productionDate > TODAY) {
+            toast.error('Ngày sản xuất không được ở tương lai');
+            return;
+        }
+        if (form.productionDate && form.importDate < form.productionDate) {
+            toast.error('Ngày nhập hàng không được trước ngày sản xuất');
+            return;
+        }
+        if (form.expiryDate <= form.importDate) {
+            toast.error('Ngày hết hạn phải sau ngày nhập hàng');
+            return;
+        }
+
         setSaving(true);
         try {
             const payload = { ...form, productId: Number(form.productId), quantity: Number(form.quantity) };

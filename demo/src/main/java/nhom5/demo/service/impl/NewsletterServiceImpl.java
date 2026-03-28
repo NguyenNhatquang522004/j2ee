@@ -6,9 +6,11 @@ import nhom5.demo.exception.BusinessException;
 import nhom5.demo.repository.NewsletterRepository;
 import nhom5.demo.service.MailService;
 import nhom5.demo.service.NewsletterService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NewsletterServiceImpl implements NewsletterService {
@@ -53,12 +55,16 @@ public class NewsletterServiceImpl implements NewsletterService {
     @Transactional
     public void sendNewsletterToAll(String subject, String content) {
         java.util.List<NewsletterSubscriber> activeSubscribers = newsletterRepository.findAll().stream()
-                .filter(NewsletterSubscriber::getIsActive)
+                .filter(s -> Boolean.TRUE.equals(s.getIsActive()))
                 .toList();
+
+        log.info("Starting to process newsletter sending to {} active subscribers.", activeSubscribers.size());
 
         for (NewsletterSubscriber subscriber : activeSubscribers) {
             mailService.sendGenericEmail(subscriber.getEmail(), subject, content);
         }
+        
+        log.info("Finished queueing {} newsletter emails.", activeSubscribers.size());
     }
 
     @Override

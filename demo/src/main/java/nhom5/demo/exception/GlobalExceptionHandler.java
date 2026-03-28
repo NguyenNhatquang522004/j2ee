@@ -66,13 +66,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(),
-                        "File upload quá lớn. Kích thước tối đa là 10MB"));
+                        "File upload quá lớn. Kích thước tối đa là 100MB"));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
+        // Log locally if needed: ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "Lỗi hệ thống. Vui lòng thử lại sau."));
+                        "Lỗi hệ thống. Vui lòng liên hệ quản trị viên hoặc thử lại sau."));
     }
 }

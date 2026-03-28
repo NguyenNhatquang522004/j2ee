@@ -142,6 +142,17 @@ export const couponService = {
     update: (id, data) => api.put(`/coupons/${id}`, data),
     delete: (id) => api.delete(`/coupons/${id}`),
     validate: (code, amount) => api.get(`/coupons/validate/${code}`, { params: { amount } }),
+    gift: (data) => api.post('/coupons/send-personal-gift', data),
+    getMyCoupons: () => api.get('/coupons/my-vouchers'),
+};
+
+// Notifications
+export const notificationService = {
+    getAll: (params) => api.get('/notifications', { params }),
+    getUnread: () => api.get('/notifications/unread'),
+    getUnreadCount: () => api.get('/notifications/unread/count'),
+    markAsRead: (id) => api.put(`/notifications/${id}/read`),
+    markAllAsRead: () => api.put('/notifications/read-all'),
 };
 
 export const wishlistService = {

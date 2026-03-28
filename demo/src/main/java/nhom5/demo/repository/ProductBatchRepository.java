@@ -24,7 +24,9 @@ public interface ProductBatchRepository extends JpaRepository<ProductBatch, Long
 
     /**
      * FEFO: lấy các lô hàng còn hạn sắp hết hạn trước.
+     * Sử dụng PESSIMISTIC_WRITE để đảm bảo không có race condition khi trừ kho.
      */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT b FROM ProductBatch b WHERE b.product.id = :productId " +
             "AND b.expiryDate > :today " +
             "AND b.remainingQuantity > 0 " +

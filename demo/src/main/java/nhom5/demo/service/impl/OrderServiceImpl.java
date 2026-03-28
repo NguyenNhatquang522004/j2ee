@@ -24,6 +24,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
+import nhom5.demo.security.SecurityUtils;
+import nhom5.demo.service.AuditService;
+
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -37,6 +40,8 @@ public class OrderServiceImpl implements OrderService {
     private final CartRepository cartRepository;
     private final BatchService batchService;
     private final MailService mailService;
+    private final AuditService auditService;
+    private final nhom5.demo.service.NotificationService notificationService;
 
     @Override
     @Transactional
@@ -142,8 +147,12 @@ public class OrderServiceImpl implements OrderService {
         // Send confirmation email asynchronously (fire-and-forget)
         try {
             mailService.sendOrderConfirmation(savedOrder);
+            notificationService.createNotification(user,
+                    "Đơn hàng #" + orderCode + " của bạn đã được tạo thành công!",
+                    "SUCCESS",
+                    "/profile/orders/" + savedOrder.getId());
         } catch (Exception ignored) {
-            // Email failure should not abort the order
+            // Email/Notification failure should not abort the order
         }
 
         return toResponse(savedOrder);
@@ -211,7 +220,17 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         
-        return toResponse(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+        
+        // Notify user about status change
+        notificationService.createNotification(order.getUser(),
+                "Đơn hàng #" + order.getOrderCode() + " đã chuyển sang trạng thái: " + status.getDisplayName(),
+                status == OrderStatusEnum.CANCELLED ? "WARNING" : "INFO",
+                "/profile/orders/" + order.getId());
+
+        auditService.log(SecurityUtils.getCurrentUsername(), "STATUS_UPDATE", "Order", id.toString(), 
+                "Updated order " + order.getOrderCode() + " status to " + status);
+        return toResponse(savedOrder);
     }
 
     private void revertCouponUsage(Order order) {
@@ -249,6 +268,13 @@ public class OrderServiceImpl implements OrderService {
         revertCouponUsage(order);
         revertStock(order);
         orderRepository.save(order);
+        
+        notificationService.createNotification(order.getUser(),
+                "Bạn đã hủy thành công đơn hàng #" + order.getOrderCode(),
+                "WARNING",
+                "/profile/orders/" + order.getId());
+
+        auditService.log(username, "CANCEL", "Order", id.toString(), "Cancelled order " + order.getOrderCode());
     }
 
     private OrderResponse toResponse(Order order) {

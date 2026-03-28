@@ -19,5 +19,13 @@ public interface UserService {
 
     void toggleUserStatus(Long id);
 
+    void logoutAllDevices(String username);
+
     void deleteUser(Long id);
+
+    Page<UserResponse> getStaff(Pageable pageable);
+
+    UserResponse adminUpdateUser(Long id, nhom5.demo.dto.request.AdminUserUpdateRequest request);
+
+    UserResponse createStaff(nhom5.demo.dto.request.RegisterRequest request, nhom5.demo.enums.RoleEnum role);
 }

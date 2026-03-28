@@ -13,6 +13,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
+    org.springframework.data.domain.Page<User> findByRoleIn(java.util.Collection<RoleEnum> roles, org.springframework.data.domain.Pageable pageable);
+
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);

@@ -25,17 +25,26 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Không tìm thấy người dùng với username: " + username));
 
-        List<SimpleGrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority(user.getRole().name()));
+        List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority(user.getRole().name()));
+        
+        // Add granular permissions from Role
+        user.getRole().getPermissions().forEach(permission -> 
+                authorities.add(new SimpleGrantedAuthority(permission)));
+        
+        // Add custom permissions for Staff/Admin
+        if (user.getCustomPermissions() != null) {
+            user.getCustomPermissions().forEach(permission ->
+                    authorities.add(new SimpleGrantedAuthority(permission)));
+        }
 
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .authorities(authorities)
-                .accountExpired(false)
-                .accountLocked(!user.getIsActive())
-                .credentialsExpired(false)
-                .disabled(!user.getIsActive())
-                .build();
+        return new CustomUserDetails(
+                user.getUsername(),
+                user.getPassword(),
+                authorities,
+                user.getId(),
+                user.getTokenVersion(),
+                user.getIsActive()
+        );
     }
 }
