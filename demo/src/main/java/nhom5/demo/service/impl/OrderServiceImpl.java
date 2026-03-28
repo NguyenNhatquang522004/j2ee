@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import nhom5.demo.security.SecurityUtils;
@@ -42,6 +43,7 @@ public class OrderServiceImpl implements OrderService {
     private final MailService mailService;
     private final AuditService auditService;
     private final nhom5.demo.service.NotificationService notificationService;
+    private final nhom5.demo.repository.FlashSaleItemRepository flashSaleItemRepository;
 
     @Override
     @Transactional
@@ -58,13 +60,40 @@ public class OrderServiceImpl implements OrderService {
                 throw new BusinessException("Sản phẩm '" + product.getName() + "' hiện không còn bán");
             }
 
+            // Check Flash Sale with Lock for thread safety
+            BigDecimal unitPrice = product.getPrice();
+            Long flashSaleItemId = null;
+            Optional<FlashSaleItem> flashSaleItemOpt = flashSaleItemRepository.findActiveByProductId(product.getId(), LocalDateTime.now());
+            
+            if (flashSaleItemOpt.isPresent()) {
+                // Re-fetch with Lock to ensure accurate soldQuantity
+                FlashSaleItem flashSaleItem = flashSaleItemRepository.findByIdWithLock(flashSaleItemOpt.get().getId())
+                        .orElse(flashSaleItemOpt.get());
+
+                if (flashSaleItem.getSoldQuantity() + itemReq.getQuantity() <= flashSaleItem.getQuantityLimit()) {
+                    // Entire quantity fits in flash sale
+                    unitPrice = flashSaleItem.getFlashSalePrice();
+                    flashSaleItemId = flashSaleItem.getId();
+                    flashSaleItem.setSoldQuantity(flashSaleItem.getSoldQuantity() + itemReq.getQuantity());
+                    flashSaleItemRepository.save(flashSaleItem);
+                } else if (flashSaleItem.getSoldQuantity() < flashSaleItem.getQuantityLimit()) {
+                    // PARTIAL Flash Sale? 
+                    // For simplicity in UI, if the requested quantity exceeds the remaining flash sale stock, 
+                    // we apply the system price (as requested: "hết số lượng thì dùng giá hệ thống").
+                    // Or we could check if they are okay with system price. 
+                    // Most systems would revert to regular price if the "deal" quantity is exhausted.
+                    unitPrice = product.getPrice(); 
+                }
+            }
+
             return OrderItem.builder()
                     .product(product)
                     .quantity(itemReq.getQuantity())
-                    .unitPrice(product.getPrice()) // snapshot current price
-                    .subtotal(product.getPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity())))
+                    .unitPrice(unitPrice) // snapshot current price (maybe flash sale)
+                    .subtotal(unitPrice.multiply(BigDecimal.valueOf(itemReq.getQuantity())))
                     .productName(product.getName()) // snapshot current name
                     .productImageUrl(product.getImageUrl()) // snapshot current image
+                    .flashSaleItemId(flashSaleItemId)
                     .build();
         }).toList();
 
@@ -206,6 +235,7 @@ public class OrderServiceImpl implements OrderService {
         LocalDateTime now = LocalDateTime.now();
         
         switch (status) {
+            case PENDING -> { /* Chờ xác nhận */ }
             case CONFIRMED -> { if (order.getConfirmedAt() == null) order.setConfirmedAt(now); }
             case PACKAGING -> { /* Just status update */ }
             case SHIPPING -> { if (order.getShippedAt() == null) order.setShippedAt(now); }
@@ -217,6 +247,7 @@ public class OrderServiceImpl implements OrderService {
                 if (order.getCancelledAt() == null) order.setCancelledAt(now); 
                 revertCouponUsage(order);
                 revertStock(order);
+                revertFlashSaleUsage(order);
             }
         }
         
@@ -238,6 +269,17 @@ public class OrderServiceImpl implements OrderService {
             Coupon coupon = order.getCoupon();
             coupon.setUsedCount(Math.max(0, coupon.getUsedCount() - 1));
             couponRepository.save(coupon);
+        }
+    }
+
+    private void revertFlashSaleUsage(Order order) {
+        for (OrderItem item : order.getOrderItems()) {
+            if (item.getFlashSaleItemId() != null) {
+                flashSaleItemRepository.findByIdWithLock(item.getFlashSaleItemId()).ifPresent(fsItem -> {
+                    fsItem.setSoldQuantity(Math.max(0, fsItem.getSoldQuantity() - item.getQuantity()));
+                    flashSaleItemRepository.save(fsItem);
+                });
+            }
         }
     }
 
@@ -267,6 +309,7 @@ public class OrderServiceImpl implements OrderService {
         order.setCancelledAt(LocalDateTime.now());
         revertCouponUsage(order);
         revertStock(order);
+        revertFlashSaleUsage(order);
         orderRepository.save(order);
         
         notificationService.createNotification(order.getUser(),

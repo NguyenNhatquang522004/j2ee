@@ -20,6 +20,8 @@ public class ProductResponse {
     private Boolean isActive;
     private Boolean isNew;
     private BigDecimal originalPrice;
+    private BigDecimal flashSalePrice;
+    private LocalDateTime flashSaleEndDate;
     private int totalStock;
 
     // Category info

@@ -26,8 +26,13 @@ public class MediaServiceImpl implements MediaService {
     @Override
     @Transactional
     public MediaResponse uploadFile(MultipartFile file) throws IOException {
+        String contentType = file.getContentType();
+        if (contentType == null || (!contentType.startsWith("image/") && !contentType.startsWith("video/"))) {
+            throw new RuntimeException("Chỉ chấp nhận file hình ảnh hoặc video");
+        }
+
         String resourceType = "auto";
-        if (file.getContentType() != null && file.getContentType().startsWith("video")) {
+        if (contentType.startsWith("video")) {
             resourceType = "video";
         }
 

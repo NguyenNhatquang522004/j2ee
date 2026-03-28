@@ -11,7 +11,8 @@ import {
     ArrowRightIcon,
     InboxIcon,
     CubeIcon,
-    XMarkIcon
+    XMarkIcon,
+    BoltIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 
@@ -87,6 +88,21 @@ export default function Wishlist() {
                                         </div>
                                     )}
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
+                                    <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 transition-transform group-hover:translate-x-1 duration-500">
+                                        {product.isNew && (
+                                            <span className="bg-black text-white text-[9px] font-black px-3 py-1.5 rounded-xl shadow-xl uppercase tracking-widest border border-white/20">Mới</span>
+                                        )}
+                                        {product.flashSalePrice ? (
+                                            <span className="bg-red-600 text-white text-[9px] font-black px-3 py-1.5 rounded-xl shadow-xl uppercase tracking-widest border border-white/20 animate-pulse flex items-center gap-1">
+                                                <BoltIcon className="w-3 h-3" />
+                                                -{Math.round((product.price - product.flashSalePrice) / product.price * 100)}%
+                                            </span>
+                                        ) : (product.originalPrice > product.price && (
+                                            <span className="bg-red-600 text-white text-[9px] font-black px-3 py-1.5 rounded-xl shadow-xl uppercase tracking-widest border border-white/20">
+                                                -{Math.round((product.originalPrice - product.price) / product.originalPrice * 100)}%
+                                            </span>
+                                        ))}
+                                    </div>
                                 </Link>
 
                                 <button 
@@ -98,16 +114,57 @@ export default function Wishlist() {
                                 </button>
 
                                 <div className="p-6">
-                                    <Link to={`/products/${product.id}`} className="block mb-2">
-                                        <h3 className="text-lg font-bold text-gray-800 hover:text-green-600 transition-colors line-clamp-1">{product.name}</h3>
-                                        <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">{product.categoryName || 'Sản phẩm'}</p>
+                                    <div className="flex items-center gap-1 text-[9px] text-gray-500 mb-1 truncate font-black uppercase tracking-widest">
+                                        <span className="w-1 h-1 rounded-full bg-green-500"></span>
+                                        {product.farmName || 'Trang trại hữu cơ'}
+                                    </div>
+                                    <Link to={`/products/${product.id}`} className="block mb-4">
+                                        <h3 className="text-lg font-bold text-gray-800 hover:text-green-600 transition-colors line-clamp-1 uppercase tracking-tight">{product.name}</h3>
+                                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest mb-2">{product.categoryName || 'Sản phẩm'}</p>
+                                        <div className="flex items-center gap-2">
+                                            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border shadow-sm transition-all group-hover:shadow-md ${product.totalStock > 0 ? 'bg-gray-50 border-gray-100 group-hover:border-green-100' : 'bg-red-50 border-red-100'}`}>
+                                                <div className={`w-1.5 h-1.5 rounded-full ${product.totalStock > 10 ? 'bg-green-500' : product.totalStock > 0 ? 'bg-amber-500' : 'bg-red-500 animate-pulse'}`}></div>
+                                                <span className={`text-[9px] font-black uppercase tracking-tighter ${product.totalStock > 0 ? 'text-gray-500' : 'text-red-600'}`}>
+                                                    {product.totalStock > 0 ? `Còn lại: ${product.totalStock} ${product.unit}` : 'Tạm hết hàng'}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </Link>
                                     
-                                    <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                                        <div>
-                                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Giá bán</p>
-                                            <p className="text-lg font-black text-green-700">{product.price?.toLocaleString('vi-VN')}đ</p>
-                                        </div>
+                                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                                         <div>
+                                             <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1.5">
+                                                 {product.flashSalePrice ? (
+                                                     <span className="text-red-600 flex items-center gap-1">
+                                                         <BoltIcon className="w-2.5 h-2.5" />
+                                                         Giá Flash Sale
+                                                     </span>
+                                                 ) : 'Giá bán'}
+                                             </p>
+                                             <div className="flex flex-col">
+                                                 {product.flashSalePrice ? (
+                                                     <>
+                                                         <span className="text-gray-400 line-through text-[10px] font-bold italic leading-none mb-1">
+                                                             {product.price.toLocaleString('vi-VN')}đ
+                                                         </span>
+                                                         <span className="text-red-600 font-black text-xl leading-none">
+                                                             {product.flashSalePrice.toLocaleString('vi-VN')}đ
+                                                         </span>
+                                                     </>
+                                                 ) : (
+                                                     <>
+                                                         {product.originalPrice > product.price && (
+                                                             <span className="text-gray-400 line-through text-[10px] font-bold italic leading-none mb-1">
+                                                                 {product.originalPrice.toLocaleString('vi-VN')}đ
+                                                             </span>
+                                                         )}
+                                                         <span className="text-green-700 font-black text-xl leading-none">
+                                                             {product.price?.toLocaleString('vi-VN')}đ
+                                                         </span>
+                                                     </>
+                                                 )}
+                                             </div>
+                                         </div>
                                         <Link to={`/products/${product.id}`} className="w-10 h-10 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center hover:bg-green-600 hover:text-white transition-all duration-300">
                                             <ArrowRightIcon className="w-5 h-5" />
                                         </Link>

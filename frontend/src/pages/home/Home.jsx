@@ -13,9 +13,11 @@ import {
     ShoppingBagIcon,
     ArrowRightIcon,
     TagIcon,
-    CubeIcon
+    CubeIcon,
+    BoltIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid, StarIcon } from '@heroicons/react/24/solid';
+import FlashSaleSection from '../../components/FlashSaleSection';
 
 export default function Home() {
     const [topProducts, setTopProducts] = useState([]);
@@ -74,6 +76,9 @@ export default function Home() {
                     </div>
                 ))}
             </section>
+ 
+            {/* Flash Sale */}
+            <FlashSaleSection />
 
             {/* Categories */}
             {categories.length > 0 && (
@@ -114,7 +119,7 @@ export default function Home() {
                 {loading ? (
                     <div className="text-center py-20 text-gray-400 font-medium">Đang chuẩn bị sản phẩm...</div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-8">
                         {topProducts.map((p) => (
                             <ProductCard key={p.id} product={p} />
                         ))}
@@ -154,56 +159,76 @@ function ProductCard({ product }) {
     };
 
     return (
-        <Link to={`/products/${product.id}`} className="group bg-white rounded-2xl border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
-            <div className="h-48 bg-gray-50 flex items-center justify-center overflow-hidden relative">
+        <Link to={`/products/${product.id}`} className="group bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col h-full border-b-[3px] sm:border-b-[4px] hover:border-b-green-500">
+            <div className="h-32 sm:h-48 bg-gray-50 flex items-center justify-center overflow-hidden relative">
                 {product.imageUrl ? (
                     <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 ) : (
-                    <CubeIcon className="w-16 h-16 text-gray-200" />
+                    <CubeIcon className="w-10 h-10 sm:w-16 sm:h-16 text-gray-200" />
                 )}
 
                 {/* Badges */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 transition-transform group-hover:translate-x-1 group-hover:translate-y-1 duration-500">
+                <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1 sm:gap-2 z-10 transition-transform group-hover:translate-x-1 group-hover:translate-y-1 duration-500">
                     {product.isNew && (
-                        <span className="bg-black text-white text-[10px] font-black px-3 py-1 rounded-xl shadow-xl uppercase tracking-widest border border-white/20 backdrop-blur-sm">Mới</span>
+                        <span className="bg-black/80 backdrop-blur-md text-white text-[7px] sm:text-[10px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20">Mới</span>
                     )}
-                    {product.originalPrice > product.price && (
-                        <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-xl shadow-xl uppercase tracking-widest border border-white/20 backdrop-blur-sm">
+                    {product.flashSalePrice ? (
+                        <span className="bg-red-600 text-white text-[7px] sm:text-[10px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20 animate-pulse flex items-center gap-0.5 sm:gap-1">
+                            <BoltIcon className="w-2 sm:w-3.5 h-2 sm:h-3.5" />
+                            -{Math.round((product.price - product.flashSalePrice) / product.price * 100)}%
+                        </span>
+                    ) : (product.originalPrice > product.price && (
+                        <span className="bg-red-600 text-white text-[7px] sm:text-[10px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20">
                             -{Math.round((product.originalPrice - product.price) / product.originalPrice * 100)}%
                         </span>
-                    )}
+                    ))}
                 </div>
             </div>
             
             <button 
                 onClick={toggleWishlist}
-                className={`absolute top-4 right-4 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 scale-90 group-hover:scale-100 ${isLiked ? 'bg-white text-red-500' : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500'}`}
+                className={`absolute top-2 right-2 sm:top-4 sm:right-4 w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 scale-90 sm:group-hover:scale-100 ${isLiked ? 'bg-white text-red-500' : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500'}`}
             >
-                {isLiked ? <HeartIconSolid className="w-6 h-6" /> : <HeartIcon className="w-6 h-6" />}
+                {isLiked ? <HeartIconSolid className="w-3.5 h-3.5 sm:w-6 sm:h-6" /> : <HeartIcon className="w-3.5 h-3.5 sm:w-6 sm:h-6" />}
             </button>
 
-            <div className="p-4">
-                <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-1">{product.farmName || 'Trang trại'}</p>
-                <h3 className="font-bold text-gray-800 text-sm mb-3 line-clamp-1 group-hover:text-green-700 transition-colors uppercase tracking-tight">{product.name}</h3>
+            <div className="p-2 sm:p-4 flex flex-col flex-1">
+                <p className="text-[7px] sm:text-[9px] font-black text-gray-500 uppercase tracking-widest mb-0.5 sm:mb-1">{product.farmName || 'Trang trại'}</p>
+                <h3 className="font-bold text-gray-800 text-[10px] sm:text-sm mb-2 sm:mb-3 line-clamp-1 group-hover:text-green-700 transition-colors uppercase tracking-tight">{product.name}</h3>
                 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+                <div className="mt-auto pt-2 sm:pt-4 border-t border-gray-100 flex items-center justify-between">
                     <div>
-                        <p className="text-[10px] text-gray-400 uppercase font-black tracking-tighter mb-1">Giá / {product.unit}</p>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-black text-green-700">
-                                {product.price?.toLocaleString('vi-VN')}đ
-                            </span>
-                            {product.originalPrice > product.price && (
-                                <span className="text-gray-300 line-through text-xs font-bold italic">
-                                    {product.originalPrice.toLocaleString('vi-VN')}đ
-                                </span>
+                        <p className="text-[7px] sm:text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-0.5 sm:mb-1">
+                            {product.flashSalePrice ? "Flash Sale" : `Giá / ${product.unit}`}
+                        </p>
+                        <div className="flex flex-col">
+                            {product.flashSalePrice ? (
+                                <>
+                                    <span className="text-gray-400 line-through text-[8px] sm:text-[10px] font-bold italic leading-none mb-0.5 sm:mb-1">
+                                        {product.price.toLocaleString('vi-VN')}đ
+                                    </span>
+                                    <span className="text-red-600 font-extrabold text-xs sm:text-xl leading-none">
+                                        {product.flashSalePrice.toLocaleString('vi-VN')}đ
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    {product.originalPrice > product.price && (
+                                        <span className="text-gray-400 line-through text-[8px] sm:text-[10px] font-bold italic leading-none mb-0.5 sm:mb-1">
+                                            {product.originalPrice.toLocaleString('vi-VN')}đ
+                                        </span>
+                                    )}
+                                    <span className="text-green-700 font-extrabold text-xs sm:text-xl leading-none">
+                                        {product.price.toLocaleString('vi-VN')}đ
+                                    </span>
+                                </>
                             )}
                         </div>
                     </div>
                     {product.averageRating > 0 && (
-                        <div className="flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-full border border-yellow-100 shadow-sm">
-                            <StarIcon className="w-3.5 h-3.5 text-yellow-500" />
-                            <span className="text-yellow-700 font-bold text-xs">{product.averageRating.toFixed(1)}</span>
+                        <div className="flex items-center gap-1 bg-yellow-50 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-yellow-100 shadow-sm">
+                            <StarIcon className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-yellow-500" />
+                            <span className="text-yellow-700 font-bold text-[9px] sm:text-xs">{product.averageRating.toFixed(1)}</span>
                         </div>
                     )}
                 </div>

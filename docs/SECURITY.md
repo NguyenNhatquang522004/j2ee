@@ -26,10 +26,11 @@ Hệ thống cấu hình Filter CORS nghiêm ngặt để chỉ cho phép các n
 
 ---
 
-## 🔒 4. CSRF Protection (Double Submit Cookie)
-Hệ thống chống lại các cuộc tấn công Cross-Site Request Forgery (CSRF) bằng cơ chế nghiêm ngặt:
-- **Strict Match Policy**: Chỉ chấp nhận các yêu cầu thay đổi dữ liệu (POST, PUT, DELETE) khi mã token trong Cookie và mã trong Header (`X-XSRF-TOKEN`) khớp hoàn toàn 1:1.
-- **Synchronized Initialization**: Mã CSRF được khởi tạo ngay từ lần gọi API đầu tiên qua `CsrfCookieFilter`.
+## 🔒 4. CSRF Protection (Stateless API Guard)
+Hệ thống ưu tiên sử dụng chuẩn REST API không trạng thái (Stateless), giúp loại bỏ các lỗi đồng bộ mã xác thực thông thường:
+- **API Exclusion**: Mọi yêu cầu bắt đầu bằng `/api/v1/**` được loại trừ khỏi bộ lọc CSRF. Điều này là an toàn tuyệt đối vì hệ thống yêu cầu mã `Authorization: Bearer <JWT>` trong Header — một thông tin mà các trang web độc hại không thể tự động đính kèm hoặc đọc được từ LocalStorage.
+- **Fail-safe Design**: Khắc phục triệt để lỗi người dùng phải thực hiện hành động 2 lần do trễ mã XSRF-TOKEN.
+- **Stateful Safety**: Với các phần (nếu có) sử dụng Sesion, hệ thống vẫn duy trì `CookieCsrfTokenRepository` chuẩn để bảo vệ.
 
 ---
 

@@ -36,5 +36,13 @@ Tài liệu này cung cấp cái nhìn tổng quan về các điểm cuối (End
 - `POST /reviews`: Gửi đánh giá kèm hình ảnh/video.
 - `PUT /reviews/admin/{id}/moderate`: (Admin) Duyệt và phản hồi đánh giá.
 
+### 📊 7. Dashboard & Analytics (`/dashboard`)
+- `GET /dashboard`: (Admin) Lấy dữ liệu thống kê tổng hợp, doanh thu và biểu đồ hiệu suất.
+
+### 🖼️ 8. Media Library (`/media`)
+- `GET /media`: (Admin) Danh sách tài liệu đa phương tiện từ Cloudinary.
+- `POST /media/upload`: Tải tệp tin mới lên hệ thống.
+- `DELETE /media/{id}`: Xoá tài nguyên khỏi thư viện.
+
 ---
 © 2026 FreshFood Project.

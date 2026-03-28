@@ -10,7 +10,8 @@ import {
     ClipboardDocumentIcon,
     MagnifyingGlassIcon,
     XMarkIcon,
-    CheckCircleIcon
+    CheckCircleIcon,
+    EyeIcon
 } from '@heroicons/react/24/outline';
 
 export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }) {
@@ -19,6 +20,7 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
     const [uploading, setUploading] = useState(false);
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('all'); // all, image, video
+    const [previewing, setPreviewing] = useState(null);
 
     const fetchMedia = useCallback(async () => {
         setLoading(true);
@@ -40,6 +42,14 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
         const file = e.target.files[0];
         if (!file) return;
 
+        // Validate file type
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        if (!isImage && !isVideo) {
+            toast.error('Chỉ hỗ trợ tải lên hình ảnh hoặc video');
+            return;
+        }
+
         const formData = new FormData();
         formData.append('file', file);
 
@@ -53,6 +63,7 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
             toast.error('Tải lên thất bại', { id: 'upload' });
         } finally {
             setUploading(false);
+            e.target.value = ''; // Reset input
         }
     };
 
@@ -72,6 +83,17 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
         toast.success('Đã sao chép liên kết');
     };
 
+    const formatBytes = (bytes, decimals = 2) => {
+        if (!bytes) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    };
+
+    const totalSize = media.reduce((acc, m) => acc + (m.fileSize || 0), 0);
+
     const filteredMedia = media.filter(m => {
         const matchesSearch = m.fileName?.toLowerCase().includes(search.toLowerCase());
         const matchesType = filter === 'all' || (filter === 'image' && m.fileType?.startsWith('image')) || (filter === 'video' && m.fileType?.startsWith('video'));
@@ -87,13 +109,17 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                         <PhotoIcon className="w-6 h-6 text-green-600" />
                         Thư viện Media
                     </h1>
-                    <p className="text-[13px] text-gray-500 font-medium">Lưu trữ và quản lý tài sản số của FreshFood.</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">{media.length} tệp tin</p>
+                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                        <p className="text-[11px] text-green-600 font-black uppercase tracking-wider">Tổng: {formatBytes(totalSize)}</p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <label className={`cursor-pointer flex items-center gap-2 px-4.5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-black rounded-lg shadow-lg shadow-green-100 transition-all active:scale-95 text-[11px] uppercase tracking-wider ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
                         <CloudArrowUpIcon className="w-5 h-5 stroke-[3]" />
                         <span>{uploading ? 'Đang tải...' : 'Tải lên'}</span>
-                        <input type="file" className="hidden" onChange={handleUpload} disabled={uploading} />
+                        <input type="file" className="hidden" accept="image/*,video/*" onChange={handleUpload} disabled={uploading} />
                     </label>
                     {isModal && (
                         <button onClick={onClose} className="p-3 text-gray-400 hover:bg-gray-100 rounded-xl transition-all">
@@ -147,16 +173,31 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                             return (
                                 <div key={m.id} className="group relative aspect-square rounded-xl overflow-hidden border border-gray-100 bg-gray-50 shadow-sm hover:shadow-lg transition-all duration-300">
                                     {isVideo ? (
-                                        <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                                            <VideoCameraIcon className="w-10 h-10 text-white/50" />
-                                            <video src={m.url} className="absolute inset-0 w-full h-full object-cover hidden group-hover:block" muted loop onMouseOver={e => e.target.play()} onMouseOut={e => {e.target.pause(); e.target.currentTime = 0;}} />
+                                        <div className="w-full h-full flex items-center justify-center bg-gray-900 select-none">
+                                            <VideoCameraIcon className="w-10 h-10 text-white/20 absolute z-0" />
+                                            <video 
+                                                src={m.url} 
+                                                className="absolute inset-0 w-full h-full object-cover z-10" 
+                                                muted 
+                                                loop 
+                                                playsInline
+                                                onMouseOver={e => e.target.play()} 
+                                                onMouseOut={e => {e.target.pause(); e.target.currentTime = 0;}} 
+                                            />
                                         </div>
                                     ) : (
                                         <img src={m.url} alt={m.fileName} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                     )}
                                     
                                     {/* Overlay */}
-                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 z-20">
+                                        <button 
+                                            onClick={() => setPreviewing(m)}
+                                            className="w-10 h-10 flex items-center justify-center bg-white/20 hover:bg-white/40 text-white rounded-full transition-colors"
+                                            title="Xem trước"
+                                        >
+                                            <EyeIcon className="w-5 h-5" />
+                                        </button>
                                         {onSelect ? (
                                             <button 
                                                 onClick={() => onSelect(m)}
@@ -186,11 +227,20 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                                     </div>
 
                                     {/* Info Flag */}
-                                    <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center pointer-events-none">
-                                        <span className="text-[10px] bg-black/50 backdrop-blur px-2 py-0.5 rounded text-white font-bold truncate max-w-[70%]">
-                                            {m.fileName}
-                                        </span>
-                                        {isVideo && <span className="text-[10px] bg-red-600 px-1.5 py-0.5 rounded text-white font-black uppercase">Video</span>}
+                                    <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end pointer-events-none z-10">
+                                        <div className="flex flex-col bg-black/70 backdrop-blur-md px-2 py-1 rounded-lg max-w-[70%] shadow-lg border border-white/10">
+                                            <span className="text-[9px] text-white font-black truncate leading-tight">
+                                                {m.fileName}
+                                            </span>
+                                            <span className="text-[8px] text-green-400 font-black tracking-widest uppercase mt-0.5">
+                                                {formatBytes(m.fileSize)}
+                                            </span>
+                                        </div>
+                                        {isVideo && (
+                                            <span className="text-[9px] bg-red-600 px-2 py-1 rounded-lg text-white font-black uppercase shadow-lg shadow-red-900/60 border border-red-500/20">
+                                                Video
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             );
@@ -198,6 +248,59 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                     </div>
                 )}
             </div>
+
+            {/* Preview Lightbox */}
+            {previewing && (
+                <div className="fixed inset-0 z-[70] bg-black/95 backdrop-blur-md overflow-y-auto">
+                    <button 
+                        onClick={() => setPreviewing(null)}
+                        className="fixed top-6 right-6 p-4 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all z-[80]"
+                    >
+                        <XMarkIcon className="w-10 h-10" />
+                    </button>
+                    
+                    <div className="min-h-full flex flex-col items-center justify-center p-8 sm:p-12">
+                        <div className="w-full max-w-5xl aspect-video flex items-center justify-center animate-in zoom-in-95 duration-500 mb-8">
+                            {previewing.fileType?.startsWith('video') ? (
+                                <video 
+                                    src={previewing.url} 
+                                    controls 
+                                    autoPlay 
+                                    className="max-w-full max-h-[60vh] sm:max-h-[70vh] rounded-2xl shadow-2xl" 
+                                />
+                            ) : (
+                                <img 
+                                    src={previewing.url} 
+                                    alt="" 
+                                    className="max-w-full max-h-[60vh] sm:max-h-[70vh] object-contain rounded-2xl shadow-2xl" 
+                                />
+                            )}
+                        </div>
+                        
+                        <div className="text-center text-white space-y-3 animate-in fade-in slide-in-from-bottom-5 duration-700 max-w-2xl">
+                            <h3 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter">{previewing.fileName}</h3>
+                            <p className="text-white/40 font-bold uppercase tracking-widest text-[9px] sm:text-[11px]">Định dạng: {previewing.fileType} • Dung lượng: {(previewing.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+                            <div className="flex flex-wrap gap-4 pt-4 justify-center">
+                                <button 
+                                    onClick={() => copyToClipboard(previewing.url)}
+                                    className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-xl transition-all border border-white/10"
+                                >
+                                    Sao chép liên kết
+                                </button>
+                                <a 
+                                    href={previewing.url} 
+                                    download 
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-green-900/40"
+                                >
+                                    Tải về máy tính
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 

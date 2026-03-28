@@ -12,7 +12,8 @@ import {
     ShoppingBagIcon, 
     CakeIcon, 
     Square3Stack3DIcon,
-    ArrowsRightLeftIcon
+    ArrowsRightLeftIcon,
+    BoltIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { 
@@ -330,9 +331,9 @@ export default function ProductList() {
 
                 <div className="flex-1">
                     {loading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {Array(8).fill(0).map((_, i) => (
-                                <div key={i} className="bg-gray-50 animate-pulse rounded-2xl h-80 border border-gray-100"></div>
+                        <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-6">
+                            {Array(12).fill(0).map((_, i) => (
+                                <div key={i} className="bg-gray-50 animate-pulse rounded-xl sm:rounded-2xl h-48 sm:h-80 border border-gray-100"></div>
                             ))}
                         </div>
                     ) : products.length === 0 ? (
@@ -345,7 +346,7 @@ export default function ProductList() {
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-6">
                                 {products.map((p) => <ProductCard key={p.id} product={p} />)}
                             </div>
 
@@ -401,53 +402,51 @@ function ProductCard({ product }) {
     };
 
     return (
-        <div className="group bg-white rounded-2xl border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col h-full border-b-[4px] hover:border-b-green-500">
-            <Link to={`/products/${product.id}`} className="relative block h-48 overflow-hidden">
+        <div className="group bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col h-full border-b-[3px] sm:border-b-[4px] hover:border-b-green-500">
+            <Link to={`/products/${product.id}`} className="relative block h-32 sm:h-48 overflow-hidden">
                 <div className="h-full bg-gray-50 flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
                         <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
                     ) : (
-                        <Square3Stack3DIcon className="w-20 h-20 text-gray-200 animate-pulse" />
+                        <Square3Stack3DIcon className="w-10 h-10 sm:w-20 sm:h-20 text-gray-200 animate-pulse" />
                     )}
                 </div>
                 
-                <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 transition-transform group-hover:translate-x-1 duration-500">
+                <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1 sm:gap-2 z-10 transition-transform group-hover:translate-x-1 duration-500">
                     {product.isNew && (
-                        <span className="bg-black/80 backdrop-blur-md text-white text-[9px] font-black px-3 py-1.5 rounded-xl shadow-xl uppercase tracking-widest border border-white/10">Mới</span>
+                        <span className="bg-black/80 backdrop-blur-md text-white text-[7px] sm:text-[9px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/10">Mới</span>
                     )}
-                    {product.originalPrice > product.price && (
-                        <span className="bg-red-600 text-white text-[9px] font-black px-3 py-1.5 rounded-xl shadow-xl uppercase tracking-widest border border-white/20">
+                    {product.flashSalePrice ? (
+                        <span className="bg-red-600 text-white text-[7px] sm:text-[9px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20 animate-pulse flex items-center gap-0.5 sm:gap-1">
+                            <BoltIcon className="w-2 sm:w-3 h-2 sm:h-3" />
+                            -{Math.round((product.price - product.flashSalePrice) / product.price * 100)}%
+                        </span>
+                    ) : (product.originalPrice > product.price && (
+                        <span className="bg-red-600 text-white text-[7px] sm:text-[9px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20">
                             -{Math.round((product.originalPrice - product.price) / product.originalPrice * 100)}%
                         </span>
-                    )}
+                    ))}
                 </div>
 
                 <button 
                     onClick={toggleWishlist}
-                    className={`absolute top-4 right-4 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 ${isLiked ? 'bg-white text-red-500' : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500'}`}
+                    className={`absolute top-2 right-2 sm:top-4 sm:right-4 w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 ${isLiked ? 'bg-white text-red-500' : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500'}`}
                 >
-                    {isLiked ? <HeartIconSolid className="w-5 h-5 transition-transform active:scale-110" /> : <HeartIcon className="w-5 h-5 transition-transform active:scale-110" />}
-                </button>
-
-                <button 
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCompare(product); }}
-                    className={`absolute top-16 right-4 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 ${compareItems.some(i => i.id === product.id) ? 'bg-green-600 text-white' : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-green-600'}`}
-                >
-                    <ArrowsRightLeftIcon className="w-5 h-5 transition-transform active:rotate-180 duration-500" />
+                    {isLiked ? <HeartIconSolid className="w-3 h-3 sm:w-5 sm:h-5 transition-transform active:scale-110" /> : <HeartIcon className="w-3 h-3 sm:w-5 sm:h-5 transition-transform active:scale-110" />}
                 </button>
             </Link>
             
-            <div className="p-4 flex flex-col flex-1">
-                <div className="flex items-center gap-1 text-[9px] text-gray-300 mb-1 truncate font-black uppercase tracking-widest">
+            <div className="p-2 sm:p-4 flex flex-col flex-1">
+                <div className="flex items-center gap-1 text-[7px] sm:text-[9px] text-gray-500 mb-0.5 sm:mb-1 truncate font-black uppercase tracking-widest">
                     <span className="w-1 h-1 rounded-full bg-green-500"></span>
-                    {product.farmName || 'Trang trại hữu cơ'}
+                    {product.farmName || 'Hữu cơ'}
                 </div>
                 
-                <Link to={`/products/${product.id}`} className="font-extrabold text-gray-800 hover:text-green-700 block truncate text-sm transition-colors uppercase tracking-tight">
+                <Link to={`/products/${product.id}`} className="font-extrabold text-gray-800 hover:text-green-700 block truncate text-[10px] sm:text-sm transition-colors uppercase tracking-tight">
                     {product.name}
                 </Link>
 
-                <div className="flex items-center gap-2 mt-2">
+                <div className="hidden sm:flex items-center gap-2 mt-2">
                     <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border shadow-sm transition-all group-hover:shadow-md ${product.totalStock > 0 ? 'bg-gray-50 border-gray-100 group-hover:border-green-100' : 'bg-red-50 border-red-100'}`}>
                         <div className={`w-1.5 h-1.5 rounded-full ${product.totalStock > 10 ? 'bg-green-500' : product.totalStock > 0 ? 'bg-amber-500' : 'bg-red-500 animate-pulse'}`}></div>
                         <span className={`text-[9px] font-black uppercase tracking-tighter ${product.totalStock > 0 ? 'text-gray-500' : 'text-red-600'}`}>
@@ -456,25 +455,40 @@ function ProductCard({ product }) {
                     </div>
                 </div>
 
-                <div className="mt-auto pt-4 border-t border-gray-50 flex items-end justify-between">
+                <div className="mt-auto pt-2 sm:pt-4 border-t border-gray-50 flex items-end justify-between">
                     <div className="flex flex-col gap-0.5">
-                        <p className="text-[9px] text-gray-400 uppercase font-black tracking-tighter">Giá / {product.unit}</p>
-                        <div className="flex flex-col -gap-1">
-                            {product.originalPrice > product.price && (
-                                <span className="text-gray-300 line-through text-[10px] font-bold italic leading-none mb-1">
-                                    {product.originalPrice.toLocaleString('vi-VN')}đ
-                                </span>
+                        <p className="text-[7px] sm:text-[9px] text-gray-400 uppercase font-black tracking-tighter truncate">
+                            {product.flashSalePrice ? "Flash Sale" : `Giá / ${product.unit}`}
+                        </p>
+                        <div className="flex flex-col">
+                            {product.flashSalePrice ? (
+                                <>
+                                    <span className="text-gray-400 line-through text-[8px] sm:text-[10px] font-bold italic leading-none mb-0.5 sm:mb-1">
+                                        {product.price.toLocaleString('vi-VN')}đ
+                                    </span>
+                                    <span className="text-red-600 font-black text-xs sm:text-xl leading-none">
+                                        {product.flashSalePrice.toLocaleString('vi-VN')}đ
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    {product.originalPrice > product.price && (
+                                        <span className="text-gray-400 line-through text-[8px] sm:text-[10px] font-bold italic leading-none mb-0.5 sm:mb-1">
+                                            {product.originalPrice.toLocaleString('vi-VN')}đ
+                                        </span>
+                                    )}
+                                    <span className="text-green-700 font-black text-xs sm:text-xl leading-none">
+                                        {product.price?.toLocaleString('vi-VN')}đ
+                                    </span>
+                                </>
                             )}
-                            <span className="text-green-700 font-black text-xl leading-none">
-                                {product.price?.toLocaleString('vi-VN')}đ
-                            </span>
                         </div>
                     </div>
                     <button 
                         onClick={handleAdd} 
-                        className="w-11 h-11 bg-green-600 text-white rounded-2xl flex items-center justify-center hover:bg-black transition-all shadow-xl shadow-green-100 hover:shadow-black/20 group/btn"
+                        className="w-7 h-7 sm:w-11 sm:h-11 bg-green-600 text-white rounded-lg sm:rounded-2xl flex items-center justify-center hover:bg-black transition-all shadow-xl shadow-green-100 hover:shadow-black/20 group/btn"
                     >
-                        <ShoppingBagIcon className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                        <ShoppingBagIcon className="w-3 h-3 sm:w-5 sm:h-5 group-hover/btn:scale-110 transition-transform" />
                     </button>
                 </div>
             </div>

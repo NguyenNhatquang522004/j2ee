@@ -7,18 +7,20 @@ FreshFood là một nền tảng thương mại điện tử hiện đại, chuy
 ### 🛒 Dành cho Người dùng (Storefront)
 - **Duyệt sản phẩm**: Xem danh sách sản phẩm theo danh mục, trang trại hoặc tìm kiếm trực tiếp.
 - **Giỏ hàng & Thanh toán**: Hệ thống giỏ hàng linh hoạt, tích hợp thanh toán VnPay (Đang phát triển) và COD.
-- **Danh sách yêu thích (Wishlist)**: Lưu lại các sản phẩm quan tâm để mua sau.
-- **Đánh giá đa phương tiện**: Người dùng có thể đánh giá sản phẩm kèm theo hình ảnh/video thực tế (Lưu trữ qua Cloudinary).
-- **Trang cá nhân**: Quản lý thông tin cá nhân, ảnh đại diện, địa chỉ nhận hàng và lịch sử đơn hàng.
-- [AI Scan](./docs/ARCHITECTURE.md): Sử dụng trí tuệ nhân tạo để phân tích sản phẩm.
-- **Giám sát & Log**: Tích hợp **Sentry** (Theo dõi lỗi) và **Structured JSON Logging**.
+- **Danh sách yêu thích (Wishlist)**: Đã nâng cấp đồng bộ thông tin (Trang trại, Tồn kho, Nhãn mới) và tối ưu hóa tốc độ xử lý.
+- **So sánh Sản phẩm**: Hệ thống so sánh thông số chi tiết giữa các sản phẩm giúp người dùng dễ dàng lựa chọn.
+- **Flash Sale & Khuyến mãi**: Hiển thị ưu đãi Flash Sale thời gian thực với nhãn giảm giá đỏ rực rỡ và logic ưu tiên giá tốt nhất.
+- **Giám sát & Log**: Tích hợp **Global API Logging** trong Console giúp theo dõi luồng dữ liệu thời gian thực cho mọi chức năng.
 - **Tìm kiếm nâng cao**: Tích hợp **Meilisearch** cho tốc độ tìm kiếm cực nhanh.
 
 ### 🛡️ Dành cho Quản trị (Admin Dashboard)
 - **Quản lý Sản phẩm & Danh mục**: Thêm mới, cập nhật trạng thái, tồn kho, lọc theo trang trại và khoảng giá.
 - **Quản lý Đơn hàng**: Theo dõi trạng thái, tìm kiếm mã đơn/khách hàng và sắp xếp theo ngày/giá tiền.
+- **Bảng điều khiển (Dashboard) Thông minh**: Trực quan hóa dữ liệu qua biểu đồ doanh thu 7 ngày (Live Charts), tích hợp hệ thống phím tắt "Quick Actions" và danh sách nhiệm vụ ưu tiên thời gian thực.
+- **Quản lý Thư viện Media**: Tích hợp tính năng tính toán dung lượng lưu trữ (Storage Analytics), xem trước video mượt mà và quản lý tài nguyên tập trung qua Cloudinary.
+- **Giao diện Responsive 100%**: Trải nghiệm quản trị hoàn hảo trên mọi thiết bị (Mobile/Tablet/Desktop) với thanh Sidebar trượt và bố cục bảng dữ liệu thông minh.
 - **Tích hợp Thanh toán Tự động**: Hỗ trợ **SePay (VietQR)** với Webhook bảo mật bằng Token, tự động xác nhận đơn hàng khi có tiền về.
-- **Bảo mật Nâng cao**: Đạt tiêu chuẩn Enterprise với CSRF Strict Match, Sliding Window Rate Limit (Redis) và Account Lockout sau 5 lần sai mật khẩu.
+- **Bảo mật Nâng cao**: Đạt tiêu chuẩn Enterprise với Stateful/Stateless Hybrid Security. CSRF được cấu hình tối ưu cho SPA (Ignore API calls với Bearer Token), Sliding Window Rate Limit (Redis) và Account Lockout.
 - **Quản lý Nhân sự**: Hệ thống phân quyền cụ thể cho từng nhân viên (RBAC).
 - **Hệ thống Mã giảm giá**: Quản lý Voucher công khai/riêng tư và logic tặng quà cá nhân.
 - **Audit Logs**: Nhật ký hoạt động quản trị viên đạt tiêu chuẩn audit doanh nghiệp.
@@ -55,7 +57,7 @@ Lưu ý: Bạn cần cài đặt [Docker](https://www.docker.com/) và [Docker C
 
 ### Backend
 - **Java Spring Boot 21**: Framework chính (REST API).
-- **Security Grade 3**: Đạt chuẩn Enterprise với CSRF Strict Match, Sliding Window Rate Limit và Pessimistic Locking.
+- **Security Grade 3**: Đạt chuẩn Enterprise với JWT Bearer Token, Sliding Window Rate Limit và Pessimistic Locking.
 - **Spring Security (RBAC + Custom Perms)**: Phân quyền theo Role và tùy chỉnh cho từng nhân sự.
 - **Redis & Meilisearch**: Cache, Rate Limiting và Search Engine.
 - **Sentry**: Error Tracking & Performance Monitoring.

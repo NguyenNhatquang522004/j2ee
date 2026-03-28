@@ -17,6 +17,7 @@ Các tham số quan trọng cần lưu ý:
 - `JWT_SECRET`: Khóa bí mật để ký token.
 - `MAIL_USERNAME` / `MAIL_PASSWORD`: Tài khoản Gmail SMTP (nếu muốn gửi mail thật).
 - `CLOUDINARY_*`: Thông tin máy chủ lưu trữ ảnh/video.
+- `SEPAY_TOKEN`: Mã xác thực Webhook từ SePay để tự động hóa thanh toán.
 
 ### 2. Khởi động hệ thống
 ```bash

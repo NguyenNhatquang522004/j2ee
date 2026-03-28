@@ -13,8 +13,12 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-    (res) => res.data,
+    (res) => {
+        console.log(`API Response [${res.config.method.toUpperCase()}] ${res.config.url}:`, res.data);
+        return res.data;
+    },
     (err) => {
+        console.error(`API Error [${err.config?.method?.toUpperCase()}] ${err.config?.url}:`, err.response?.data || err.message);
         if (err.response?.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');

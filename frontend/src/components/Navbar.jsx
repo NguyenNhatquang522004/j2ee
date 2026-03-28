@@ -201,13 +201,13 @@ export default function Navbar() {
                     </div>
 
                     {/* Right Side Icons/Buttons */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
                         {user ? (
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 sm:gap-4">
                                 <NotificationDropdown />
                                 {!isManagement && (
                                     <>
-                                        <Link to="/wishlist" className="relative p-2 text-gray-600 hover:text-red-500 transition-colors group">
+                                        <Link to="/wishlist" className="hidden sm:block relative p-2 text-gray-600 hover:text-red-500 transition-colors group">
                                             {wishlistCount > 0 ? (
                                                 <HeartIconSolid className="w-6 h-6 text-red-500 transition-transform group-hover:scale-110" />
                                             ) : (
@@ -231,25 +231,24 @@ export default function Navbar() {
                                     </>
                                 )}
 
-                                <div className="h-8 w-px bg-gray-200"></div>
+                                <div className="h-8 w-px bg-gray-200 hidden xs:block"></div>
 
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 sm:gap-3">
                                     {!isManagement && (
-                                        <Link to="/orders" className="relative p-2 text-gray-600 hover:text-green-600 transition-colors group" title="Đơn hàng của tôi">
+                                        <Link to="/orders" className="hidden sm:block relative p-2 text-gray-600 hover:text-green-600 transition-colors group" title="Đơn hàng của tôi">
                                             <ArchiveBoxIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
                                         </Link>
                                     )}
 
-                                    <Link to="/profile" className="flex items-center gap-2 group ml-2">
-                                        <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-600 group-hover:bg-green-200 transition-colors overflow-hidden border-2 border-white shadow-sm ring-1 ring-gray-100">
+                                    <Link to="/profile" className="flex items-center gap-2 group ml-1 sm:ml-2">
+                                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-green-100 flex items-center justify-center text-green-600 group-hover:bg-green-200 transition-colors overflow-hidden border-2 border-white shadow-sm ring-1 ring-gray-100">
                                             {user.avatarUrl ? (
                                                 <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
                                             ) : (
-                                                <UserIcon className="w-5 h-5" />
+                                                <UserIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                                             )}
                                         </div>
                                     </Link>
-
                                 </div>
                             </div>
                         ) : (
@@ -264,7 +263,7 @@ export default function Navbar() {
                         )}
 
                         {/* Mobile Menu Toggle */}
-                        <button className="md:hidden p-2 text-gray-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                        <button className="lg:hidden p-2 text-gray-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
                             {isMenuOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
                         </button>
                     </div>
@@ -273,7 +272,7 @@ export default function Navbar() {
 
             {/* Mobile Nav */}
             {isMenuOpen && (
-                <div className="md:hidden bg-white border-b border-gray-100 px-4 py-4 space-y-3 shadow-xl">
+                <div className="lg:hidden bg-white border-b border-gray-100 px-4 py-4 space-y-3 shadow-xl">
                     {!isManagement ? (
                         <>
                             <Link to="/products" className="block font-bold text-gray-800 hover:text-green-600">Sản phẩm</Link>
@@ -301,7 +300,17 @@ export default function Navbar() {
                             </div>
                             <Link to="/ai-scan" className="block font-bold text-gray-800 hover:text-green-600">AI Scan</Link>
                             <Link to="/coupons" className="block font-bold text-gray-800 hover:text-green-600">Khuyến mãi</Link>
-                            {user && <Link to="/orders" className="block font-bold text-gray-800 hover:text-green-600">Đơn hàng của tôi</Link>}
+                            {user && (
+                                <>
+                                    <div className="h-px bg-gray-100 my-2"></div>
+                                    <Link to="/wishlist" className="block font-bold text-gray-800 hover:text-green-600 flex items-center gap-2">
+                                        <HeartIcon className="w-5 h-5" /> Danh sách yêu thích
+                                    </Link>
+                                    <Link to="/orders" className="block font-bold text-gray-800 hover:text-green-600 flex items-center gap-2">
+                                        <ArchiveBoxIcon className="w-5 h-5" /> Đơn hàng của tôi
+                                    </Link>
+                                </>
+                            )}
                         </>
                     ) : (
                         <Link to="/admin" className="block font-bold text-green-700 bg-green-50 px-3 py-2 rounded-xl">Bảng điều khiển Quản trị</Link>

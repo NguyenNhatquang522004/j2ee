@@ -108,14 +108,14 @@ export default function AdminFarms() {
 
     return (
         <AdminLayout>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Trang trại</h1>
-                    <p className="text-sm text-gray-500 font-medium tracking-tight">Quản lý mạng lưới các đối tác cung ứng nông sản.</p>
+                    <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight italic uppercase leading-tight">Trang trại</h1>
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium tracking-tight">Quản lý mạng lưới nông sản sạch của RawFood.</p>
                 </div>
                 <button 
                     onClick={openCreate} 
-                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black px-5 py-3 rounded-xl shadow-lg shadow-green-100 transition-all active:scale-95 text-sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black px-5 py-3 rounded-xl shadow-lg shadow-green-100 transition-all active:scale-95 text-sm"
                 >
                     <PlusIcon className="w-5 h-5 stroke-[3]" />
                     <span>Thêm trang trại</span>
@@ -141,9 +141,9 @@ export default function AdminFarms() {
                 </select>
             </div>
 
-            <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+            <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl shadow-sm overflow-hidden mb-6">
+                <div className="overflow-x-auto scrollbar-hide">
+                    <table className="w-full text-left border-collapse min-w-[900px]">
                         <thead>
                             <tr className="bg-gray-50/50">
                                 <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider">Trang trại & Vị trí</th>

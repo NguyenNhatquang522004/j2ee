@@ -20,6 +20,7 @@ import FarmList from './pages/farms/FarmList';
 import AiScan from './pages/ai/AiScan';
 import Profile from './pages/profile/Profile';
 import Wishlist from './pages/wishlist/Wishlist';
+import FlashSalePage from './pages/home/FlashSalePage';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
@@ -48,6 +49,7 @@ import BuyingGuide from './pages/guide/BuyingGuide';
 import About from './pages/other/About';
 import AdminContact from './pages/admin/AdminContact';
 import AdminBuyingGuide from './pages/admin/AdminBuyingGuide';
+import AdminFlashSales from './pages/admin/AdminFlashSales';
 
 export default function App() {
   return (
@@ -75,6 +77,7 @@ export default function App() {
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/compare" element={<Compare />} />
             <Route path="/farms" element={<FarmList />} />
+            <Route path="/flash-sale" element={<FlashSalePage />} />
             <Route path="/coupons" element={<CouponList />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
@@ -111,6 +114,7 @@ export default function App() {
             <Route path="/admin/staff" element={<AdminRoute permission="manage:users"><AdminStaff /></AdminRoute>} />
             <Route path="/admin/audit" element={<AdminRoute permission="view:reports"><AdminAudit /></AdminRoute>} />
             <Route path="/admin/contacts" element={<AdminRoute><AdminContact /></AdminRoute>} />
+            <Route path="/admin/flash-sales" element={<AdminRoute permission="manage:promotions"><AdminFlashSales /></AdminRoute>} />
             <Route path="/admin/guide" element={<AdminRoute><AdminBuyingGuide /></AdminRoute>} />
             <Route path="/admin/2fa" element={<AdminRoute><Navigate to="/admin/settings?tab=security" replace /></AdminRoute>} />
             <Route path="/admin/profile" element={<AdminRoute><Navigate to="/admin/settings?tab=profile" replace /></AdminRoute>} />

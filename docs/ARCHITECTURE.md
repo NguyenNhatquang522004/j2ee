@@ -28,7 +28,7 @@ Dự án được phân chia theo kiến trúc 3 lớp chuẩn:
 
 ### ⚛️ React Frontend (`/frontend`)
 - **`/api`**: Định nghĩa các dịch vụ gọi API qua Axios.
-- **`/components`**: Các thành phần giao diện nhỏ, tái sử dụng cao.
+- **`/components`**: Các thành phần giao diện nhỏ, tái sử dụng cao. Bao gồm `AdminLayout` - khung sườn hợp nhất cho toàn bộ module quản trị với khả năng tự thích ứng màn hình (Responsive Shell).
 - **`/context`**: Lớp quản lý trạng thái tập trung (State Management).
 - **`/pages`**: Các view chính của hệ thống.
 

@@ -25,36 +25,32 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "Đăng ký tài khoản mới")
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(
-            @Valid @RequestBody RegisterRequest request) {
-        AuthResponse response = authService.register(request);
-        return ResponseEntity.status(201).body(ApiResponse.created(response));
-    }
-
-    @Operation(summary = "Đăng nhập và nhận JWT token")
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        AuthResponse auth = authService.login(request);
+        return ResponseEntity.ok(ApiResponse.success(auth));
     }
 
-    @Operation(summary = "Xác thực mã 2FA để hoàn tất đăng nhập")
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<AuthResponse>> register(
+            @Valid @RequestBody RegisterRequest request) {
+        AuthResponse auth = authService.register(request);
+        return ResponseEntity.status(201).body(ApiResponse.created(auth));
+    }
+
     @PostMapping("/verify-2fa")
     public ResponseEntity<ApiResponse<AuthResponse>> verify2fa(
             @Valid @RequestBody TwoFactorRequest request) {
-        AuthResponse response = authService.verifyTwoFactor(request);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        AuthResponse auth = authService.verifyTwoFactor(request);
+        return ResponseEntity.ok(ApiResponse.success(auth));
     }
 
-    @Operation(summary = "Đăng nhập bằng MXH (Google/Github)")
     @PostMapping("/social-login")
     public ResponseEntity<ApiResponse<AuthResponse>> socialLogin(
             @Valid @RequestBody SocialLoginRequest request) {
-        AuthResponse response = authService.socialLogin(request);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        AuthResponse auth = authService.socialLogin(request);
+        return ResponseEntity.ok(ApiResponse.success(auth));
     }
 
     @Operation(summary = "Yêu cầu đặt lại mật khẩu")

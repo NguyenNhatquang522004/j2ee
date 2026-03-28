@@ -150,28 +150,29 @@ export default function AdminStaff() {
         }
     };
 
-    const filteredStaff = staff.filter(u => 
-        u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredStaff = staff.filter(u => {
+        const search = searchTerm.toLowerCase().trim();
+        if (!search) return true;
+        return (u.fullName || '').toLowerCase().includes(search) ||
+               (u.username || '').toLowerCase().includes(search) ||
+               (u.email || '').toLowerCase().includes(search);
+    });
 
     return (
         <AdminLayout>
-            <div className="p-8 bg-gray-50 min-h-screen">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex justify-between items-center mb-6">
-                        <div>
-                            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Quản Lý Nhân Sự</h1>
-                            <p className="mt-2 text-gray-500 font-medium">Phân quyền và điều hành đội ngũ nhân viên</p>
-                        </div>
-                        <button 
-                        className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-green-100 transition-all flex items-center gap-2 font-bold active:scale-95"
-                    >
-                        <PlusIcon className="w-5 h-5" />
-                        Thêm nhân sự mới
-                    </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+                <div>
+                    <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight italic uppercase leading-tight">Nhân sự</h1>
+                    <p className="mt-0.5 text-xs sm:text-sm text-gray-500 font-medium">Điều hành và phân quyền cho đội ngũ của bạn.</p>
                 </div>
+                <button 
+                    onClick={() => { resetForm(); setIsAddModalOpen(true); }}
+                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl shadow-lg shadow-green-100 transition-all flex items-center justify-center gap-2 font-black text-sm active:scale-95"
+                >
+                    <PlusIcon className="w-5 h-5 stroke-[3]" />
+                    <span>Thêm nhân sự</span>
+                </button>
+            </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="p-6 border-b border-gray-50 flex flex-wrap gap-4 items-center justify-between bg-white/50 backdrop-blur-sm">
@@ -193,8 +194,8 @@ export default function AdminStaff() {
                         </button>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
+                    <div className="overflow-x-auto scrollbar-hide">
+                        <table className="w-full min-w-[900px]">
                             <thead>
                                 <tr className="bg-gray-50/50">
                                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Thành viên</th>
@@ -283,8 +284,6 @@ export default function AdminStaff() {
                         </table>
                     </div>
                 </div>
-            </div>
-        </div>
 
             {/* Add Modal */}
             {isAddModalOpen && (

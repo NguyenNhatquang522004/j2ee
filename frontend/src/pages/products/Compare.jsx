@@ -2,7 +2,7 @@ import React from 'react';
 import { useCompare } from '../../context/CompareContext';
 import Layout from '../../components/Layout';
 import { Link } from 'react-router-dom';
-import { XMarkIcon, ShoppingBagIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ShoppingBagIcon, BoltIcon } from '@heroicons/react/24/outline';
 import { useCart } from '../../context/CartContext';
 import toast from 'react-hot-toast';
 
@@ -79,7 +79,19 @@ export default function Compare() {
                                                 <span className="text-sm font-bold text-gray-800">{item[row.key] || 'N/A'}</span>
                                             )}
                                             {row.type === 'price' && (
-                                                <span className="text-xl font-black text-green-700">{item[row.key]?.toLocaleString('vi-VN')}₫</span>
+                                                <div className="flex flex-col items-center">
+                                                    {item.flashSalePrice ? (
+                                                        <>
+                                                            <span className="text-[10px] text-gray-300 line-through font-bold mb-0.5">{item.price?.toLocaleString('vi-VN')}₫</span>
+                                                            <span className="text-xl font-black text-red-600 flex items-center gap-1">
+                                                                <BoltIcon className="w-4 h-4" />
+                                                                {item.flashSalePrice.toLocaleString('vi-VN')}₫
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-xl font-black text-green-700">{item[row.key]?.toLocaleString('vi-VN')}₫</span>
+                                                    )}
+                                                </div>
                                             )}
                                             {row.type === 'stock' && (
                                                 <div className="flex flex-col items-center gap-1">
