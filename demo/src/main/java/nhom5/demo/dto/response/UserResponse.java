@@ -4,7 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import nhom5.demo.enums.RoleEnum;
-
+import java.util.Set;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -17,16 +18,17 @@ public class UserResponse {
     private String fullName;
     private String phone;
     private String address;
-    private java.time.LocalDate dateOfBirth;
+    private LocalDate dateOfBirth;
     private String gender;
     private String membershipTier;
     private String avatarUrl;
-    private Long points;
+    private Long lifetimePoints;
+    private Long availablePoints;
     private Boolean emailNotifications;
     private Boolean promoNotifications;
     private RoleEnum role;
     private Boolean isActive;
     private Boolean isTwoFactorEnabled;
-    private java.util.Set<String> permissions;
-    private java.time.LocalDateTime createdAt;
+    private Set<String> permissions;
+    private LocalDateTime createdAt;
 }

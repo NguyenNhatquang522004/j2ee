@@ -119,21 +119,21 @@ function FlashSaleCard({ item }) {
                 )}
                 <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col gap-1 sm:gap-2 z-10 transition-transform group-hover/card:translate-x-1 group-hover/card:translate-y-1 duration-500">
                     <span className="bg-red-600 text-white text-[7px] sm:text-[9px] font-black px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded sm:rounded-lg shadow-xl uppercase tracking-widest border border-white/20">
-                        -{Math.round((p.price - item.flashSalePrice) / p.price * 100)}%
+                        -{Math.round(((p?.price || 0) - (item?.flashSalePrice || 0)) / (p?.price || 1) * 100)}%
                     </span>
                 </div>
             </div>
 
             <div className="p-2 sm:p-5 flex flex-col flex-1">
-                <h3 className="font-black text-gray-800 text-[10px] sm:text-sm mb-2 sm:mb-4 line-clamp-1 group-hover/card:text-orange-600 transition-colors uppercase tracking-tight">{p.name}</h3>
+                <h3 className="font-black text-gray-800 text-[10px] sm:text-sm mb-2 sm:mb-4 line-clamp-1 group-hover/card:text-orange-600 transition-colors uppercase tracking-tight">{p?.name}</h3>
                 
                 <div className="mb-2 sm:mb-4">
                     <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-2">
                         <span className="text-xs sm:text-xl font-black text-red-600 whitespace-nowrap">
-                            {item.flashSalePrice?.toLocaleString('vi-VN')}đ
+                            {(item?.flashSalePrice || 0).toLocaleString('vi-VN')}đ
                         </span>
                         <span className="text-gray-300 line-through text-[8px] sm:text-xs font-bold italic">
-                            {p.price?.toLocaleString('vi-VN')}đ
+                            {(p?.price || 0).toLocaleString('vi-VN')}đ
                         </span>
                     </div>
                 </div>

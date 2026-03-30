@@ -175,11 +175,11 @@ function ProductCard({ product }) {
                     {product.flashSalePrice ? (
                         <span className="bg-red-600 text-white text-[7px] sm:text-[10px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20 animate-pulse flex items-center gap-0.5 sm:gap-1">
                             <BoltIcon className="w-2 sm:w-3.5 h-2 sm:h-3.5" />
-                            -{Math.round((product.price - product.flashSalePrice) / product.price * 100)}%
+                            -{Math.round(((product.price || 0) - (product.flashSalePrice || 0)) / (product.price || 1) * 100)}%
                         </span>
                     ) : (product.originalPrice > product.price && (
                         <span className="bg-red-600 text-white text-[7px] sm:text-[10px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20">
-                            -{Math.round((product.originalPrice - product.price) / product.originalPrice * 100)}%
+                            -{Math.round(((product.originalPrice || 0) - (product.price || 0)) / (product.originalPrice || 1) * 100)}%
                         </span>
                     ))}
                 </div>
@@ -205,21 +205,21 @@ function ProductCard({ product }) {
                             {product.flashSalePrice ? (
                                 <>
                                     <span className="text-gray-400 line-through text-[8px] sm:text-[10px] font-bold italic leading-none mb-0.5 sm:mb-1">
-                                        {product.price.toLocaleString('vi-VN')}đ
+                                        {(product.price || 0).toLocaleString('vi-VN')}đ
                                     </span>
                                     <span className="text-red-600 font-extrabold text-xs sm:text-xl leading-none">
-                                        {product.flashSalePrice.toLocaleString('vi-VN')}đ
+                                        {(product.flashSalePrice || 0).toLocaleString('vi-VN')}đ
                                     </span>
                                 </>
                             ) : (
                                 <>
                                     {product.originalPrice > product.price && (
                                         <span className="text-gray-400 line-through text-[8px] sm:text-[10px] font-bold italic leading-none mb-0.5 sm:mb-1">
-                                            {product.originalPrice.toLocaleString('vi-VN')}đ
+                                            {(product.originalPrice || 0).toLocaleString('vi-VN')}đ
                                         </span>
                                     )}
                                     <span className="text-green-700 font-extrabold text-xs sm:text-xl leading-none">
-                                        {product.price.toLocaleString('vi-VN')}đ
+                                        {(product.price || 0).toLocaleString('vi-VN')}đ
                                     </span>
                                 </>
                             )}

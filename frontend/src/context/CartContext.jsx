@@ -22,16 +22,20 @@ export function CartProvider({ children }) {
         }
     }, [user]);
 
-    useEffect(() => { fetchCart(); }, [fetchCart]);
+    useEffect(() => { 
+        fetchCart(); 
+        window.addEventListener('cart-updated', fetchCart);
+        return () => window.removeEventListener('cart-updated', fetchCart);
+    }, [fetchCart]);
 
     const addToCart = async (productId, quantity) => {
-        await cartService.addItem({ productId, quantity });
-        await fetchCart();
+        const { data } = await cartService.addItem({ productId, quantity });
+        setCart(data);
     };
 
     const updateItem = async (cartItemId, quantity) => {
-        await cartService.updateItem(cartItemId, { quantity });
-        await fetchCart();
+        const { data } = await cartService.updateItem(cartItemId, { quantity });
+        setCart(data);
     };
 
     const removeItem = async (cartItemId) => {

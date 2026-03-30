@@ -1,0 +1,9 @@
+.git
+.github
+**/target/
+**/node_modules/
+**/.mvn/
+**/dist/
+*.log
+*.sql
+docs/

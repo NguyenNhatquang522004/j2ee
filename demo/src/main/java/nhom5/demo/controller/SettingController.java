@@ -24,8 +24,7 @@ public class SettingController {
     @Operation(summary = "Lấy các cài đặt công khai")
     @GetMapping("/public")
     public ResponseEntity<ApiResponse<List<SystemSetting>>> getPublic() {
-        // In a real app, you would filter only public keys. For now, we return all as settings are mostly public info.
-        return ResponseEntity.ok(ApiResponse.success(settingService.getAllSettings()));
+        return ResponseEntity.ok(ApiResponse.success(settingService.getPublicSettings()));
     }
 
     @Operation(summary = "Lấy tất cả cài đặt hệ thống (Admin)")

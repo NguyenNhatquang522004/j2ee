@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { couponService } from '../../api/services';
 import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../context/ModalContext';
 import { 
     PlusIcon, 
     PencilSquareIcon, 
@@ -123,7 +124,12 @@ export default function AdminCoupons() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Xoá mã giảm giá này? Bạn chắc chắn chứ?')) return;
+        const ok = await confirm({
+            title: 'Xoá mã giảm giá',
+            message: 'Bạn có chắc chắn muốn xoá vĩnh viễn voucher này? Khách hàng đã nhận được mã sẽ vẫn có thể sử dụng nếu đã lưu, nhưng mã sẽ không còn hiệu lực cho các đơn hàng mới.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await couponService.delete(id);
             toast.success('Đã xoá mã giảm giá');

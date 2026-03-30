@@ -31,6 +31,12 @@ public class MediaServiceImpl implements MediaService {
             throw new RuntimeException("Chỉ chấp nhận file hình ảnh hoặc video");
         }
 
+        long maxSize = contentType.startsWith("image/") ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
+        if (file.getSize() > maxSize) {
+            String type = contentType.startsWith("image/") ? "Hình ảnh" : "Video";
+            throw new RuntimeException(type + " không được vượt quá " + (maxSize / (1024 * 1024)) + "MB");
+        }
+
         String resourceType = "auto";
         if (contentType.startsWith("video")) {
             resourceType = "video";

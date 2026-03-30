@@ -12,6 +12,10 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Date;
 
+/**
+ * Lớp cung cấp các phương thức để tạo và xác thực JSON Web Token (JWT).
+ * Quản lý khóa bí mật, thời gian hết hạn và các tùy chỉnh (Claims) trong Token.
+ */
 @Slf4j
 @Component
 public class JwtTokenProvider {

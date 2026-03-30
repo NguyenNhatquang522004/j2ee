@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { productService, categoryService, farmService } from '../../api/services';
 import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../context/ModalContext';
 import { 
     PlusIcon, 
     PencilSquareIcon, 
@@ -25,6 +26,7 @@ const EMPTY = {
 };
 
 export default function AdminProducts() {
+    const { confirm } = useConfirm();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [farms, setFarms] = useState([]);
@@ -142,7 +144,12 @@ export default function AdminProducts() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Xoá sản phẩm này?')) return;
+        const ok = await confirm({
+            title: 'Xoá sản phẩm',
+            message: 'Bạn có chắc chắn muốn xoá vĩnh viễn sản phẩm này khỏi hệ thống? Dữ liệu đơn hàng có liên quan sẽ không bị ảnh hưởng.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await productService.delete(id);
             toast.success('Đã xoá sản phẩm');

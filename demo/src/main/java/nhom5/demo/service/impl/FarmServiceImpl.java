@@ -28,8 +28,8 @@ public class FarmServiceImpl implements FarmService {
                 .address(request.getAddress())
                 .province(request.getProvince())
                 .ownerName(request.getOwnerName())
-                .contactPhone(request.getContactPhone())
-                .contactEmail(request.getContactEmail())
+                .contactPhone(request.getContactPhone() != null && request.getContactPhone().isBlank() ? null : request.getContactPhone())
+                .contactEmail(request.getContactEmail() != null && request.getContactEmail().isBlank() ? null : request.getContactEmail())
                 .description(request.getDescription())
                 .certification(request.getCertification())
                 .certificationCode(request.getCertificationCode())
@@ -50,8 +50,8 @@ public class FarmServiceImpl implements FarmService {
         farm.setAddress(request.getAddress());
         farm.setProvince(request.getProvince());
         farm.setOwnerName(request.getOwnerName());
-        farm.setContactPhone(request.getContactPhone());
-        farm.setContactEmail(request.getContactEmail());
+        farm.setContactPhone(request.getContactPhone() != null && request.getContactPhone().isBlank() ? null : request.getContactPhone());
+        farm.setContactEmail(request.getContactEmail() != null && request.getContactEmail().isBlank() ? null : request.getContactEmail());
         farm.setDescription(request.getDescription());
         farm.setCertification(request.getCertification());
         farm.setCertificationCode(request.getCertificationCode());

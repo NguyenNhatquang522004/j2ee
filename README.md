@@ -10,21 +10,33 @@ FreshFood là một nền tảng thương mại điện tử hiện đại, chuy
 - **Danh sách yêu thích (Wishlist)**: Đã nâng cấp đồng bộ thông tin (Trang trại, Tồn kho, Nhãn mới) và tối ưu hóa tốc độ xử lý.
 - **So sánh Sản phẩm**: Hệ thống so sánh thông số chi tiết giữa các sản phẩm giúp người dùng dễ dàng lựa chọn.
 - **Flash Sale & Khuyến mãi**: Hiển thị ưu đãi Flash Sale thời gian thực với nhãn giảm giá đỏ rực rỡ và logic ưu tiên giá tốt nhất.
-- **Giám sát & Log**: Tích hợp **Global API Logging** trong Console giúp theo dõi luồng dữ liệu thời gian thực cho mọi chức năng.
-- **Tìm kiếm nâng cao**: Tích hợp **Meilisearch** cho tốc độ tìm kiếm cực nhanh.
+- **Hệ thống Xác nhận Toàn cầu (Global Confirm)**: Thay thế hoàn toàn các hộp thoại trình duyệt (window.confirm) bằng Promise-based Modal cao cấp, đồng bộ trải nghiệm người dùng toàn hệ thống.
+- **Hệ thống Hội viên (Loyalty)**: Tích điểm tự động khi mua hàng (1K VND = 1 Point), phân hạng Bronze/Silver/Gold/Platinum và tự động nâng cấp membership trọn đời.
+- **Tìm kiếm nâng cao**: Tích hợp **Meilisearch** qua REST API tùy chỉnh (không dùng SDK) cho tốc độ tìm kiếm cực nhanh và khả năng tùy biến cao.
+- **Phục hồi & Hiệu năng (v2.1)**: Đạt trạng thái Zero-Warning, nén dữ liệu GZIP tự động và hoàn thiện quy trình phục hồi Database an toàn qua Docker.
+- **Bảo mật Hạ tầng**: Hệ thống Whitelist tự động và cơ chế bảo vệ Actuator đặc quyền cho Admin, ngăn chặn rò rỉ thông tin máy chủ.
 
 ### 🛡️ Dành cho Quản trị (Admin Dashboard)
-- **Quản lý Sản phẩm & Danh mục**: Thêm mới, cập nhật trạng thái, tồn kho, lọc theo trang trại và khoảng giá.
-- **Quản lý Đơn hàng**: Theo dõi trạng thái, tìm kiếm mã đơn/khách hàng và sắp xếp theo ngày/giá tiền.
-- **Bảng điều khiển (Dashboard) Thông minh**: Trực quan hóa dữ liệu qua biểu đồ doanh thu 7 ngày (Live Charts), tích hợp hệ thống phím tắt "Quick Actions" và danh sách nhiệm vụ ưu tiên thời gian thực.
-- **Quản lý Thư viện Media**: Tích hợp tính năng tính toán dung lượng lưu trữ (Storage Analytics), xem trước video mượt mà và quản lý tài nguyên tập trung qua Cloudinary.
-- **Giao diện Responsive 100%**: Trải nghiệm quản trị hoàn hảo trên mọi thiết bị (Mobile/Tablet/Desktop) với thanh Sidebar trượt và bố cục bảng dữ liệu thông minh.
-- **Tích hợp Thanh toán Tự động**: Hỗ trợ **SePay (VietQR)** với Webhook bảo mật bằng Token, tự động xác nhận đơn hàng khi có tiền về.
-- **Bảo mật Nâng cao**: Đạt tiêu chuẩn Enterprise với Stateful/Stateless Hybrid Security. CSRF được cấu hình tối ưu cho SPA (Ignore API calls với Bearer Token), Sliding Window Rate Limit (Redis) và Account Lockout.
-- **Quản lý Nhân sự**: Hệ thống phân quyền cụ thể cho từng nhân viên (RBAC).
+- **Dashboard Thông minh**: Trực quan hóa dữ liệu qua biểu đồ doanh thu 7 ngày, hệ thống phím tắt "Quick Actions" và danh sách nhiệm vụ ưu tiên.
+- **Bảo mật Đa tầng (Hardening)**: Đạt tiêu chuẩn Enterprise với Account Lockout (chống Brute-force), IP Blocklist, Admin IP Whitelisting, WebSocket Security (bỏ qua filter cho endpoint /ws/info đầu cuối), và Security Stamp (Vô hiệu hóa phiên tức thì).
+- **Payment Security**:
+    - **Checksum Validation**: Mọi callback từ VnPay/SePay đều được xác thực chữ ký (Signature) bằng thuật toán HMAC-SHA512/Token bí mật trước khi xử lý.
+    - **Ownership Enforcement**: Chỉ chủ sở hữu đơn hàng mới có quyền tạo link thanh toán (Logic trong `PaymentController`).
+- **Data Integrity**: Chuyển sang Flyway đảm bảo cấu trúc database không bị thay đổi ngẫu nhiên ngoài ý muốn.
+- **Làm sạch Dữ liệu (XSS Protection)**: Tích hợp Jsoup filter ngăn chặn tấn công Script Injection trên toàn hệ thống.
+- **Quản lý Thư viện Media**: Tích hợp Storage Analytics, xem trước video mượt mà và quản lý tài nguyên tập trung qua Cloudinary.
+- **Giao diện Responsive 100%**: Trải nghiệm quản trị hoàn hảo trên mọi thiết bị với Sidebar trượt và bố cục bảng dữ liệu thông minh.
+- **SePay (VietQR)**: Tự động hóa quy trình thanh toán qua Webhook bảo mật, xác nhận đơn hàng tức thì.
+- **Quản lý Nhân sự & Phân quyền**: Hệ thống RBAC với ma trận quyền hạn chi tiết và quản lý Audit Logs chuyên nghiệp.
 - **Hệ thống Mã giảm giá**: Quản lý Voucher công khai/riêng tư và logic tặng quà cá nhân.
-- **Audit Logs**: Nhật ký hoạt động quản trị viên đạt tiêu chuẩn audit doanh nghiệp.
-- **CI/CD Pipeline**: Tự động Build & Test qua **GitHub Actions**.
+- **Tự động hoá Bảo trì**: Hệ thống Scheduled Tasks dọn dẹp đơn hàng ảo quá hạn và tối ưu dung lượng Database.
+
+### 🏗️ Cột mốc Hạ tầng & Bảo mật (Infrastructure Milestones)
+- **Database Migration**: Tích hợp **Flyway**, quản lý phiên bản database đồng bộ giữa các môi trường, đảm bảo tính toàn vẹn của dữ liệu trong quá trình mở rộng.
+- **Stock Integrity**: Hệ thống **Redis Stock Reservation** (Giữ chỗ tồn kho 15 phút) giúp chống "overselling" khi khách đặt hàng nhưng chưa hoàn tất thanh toán.
+- **Payment Gateway**: Tích hợp **VnPay 2.1.0** với luồng bảo mật HMAC-SHA512 và xác thực Signature nghiêm ngặt từ Backend.
+- **Zero-Warning Code**: Đã rà soát thủ công toàn bộ mã nguồn, bổ sung JavaDoc và xử lý triệt để các cảnh báo kỹ thuật (Raw types, unused imports).
+- **Logging & Auditing**: Hệ thống Audit Logs tập trung ghi nhận mọi tác động đến dữ liệu của quản trị viên để phục vụ bảo soát.
 
 ## 🛠️ Hướng dẫn cài đặt nhanh (Quick Start)
 
@@ -55,24 +67,30 @@ Lưu ý: Bạn cần cài đặt [Docker](https://www.docker.com/) và [Docker C
 
 ## 💻 Công nghệ sử dụng
 
-### Backend
-- **Java Spring Boot 21**: Framework chính (REST API).
-- **Security Grade 3**: Đạt chuẩn Enterprise với JWT Bearer Token, Sliding Window Rate Limit và Pessimistic Locking.
-- **Spring Security (RBAC + Custom Perms)**: Phân quyền theo Role và tùy chỉnh cho từng nhân sự.
-- **Redis & Meilisearch**: Cache, Rate Limiting và Search Engine.
-- **Sentry**: Error Tracking & Performance Monitoring.
-- **Logstash/Logback**: Structured JSON Logging.
+### Backend (Spring Boot 3.x)
+- **Spring Data JPA**: Quản lý thực thể và tương tác cơ sở dữ liệu.
+- **Spring Security + JWT**: Bảo mật hệ thống, phân quyền (RBAC) và xác thực 2 lớp (2FA).
+- **Redis**: Caching, Stock Reservation (giữ chỗ tồn kho) và xử lý Rate Limiting.
+- **Flyway**: Quản lý phiên bản cơ sở dữ liệu (Database Migration).
+- **VNPAY & SePay**: Hệ thống thanh toán trực tuyến qua cổng thẻ và QR Code.
+- **Bucket4j**: Giới hạn tần suất yêu cầu (Rate Limiting) kết hợp Redis.
+- **Sentry**: Giám sát lỗi và báo cáo Log thời gian thực.
 
 ### Frontend
-- **React 18 + Vite**: Thư viện UI hiện đại và tốc độ build cực nhanh.
-- **Tailwind CSS**: Framework styling tiện lợi, tối ưu.
-- **Lucide React**: Hệ thống Icon phong phú.
-- **Framer Motion**: Animation mượt mà, cao cấp.
+- **React 18 + Vite**: Thư viện UI hiện đại với tốc độ build và hot-reload cực nhanh.
+- **Tailwind CSS**: Framework CSS tiện lợi giúp xây dựng giao diện tùy biến, responsive 100%.
+- **Heroicons**: Hệ thống Icons chuẩn từ đội ngũ Tailwind Labs.
+- **React Router 7**: Hệ thống định tuyến mạnh mẽ cho Single Page Application.
+- **Axios & Context API**: Xử lý gọi API và quản lý trạng thái ứng dụng tập trung.
+- **React Hot Toast**: Hệ thống thông báo (Toast Notifications) trực quan, mượt mà.
 
-### Infrastructure & DevOps
-- **Docker & Docker Compose**: Container hóa toàn bộ stack (App, Redis, Meilisearch, MailHog).
-- **GitHub Actions**: Tự động hóa quy trình CI (Lint, Test, Build Docker).
-- **MailHog**: Môi trường giả lập SMTP để kiểm thử email nhanh chóng.
+### Infrastructure & Services
+- **Docker & Docker Compose**: Container hóa toàn bộ stack (App, Database, Redis, Meilisearch, MailHog).
+- **Redis**: Cấu trúc dữ liệu trong bộ nhớ (In-memory), sử dụng cho Caching, Stock Reservation và Rate Limiting.
+- **Cloudinary**: Dịch vụ quản lý, lưu trữ và tối ưu hóa hình ảnh/video chuyên nghiệp.
+- **Meilisearch**: Công cụ tìm kiếm tốc độ cao (Search Engine) tích hợp qua Docker.
+- **GitHub Actions**: Tự động hóa quy trình CI (Lint, Test, Build Docker Image).
+- **MailHog**: Môi trường giả lập SMTP dành cho việc kiểm thử email trong quá trình phát triển.
 
 ## 📂 Cấu trúc thư mục
 

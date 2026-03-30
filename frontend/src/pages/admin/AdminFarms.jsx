@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { farmService } from '../../api/services';
 import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../context/ModalContext';
 import { 
     PlusIcon, 
     PencilSquareIcon, 
@@ -25,6 +26,7 @@ const EMPTY = {
 };
 
 export default function AdminFarms() {
+    const { confirm } = useConfirm();
     const [farms, setFarms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -89,7 +91,12 @@ export default function AdminFarms() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Xoá trang trại này?')) return;
+        const ok = await confirm({
+            title: 'Xoá trang trại',
+            message: 'Bạn có chắc chắn muốn xoá vĩnh viễn trang trại này? Các sản phẩm liên quan sẽ cần được cập nhật nguồn cung mới.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await farmService.delete(id);
             toast.success('Đã xoá trang trại');

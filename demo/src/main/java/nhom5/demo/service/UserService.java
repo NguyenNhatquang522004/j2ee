@@ -1,6 +1,5 @@
 package nhom5.demo.service;
 
-import nhom5.demo.dto.request.RegisterRequest;
 import nhom5.demo.dto.request.UserUpdateRequest;
 import nhom5.demo.dto.response.UserResponse;
 import org.springframework.data.domain.Page;
@@ -11,7 +10,8 @@ public interface UserService {
 
     UserResponse updateProfile(String username, UserUpdateRequest request);
 
-    UserResponse updateAvatar(String username, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
+    UserResponse updateAvatar(String username, org.springframework.web.multipart.MultipartFile file)
+            throws java.io.IOException;
 
     Page<UserResponse> getAllUsers(String query, nhom5.demo.enums.RoleEnum role, Boolean isActive, Pageable pageable);
 

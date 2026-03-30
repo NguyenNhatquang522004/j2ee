@@ -34,6 +34,7 @@ const MENU_ITEMS = [
     { name: 'Lô hàng', path: '/admin/batches', icon: PuzzlePieceIcon, permission: 'manage:batches' },
     { name: 'Trang trại', path: '/admin/farms', icon: HomeIcon, permission: 'manage:farms' },
     { name: 'Đơn hàng', path: '/admin/orders', icon: ClipboardDocumentListIcon, permission: 'manage:orders' },
+    { name: 'Hoàn hàng', path: '/admin/refunds', icon: TruckIcon, permission: 'manage:orders' },
     { name: 'Mã giảm giá', path: '/admin/coupons', icon: TicketIcon, permission: 'manage:promotions' },
     { name: 'Flash Sale', path: '/admin/flash-sales', icon: BoltIcon, permission: 'manage:promotions' },
     { name: 'Đánh giá', path: '/admin/reviews', icon: UserIcon, permission: 'manage:reviews' },

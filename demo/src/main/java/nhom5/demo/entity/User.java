@@ -69,9 +69,16 @@ public class User {
     @Column(name = "avatar_url", length = 255)
     private String avatarUrl;
 
-    @Column(name = "points")
+    @Column(name = "lifetime_points")
     @Builder.Default
-    private Long points = 0L;
+    private Long lifetimePoints = 0L;
+
+    @Column(name = "available_points")
+    @Builder.Default
+    private Long availablePoints = 0L;
+
+    @Column(name = "tier_updated_at")
+    private LocalDateTime tierUpdatedAt;
 
     @Column(name = "email_notifications")
     @Builder.Default
@@ -128,19 +135,33 @@ public class User {
     @Column(name = "email_2fa_code_expiry")
     private LocalDateTime email2faCodeExpiry;
 
+    /**
+     * Phiên bản Token (Security Stamp). 
+     * Tăng giá trị này khi người dùng đổi mật khẩu hoặc đăng xuất toàn cầu để vô hiệu hóa các JWT cũ.
+     */
     @Column(name = "token_version", nullable = false)
     @Builder.Default
-    private Integer tokenVersion = 0;
+    private Integer tokenVersion = 1;
 
+    /**
+     * Số lần đăng nhập sai liên tiếp. Dùng để khóa tài khoản tạm thời nếu vượt quá giới hạn.
+     */
     @Column(name = "failed_login_attempts")
     @Builder.Default
     private Integer failedLoginAttempts = 0;
 
-    @Column(name = "lock_until")
-    private LocalDateTime lockUntil;
+    /**
+     * Thời gian khóa tài khoản đến khi nào (nếu bị khóa do Brute-force).
+     */
+    @Column(name = "lockout_until")
+    private LocalDateTime lockoutUntil;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_permissions", joinColumns = @JoinColumn(name = "user_id"))
+    @CollectionTable(
+            name = "user_permissions", 
+            joinColumns = @JoinColumn(name = "user_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "permission"})
+    )
     @Column(name = "permission")
     @Builder.Default
     private java.util.Set<String> customPermissions = new java.util.HashSet<>();
@@ -164,4 +185,9 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Address> addresses = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<PointTransaction> pointTransactions = new ArrayList<>();
 }

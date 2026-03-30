@@ -11,4 +11,5 @@ public interface MailService {
     void sendLoginAlert(String toEmail, String ipAddress, String deviceInfo);
     void sendGenericEmail(String toEmail, String subject, String content);
     void send2faEmail(String toEmail, String code);
+    void sendTierUpgradeNotification(String toEmail, String fullName, String newTier);
 }

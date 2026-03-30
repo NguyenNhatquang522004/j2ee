@@ -109,7 +109,7 @@ export default function CouponList() {
                                     <div className="space-y-2 mb-6">
                                         <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400">
                                             <ScaleIcon className="w-4 h-4 text-emerald-500/50" />
-                                            <span>Đơn tối thiểu: <span className="text-gray-900 font-black">{coupon.minOrderAmount?.toLocaleString('vi-VN')}đ</span></span>
+                                            <span>Đơn tối thiểu: <span className="text-gray-900 font-black">{(coupon.minOrderAmount || 0).toLocaleString('vi-VN')}đ</span></span>
                                         </div>
                                         <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400">
                                             <CalendarDaysIcon className="w-4 h-4 text-emerald-500/50" />

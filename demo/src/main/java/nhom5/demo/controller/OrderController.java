@@ -50,6 +50,24 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
+    @Operation(summary = "Danh sách yêu cầu hoàn trả/hoàn tiền (Admin)")
+    @PreAuthorize("hasAnyAuthority('manage:orders', 'manage:refunds')")
+    @GetMapping("/refund-requests")
+    public ResponseEntity<ApiResponse<Page<OrderResponse>>> getRefundRequests(
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "updatedAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+        
+        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<OrderResponse> data = orderService.getRefundRequests(query, pageable);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+
+
     @Operation(summary = "Chi tiết đơn hàng")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<OrderResponse>> getOrder(
@@ -93,5 +111,46 @@ public class OrderController {
             @AuthenticationPrincipal UserDetails userDetails) {
         orderService.cancelOrder(id, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được huỷ", null));
+    }
+
+    @Operation(summary = "Hoàn tiền đơn hàng (Admin)")
+    @PreAuthorize("hasAnyAuthority('manage:orders', 'manage:refunds')")
+    @PostMapping("/{id}/refund")
+    public ResponseEntity<ApiResponse<OrderResponse>> refundOrder(
+            @PathVariable Long id) {
+        OrderResponse data = orderService.markAsRefunded(id);
+        return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu hoàn tiền cho đơn hàng", data));
+    }
+
+    @Operation(summary = "Yêu cầu trả hàng")
+    @PostMapping("/{id}/return")
+    public ResponseEntity<ApiResponse<OrderResponse>> requestReturn(
+            @PathVariable Long id,
+            @RequestParam(required = false) String reason,
+            @RequestParam(required = false) String returnMedia,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        OrderResponse data = orderService.requestReturn(id, reason, returnMedia, userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("Gửi yêu cầu trả hàng thành công", data));
+    }
+
+
+
+    @Operation(summary = "Xác nhận trả hàng (Admin)")
+    @PreAuthorize("hasAnyAuthority('manage:orders', 'manage:refunds')")
+    @PostMapping("/{id}/confirm-return")
+    public ResponseEntity<ApiResponse<OrderResponse>> confirmReturn(
+            @PathVariable Long id) {
+        OrderResponse data = orderService.confirmReturn(id);
+        return ResponseEntity.ok(ApiResponse.success("Đã xác nhận trả hàng", data));
+    }
+
+    @Operation(summary = "Từ chối trả hàng (Admin)")
+    @PreAuthorize("hasAnyAuthority('manage:orders', 'manage:refunds')")
+    @PostMapping("/{id}/reject-return")
+    public ResponseEntity<ApiResponse<OrderResponse>> rejectReturn(
+            @PathVariable Long id,
+            @RequestParam String reason) {
+        OrderResponse data = orderService.rejectReturn(id, reason);
+        return ResponseEntity.ok(ApiResponse.success("Đã từ chối yêu cầu trả hàng", data));
     }
 }

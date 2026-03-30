@@ -10,9 +10,10 @@ export const authService = {
     verify2fa: (data) => api.post('/auth/verify-2fa', data),
 };
 
-// Settings (admin)
+// Settings
 export const settingsService = {
     getAll: () => api.get('/settings'),
+    getPublic: () => api.get('/settings/public'),
     update: (key, value) => api.put(`/settings/${key}`, { value }),
     updateBatch: (settings) => api.put('/settings/batch', settings),
 };
@@ -68,6 +69,16 @@ export const orderService = {
     // Admin
     getAll: (params) => api.get('/orders', { params }),
     updateStatus: (id, status) => api.patch(`/orders/${id}/status?status=${status}`),
+    refund: (id) => api.post(`/orders/${id}/refund`),
+    requestReturn: (id, reason, returnMedia) => {
+        const params = new URLSearchParams();
+        if (reason) params.append('reason', reason);
+        if (returnMedia) params.append('returnMedia', returnMedia);
+        return api.post(`/orders/${id}/return?${params.toString()}`);
+    },
+    confirmReturn: (id) => api.post(`/orders/${id}/confirm-return`),
+    rejectReturn: (id, reason) => api.post(`/orders/${id}/reject-return?reason=${encodeURIComponent(reason)}`),
+    getRefundRequests: (params) => api.get('/orders/refund-requests', { params }),
 };
 
 // Reviews
@@ -199,4 +210,13 @@ export const flashSaleService = {
     create: (data) => api.post('/flash-sales', data),
     delete: (id) => api.delete(`/flash-sales/${id}`),
     toggle: (id) => api.patch(`/flash-sales/${id}/toggle`),
+};
+
+// --- Xử lý Thanh toán (VnPay, SePay) ---
+/**
+ * paymentService: Tạo liên kết thanh toán trực tuyến.
+ * createVnPayUrl: Trả về URL để chuyển hướng sang VnPay.
+ */
+export const paymentService = {
+    createVnPayUrl: (orderId) => api.post(`/payment/vnpay/${orderId}`),
 };

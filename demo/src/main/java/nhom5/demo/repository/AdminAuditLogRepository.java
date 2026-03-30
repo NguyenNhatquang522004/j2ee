@@ -12,4 +12,5 @@ import java.util.List;
 public interface AdminAuditLogRepository extends JpaRepository<AdminAuditLog, Long> {
     Page<AdminAuditLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
     List<AdminAuditLog> findByAdminUsername(String adminUsername);
+    void deleteByAdminUsername(String adminUsername);
 }

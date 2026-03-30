@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { dashboardService, orderService } from '../../api/services';
-import AdminLayout from '../../components/AdminLayout';
+/**
+ * Bảng điều khiển Quản trị (Admin Dashboard).
+ * Sử dụng phong cách Glassmorphism (White/70 backdrop-blur) để tạo giao diện hiện đại, sang trọng.
+ * Tích hợp biểu đồ doanh thu động và hệ thống thẻ thống kê (StatCards).
+ */
 import {
     ShoppingBagIcon,
     UserGroupIcon,
@@ -14,6 +18,10 @@ import {
     ChartBarIcon
 } from '@heroicons/react/24/outline';
 
+/**
+ * Thành phần hiển thị chỉ số (StatCard).
+ * Tích hợp hiệu ứng Hover-translate và Shadow mượt mà.
+ */
 const StatCard = ({ title, value, icon: Icon, color, trend, trendValue }) => (
     <div className="bg-white/70 backdrop-blur-xl border border-white/40 p-4 rounded-xl shadow-sm hover:-translate-y-1 transition-all duration-300">
     <div className="flex items-center justify-between mb-3">
@@ -99,9 +107,10 @@ export default function AdminDashboard() {
                             <span className="text-[10px] font-black text-gray-400 uppercase">Doanh thu</span>
                         </div>
                     </div>
-                    {/* CSS/SVG Chart */}
+                    {/* BIỂU ĐỒ DOANH THU DỰA TRÊN SVG/CSS (Không dùng thư viện nặng) */}
                     <div className="h-[220px] flex items-end gap-3 sm:gap-6 px-2">
                         {(stats?.revenueChart?.length > 0 ? stats.revenueChart : Array(7).fill({ revenue: 0, date: '?' })).map((item, i) => {
+                            // Tính toán chiều cao cột dựa trên tỷ lệ Doanh thu / Doanh thu lớn nhất trong tuần
                             const val = Number(item.revenue || 0);
                             const maxRev = Math.max(...(stats?.revenueChart?.map(r => Number(r.revenue)) || [1]));
                             const height = maxRev > 0 ? (val / maxRev) * 100 : 0;

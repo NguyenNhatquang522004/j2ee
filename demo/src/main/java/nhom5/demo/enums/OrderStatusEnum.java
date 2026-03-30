@@ -9,7 +9,10 @@ public enum OrderStatusEnum {
     PACKAGING("Đang đóng gói"),
     SHIPPING("Đang giao hàng"),
     DELIVERED("Đã giao hàng"),
-    CANCELLED("Đã hủy");
+    CANCELLED("Đã hủy"),
+    RETURN_REQUESTED("Yêu cầu trả hàng"),
+    RETURNED("Đã trả hàng"),
+    RETURN_REJECTED("Từ chối trả hàng");
 
     private final String displayName;
 

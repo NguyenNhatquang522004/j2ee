@@ -17,6 +17,6 @@ public interface FlashSaleItemRepository extends JpaRepository<FlashSaleItem, Lo
     @Query("SELECT i FROM FlashSaleItem i WHERE i.id = :id")
     Optional<FlashSaleItem> findByIdWithLock(@Param("id") Long id);
 
-    @Query("SELECT i FROM FlashSaleItem i WHERE i.product.id = :productId AND i.flashSale.isActive = true AND i.flashSale.startTime <= :now AND i.flashSale.endTime >= :now")
+    @Query("SELECT i FROM FlashSaleItem i WHERE i.product.id = :productId AND i.product.isActive = true AND i.flashSale.isActive = true AND i.flashSale.startTime <= :now AND i.flashSale.endTime >= :now")
     Optional<FlashSaleItem> findActiveByProductId(@Param("productId") Long productId, @Param("now") LocalDateTime now);
 }

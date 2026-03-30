@@ -138,7 +138,7 @@ function FlashSaleItemLarge({ item }) {
                 )}
                 <div className="absolute top-2 left-2 sm:top-5 sm:left-5 z-10">
                     <span className="bg-red-600 text-white text-[7px] sm:text-[10px] font-black px-1.5 py-1 sm:px-4 sm:py-2 rounded sm:rounded-2xl shadow-2xl uppercase tracking-[0.1em] sm:tracking-[0.2em] border border-white/20">
-                        -{Math.round((p.price - item.flashSalePrice) / p.price * 100)}%
+                        -{Math.round(((p.price || 0) - (item.flashSalePrice || 0)) / (p.price || 1) * 100)}%
                     </span>
                 </div>
             </div>
@@ -150,10 +150,10 @@ function FlashSaleItemLarge({ item }) {
                 <div className="mb-2 sm:mb-8 p-1 sm:p-4 bg-gray-50/50 rounded-xl sm:rounded-3xl border border-gray-50">
                     <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
                         <span className="text-xs sm:text-3xl font-black text-red-600 tracking-tighter whitespace-nowrap">
-                            {item.flashSalePrice?.toLocaleString('vi-VN')}đ
+                            {(item.flashSalePrice || 0).toLocaleString('vi-VN')}đ
                         </span>
                         <span className="text-[8px] sm:text-sm text-gray-300 line-through font-black italic tracking-tighter">
-                            {p.price?.toLocaleString('vi-VN')}đ
+                            {(p.price || 0).toLocaleString('vi-VN')}đ
                         </span>
                     </div>
                 </div>

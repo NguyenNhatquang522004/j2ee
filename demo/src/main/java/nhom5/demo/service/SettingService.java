@@ -6,6 +6,7 @@ import java.util.Map;
 
 public interface SettingService {
     List<SystemSetting> getAllSettings();
+    List<SystemSetting> getPublicSettings();
     String getSettingValue(String key, String defaultValue);
     void updateSetting(String key, String value);
     void updateSettings(Map<String, String> settings);

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { flashSaleService, productService } from '../../api/services';
 import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../context/ModalContext';
 import { 
     PlusIcon, 
     TrashIcon, 
@@ -16,6 +17,7 @@ const EMPTY_FS = { name: '', startTime: '', endTime: '', description: '', items:
 const EMPTY_ITEM = { productId: '', flashSalePrice: '', quantityLimit: 0 };
 
 export default function AdminFlashSales() {
+    const { confirm } = useConfirm();
     const [flashSales, setFlashSales] = useState([]);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -89,7 +91,12 @@ export default function AdminFlashSales() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Xoá Flash Sale này?')) return;
+        const ok = await confirm({
+            title: 'Xoá Flash Sale',
+            message: 'Bạn có chắc chắn muốn xoá vĩnh viễn chương trình Flash Sale này? Dữ liệu thống kê về doanh số sẽ được lưu lại nhưng sự kiện sẽ kết thúc ngay lập tức.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await flashSaleService.delete(id);
             toast.success('Đã xoá');

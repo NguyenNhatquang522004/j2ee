@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { settingsService, userService, addressService, twoFactorService, orderService } from '../../api/services';
 import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../context/ModalContext';
 import { useAuth } from '../../context/AuthContext';
 import { 
     ShieldCheckIcon, 
@@ -27,11 +28,13 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function AdminSettings() {
+    const { confirm } = useConfirm();
     const { user: authUser, setUser } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
     const activeTab = searchParams.get('tab') || 'system';
 
     const [settings, setSettings] = useState([]);
+    const [systemForm, setSystemForm] = useState({});
     const [user, setUserData] = useState(null);
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -56,7 +59,7 @@ export default function AdminSettings() {
     const [showAddrForm, setShowAddrForm] = useState(false);
     const [editingAddrId, setEditingAddrId] = useState(null);
     const [addrForm, setAddrForm] = useState({
-        label: 'Nhà',
+        label: 'Văn phòng',
         fullName: '',
         phone: '',
         details: '',
@@ -84,6 +87,14 @@ export default function AdminSettings() {
             ]);
             
             setSettings(settingsRes.data);
+            
+            // Populate system form
+            const sMap = {};
+            settingsRes.data.forEach(s => {
+                sMap[s.settingKey] = s.settingValue;
+            });
+            setSystemForm(sMap);
+
             const data = userRes.data;
             setUserData(data);
             setProfileForm({
@@ -115,15 +126,73 @@ export default function AdminSettings() {
         loadData();
     }, []);
 
+    const handleSettingValueChange = (key, value) => {
+        setSystemForm(prev => ({ ...prev, [key]: value }));
+    };
+
     const fetchSettings = async () => {
         setLoading(true);
         try {
             const res = await settingsService.getAll();
             setSettings(res.data);
+            const sMap = {};
+            res.data.forEach(s => {
+                sMap[s.settingKey] = s.settingValue;
+            });
+            setSystemForm(sMap);
         } catch {
-            toast.error('Lỗi khi tải cài đặt hệ thống');
+            toast.error('Lỗi khi tải cài đặt');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const saveSection = async (keys) => {
+        const batch = {};
+        keys.forEach(k => {
+            batch[k] = systemForm[k] || '';
+        });
+
+        setSaving(true);
+        try {
+            await settingsService.updateBatch(batch);
+            setSettings(prev => {
+                let next = [...prev];
+                keys.forEach(k => {
+                    const idx = next.findIndex(s => s.settingKey === k);
+                    if (idx > -1) {
+                        next[idx] = { ...next[idx], settingValue: batch[k] };
+                    } else {
+                        next.push({ settingKey: k, settingValue: batch[k], id: Date.now() + Math.random() });
+                    }
+                });
+                return next;
+            });
+            toast.success('Đã lưu thay đổi cấu hình');
+        } catch {
+            toast.error('Lỗi khi lưu bộ cài đặt');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const saveSetting = async (key) => {
+        const newValue = systemForm[key] || '';
+        setSaving(true);
+        try {
+            await settingsService.update(key, newValue);
+            setSettings(prev => {
+                const existing = prev.find(s => s.settingKey === key);
+                if (existing) {
+                    return prev.map(s => s.settingKey === key ? { ...s, settingValue: newValue } : s);
+                }
+                return [...prev, { settingKey: key, settingValue: newValue, id: Date.now() }];
+            });
+            toast.success('Cập nhật thành công');
+        } catch {
+            toast.error('Lỗi khi cập nhật cài đặt');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -133,7 +202,8 @@ export default function AdminSettings() {
         try {
             await settingsService.update(key, newValue);
             setSettings(prev => prev.map(s => s.settingKey === key ? { ...s, settingValue: newValue } : s));
-            toast.success('Cập nhật thành công');
+            setSystemForm(prev => ({ ...prev, [key]: newValue }));
+            toast.success('Đã thay đổi trạng thái');
         } catch {
             toast.error('Lỗi khi cập nhật');
         } finally {
@@ -296,7 +366,12 @@ export default function AdminSettings() {
     };
 
     const handleDeleteAddress = async (id) => {
-        if (!window.confirm('Bạn có chắc muốn xoá địa chỉ này?')) return;
+        const ok = await confirm({
+            title: 'Xóa địa chỉ',
+            message: 'Bạn có chắc chắn muốn xóa vĩnh viễn địa chỉ này khỏi hồ sơ quản trị? Các thông báo hoặc kiện hàng mẫu gửi tới đây sẽ bị gián đoạn.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await addressService.delete(id);
             toast.success('Đã xoá địa chỉ');
@@ -330,7 +405,7 @@ export default function AdminSettings() {
             <div className="max-w-7xl mx-auto px-4 py-6">
                 <div className="mb-8 text-center md:text-left">
                     <h1 className="text-3xl font-black text-gray-900 tracking-tighter uppercase mb-1.5">Trung tâm cấu hình</h1>
-                    <p className="text-sm text-gray-500 font-medium italic">Quản trị toàn bộ cài đặt hệ thống và bảo mật cá nhân của bạn.</p>
+                    <p className="text-sm text-gray-500 font-medium italic">Quản trị toàn bộ cài đặt hệ thống và bảo mật tài khoản đặc quyền.</p>
                 </div>
 
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-[600px]">
@@ -358,11 +433,15 @@ export default function AdminSettings() {
                             </button>
                             <button onClick={() => setActiveTab('profile')} className={`w-full flex items-center gap-3 px-5 py-3 rounded-xl font-black transition-all ${activeTab === 'profile' ? 'bg-black text-white shadow-lg' : 'text-gray-400 hover:bg-white hover:text-green-600'}`}>
                                 <UserCircleIcon className="w-5 h-5" />
-                                <span className="text-[11px] uppercase tracking-wider">Hồ sơ cá nhân</span>
+                                <span className="text-[11px] uppercase tracking-wider">Hồ sơ quản trị</span>
+                            </button>
+                            <button onClick={() => setActiveTab('addresses')} className={`w-full flex items-center gap-3 px-5 py-3 rounded-xl font-black transition-all ${activeTab === 'addresses' ? 'bg-black text-white shadow-lg' : 'text-gray-400 hover:bg-white hover:text-green-600'}`}>
+                                <HomeIcon className="w-5 h-5" />
+                                <span className="text-[11px] uppercase tracking-wider">Kho bãi & Văn phòng</span>
                             </button>
                             <button onClick={() => setActiveTab('notifications')} className={`w-full flex items-center gap-3 px-5 py-3 rounded-xl font-black transition-all ${activeTab === 'notifications' ? 'bg-black text-white shadow-lg' : 'text-gray-400 hover:bg-white hover:text-green-600'}`}>
                                 <BellIcon className="w-5 h-5" />
-                                <span className="text-[11px] uppercase tracking-wider">Thông báo</span>
+                                <span className="text-[11px] uppercase tracking-wider">Thông báo hệ thống</span>
                             </button>
                             <button onClick={() => setActiveTab('security')} className={`w-full flex items-center gap-3 px-5 py-3 rounded-xl font-black transition-all ${activeTab === 'security' ? 'bg-black text-white shadow-lg' : 'text-gray-400 hover:bg-white hover:text-green-600'}`}>
                                 <ShieldCheckIcon className="w-5 h-5" />
@@ -370,7 +449,7 @@ export default function AdminSettings() {
                             </button>
                             <button onClick={() => setActiveTab('privacy')} className={`w-full flex items-center gap-3 px-5 py-3 rounded-xl font-black transition-all ${activeTab === 'privacy' ? 'bg-black text-white shadow-lg' : 'text-gray-400 hover:bg-white hover:text-green-600'}`}>
                                 <LockClosedIcon className="w-5 h-5" />
-                                <span className="text-[11px] uppercase tracking-wider">Quyền riêng tư</span>
+                                <span className="text-[11px] uppercase tracking-wider">Dữ liệu & Lưu trữ</span>
                             </button>
                         </nav>
 
@@ -398,71 +477,128 @@ export default function AdminSettings() {
                                         </div>
 
                                         {/* Section: Thông tin cửa hàng */}
-                                        <section className="space-y-3">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-1.5 h-6 bg-black rounded-full"></div>
-                                                <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Thông tin cửa hàng</h4>
+                                        <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-1.5 h-6 bg-black rounded-full"></div>
+                                                    <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Thông tin cửa hàng</h4>
+                                                </div>
+                                                <button 
+                                                    onClick={() => saveSection(['STORE_NAME', 'STORE_EMAIL', 'STORE_PHONE', 'STORE_ADDRESS', 'COPYRIGHT_TEXT'])}
+                                                    disabled={saving}
+                                                    className="px-4 py-2 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all disabled:opacity-50"
+                                                >
+                                                    {saving ? 'ĐANG LƯU...' : 'LƯU THÔNG TIN'}
+                                                </button>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                                                {settings.filter(s => ['STORE_NAME', 'STORE_EMAIL', 'STORE_PHONE', 'STORE_ADDRESS', 'COPYRIGHT_TEXT'].some(k => s.settingKey.includes(k))).map(s => (
-                                                    <div key={s.id} className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 hover:border-black transition-all group">
-                                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">{s.settingKey.replace(/_/g, ' ')}</label>
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center text-gray-400 group-hover:text-black transition-colors shadow-sm">
-                                                                <span className="scale-75">{getSettingIcon(s.settingKey)}</span>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {['STORE_NAME', 'STORE_EMAIL', 'STORE_PHONE', 'STORE_ADDRESS', 'COPYRIGHT_TEXT'].map(key => {
+                                                    const s = settings.find(st => st.settingKey === key);
+                                                    const isMissing = !s;
+                                                    const currentVal = systemForm[key] || '';
+                                                    return (
+                                                        <div key={key} className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 hover:border-black transition-all group">
+                                                            <div className="flex justify-between items-start mb-1">
+                                                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                                                                    {key.replace(/_/g, ' ')}
+                                                                </label>
+                                                                {isMissing && <span className="text-red-500 font-bold text-[8px] uppercase tracking-tighter">(CHƯA KHỞI TẠO)</span>}
                                                             </div>
-                                                            <input type="text" value={s.settingValue} className="flex-1 bg-transparent border-none font-bold text-gray-900 focus:ring-0 text-sm p-0" onChange={(e) => handleToggle(s.settingKey, e.target.value)} readOnly={s.settingKey === 'STORE_EMAIL'} />
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center text-gray-400 group-hover:text-black transition-colors shadow-sm shrink-0">
+                                                                    <span className="scale-75">{getSettingIcon(key)}</span>
+                                                                </div>
+                                                                <input 
+                                                                    type="text" 
+                                                                    value={currentVal} 
+                                                                    className={`flex-1 bg-transparent border-none font-bold text-gray-900 focus:ring-0 text-sm p-0 ${isMissing ? 'placeholder-gray-300' : ''}`} 
+                                                                    placeholder={`Nhập ${key.replace(/_/g, ' ').toLowerCase()}...`}
+                                                                    onChange={(e) => handleSettingValueChange(key, e.target.value)} 
+                                                                    readOnly={key === 'STORE_EMAIL'} 
+                                                                />
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
-                                                {settings.filter(s => ['STORE_NAME', 'STORE_EMAIL', 'STORE_PHONE', 'STORE_ADDRESS', 'COPYRIGHT_TEXT'].some(k => s.settingKey.includes(k))).length === 0 && (
-                                                    <p className="text-gray-400 italic text-sm col-span-2 text-center py-6 border-2 border-dashed rounded-[2rem]">Chưa có thông tin cửa hàng cơ bản.</p>
-                                                )}
+                                                    );
+                                                })}
                                             </div>
                                         </section>
 
                                         {/* Section: Tài chính & Thanh toán */}
-                                        <section className="space-y-3">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-1.5 h-6 bg-green-600 rounded-full"></div>
-                                                <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Tài chính & Thanh toán</h4>
+                                        <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-1.5 h-6 bg-green-600 rounded-full"></div>
+                                                    <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Tài chính & Thanh toán</h4>
+                                                </div>
+                                                <button 
+                                                    onClick={() => saveSection(['TAX', 'CURRENCY', 'SHIPPING_FEE', 'FREE_SHIPPING_THRESHOLD'])}
+                                                    disabled={saving}
+                                                    className="px-4 py-2 bg-green-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all disabled:opacity-50"
+                                                >
+                                                    {saving ? 'ĐANG LƯU...' : 'LƯU TÀI CHÍNH'}
+                                                </button>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                                                {settings.filter(s => ['TAX', 'CURRENCY', 'SHIPPING', 'FEE'].some(k => s.settingKey.includes(k))).map(s => (
-                                                    <div key={s.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">{s.settingKey.replace(/_/g, ' ')}</label>
-                                                        <div className="flex items-center gap-2">
-                                                            <input 
-                                                                type={s.settingKey.includes('CURRENCY') ? 'text' : 'number'} 
-                                                                value={s.settingValue} 
-                                                                className="w-full text-lg font-black text-gray-900 border-none p-0 focus:ring-0" 
-                                                                step="0.01"
-                                                            />
-                                                            <span className="text-gray-300 font-bold text-[10px]">{s.settingKey.includes('TAX') ? '%' : ''}</span>
+                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                                {['TAX', 'CURRENCY', 'SHIPPING_FEE', 'FREE_SHIPPING_THRESHOLD'].map(key => {
+                                                    const s = settings.find(st => st.settingKey === key);
+                                                    const isMissing = !s;
+                                                    const currentVal = systemForm[key] || '0';
+                                                    return (
+                                                        <div key={key} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                                                                {key.replace(/_/g, ' ')} {isMissing && <span className="text-red-300 ml-1">(?)</span>}
+                                                            </label>
+                                                            <div className="flex items-center gap-2">
+                                                                <input 
+                                                                    type={key.includes('CURRENCY') ? 'text' : 'number'} 
+                                                                    value={currentVal} 
+                                                                    className="w-full text-lg font-black text-gray-900 border-none p-0 focus:ring-0" 
+                                                                    onChange={(e) => handleSettingValueChange(key, e.target.value)}
+                                                                    step="0.01"
+                                                                />
+                                                                <span className="text-gray-300 font-bold text-[10px]">{key.includes('TAX') ? '%' : ''}</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         </section>
 
                                         {/* Section: Mạng xã hội */}
-                                        <section className="space-y-3">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-                                                <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Mạng xã hội</h4>
+                                        <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
+                                                    <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Mạng xã hội</h4>
+                                                </div>
+                                                <button 
+                                                    onClick={() => saveSection(['FACEBOOK', 'INSTAGRAM', 'YOUTUBE', 'TWITTER'])}
+                                                    disabled={saving}
+                                                    className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50"
+                                                >
+                                                    {saving ? 'ĐANG LƯU...' : 'LƯU LIÊN KẾT'}
+                                                </button>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                {settings.filter(s => ['FACEBOOK', 'INSTAGRAM', 'YOUTUBE', 'TWITTER'].some(k => s.settingKey.includes(k))).map(s => (
-                                                    <div key={s.id} className="flex items-center gap-4 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
-                                                        <span className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
-                                                            <span className="text-blue-600 font-black text-xs">#</span>
-                                                        </span>
-                                                        <input type="text" value={s.settingValue} className="flex-1 bg-transparent border-none font-medium text-gray-500 italic text-xs p-0 focus:ring-0" placeholder={`Link ${s.settingKey.toLowerCase()}...`} />
-                                                    </div>
-                                                ))}
-                                                {settings.filter(s => ['FACEBOOK', 'INSTAGRAM', 'YOUTUBE', 'TWITTER'].some(k => s.settingKey.includes(k))).length === 0 && (
-                                                    <p className="text-gray-400 italic text-sm">Chưa có liên kết mạng xã hội nào được cấu hình.</p>
-                                                )}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {['FACEBOOK', 'INSTAGRAM', 'YOUTUBE', 'TWITTER'].map(key => {
+                                                    const s = settings.find(st => st.settingKey === key);
+                                                    const isMissing = !s;
+                                                    const currentVal = systemForm[key] || '';
+                                                    return (
+                                                        <div key={key} className="flex items-center gap-4 bg-gray-50/50 p-3 rounded-xl border border-gray-100 group hover:border-blue-200 transition-all">
+                                                            <span className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
+                                                                <span className={`font-black text-xs ${isMissing ? 'text-gray-200' : 'text-blue-600'}`}>#</span>
+                                                            </span>
+                                                            <input 
+                                                                type="text" 
+                                                                value={currentVal} 
+                                                                className="flex-1 bg-transparent border-none font-medium text-gray-500 italic text-xs p-0 focus:ring-0" 
+                                                                placeholder={`Cấu hình link ${key.toLowerCase()}...`}
+                                                                onChange={(e) => handleSettingValueChange(key, e.target.value)}
+                                                            />
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </section>
 
@@ -494,7 +630,21 @@ export default function AdminSettings() {
                                                                     <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-all duration-300 shadow-md ${s.settingValue === 'true' ? 'translate-x-6' : 'translate-x-1'}`} />
                                                                 </button>
                                                             ) : (
-                                                                <input type="text" value={s.settingValue} className="w-40 bg-gray-100 border-none rounded-lg px-3 py-2 text-[10px] font-bold text-gray-400 italic" readOnly />
+                                                                <div className="flex items-center gap-2">
+                                                                    <input 
+                                                                        type="text" 
+                                                                        value={systemForm[s.settingKey] || ''} 
+                                                                        onChange={(e) => handleSettingValueChange(s.settingKey, e.target.value)}
+                                                                        className="w-40 bg-gray-100 border-none rounded-lg px-3 py-2 text-[10px] font-bold text-gray-900 focus:ring-2 focus:ring-red-500 transition-all shadow-inner" 
+                                                                    />
+                                                                    <button 
+                                                                        onClick={() => saveSetting(s.settingKey)}
+                                                                        disabled={saving}
+                                                                        className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all disabled:opacity-50"
+                                                                    >
+                                                                        <PencilSquareIcon className="w-3 h-3" />
+                                                                    </button>
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </div>
@@ -517,8 +667,8 @@ export default function AdminSettings() {
                                 {activeTab === 'profile' && (
                                     <div className="space-y-8 animate-fade-in">
                                         <div>
-                                            <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-4">Hồ sơ định danh</h3>
-                                            <p className="text-[13px] text-gray-500 font-medium italic mt-1">Thông tin định danh quản trị viên trên hệ thống.</p>
+                                            <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-4">Hồ sơ quản trị</h3>
+                                            <p className="text-[13px] text-gray-500 font-medium italic mt-1">Thông tin tài khoản và định danh quản trị viên trên hệ thống.</p>
                                         </div>
                                         <form onSubmit={handleProfileSubmit} className="space-y-5 bg-gray-50/50 p-6 rounded-xl border border-gray-100">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -604,8 +754,7 @@ export default function AdminSettings() {
                                         </div>
                                         <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
                                             {[
-                                                { key: 'emailNotifications', label: 'Email thông báo hệ thống', desc: 'Nhận tin nhắn về trạng thái đơn hàng, đăng nhập và bảo mật qua email.' },
-                                                { key: 'promoNotifications', label: 'Email ưu đãi & Marketing', desc: 'Nhận các bản tin về sản phẩm mới, khuyến mãi và tích điểm thành viên.' }
+                                                { key: 'emailNotifications', label: 'Email thông báo hệ thống', desc: 'Nhận tin nhắn về các hoạt động quan trọng của hệ thống, đăng nhập và bảo mật qua email.' }
                                             ].map((n) => (
                                                 <div key={n.key} className="flex items-center justify-between p-5 border-b last:border-none border-gray-50 group hover:bg-gray-50/50 transition-all">
                                                     <div className="flex items-center gap-5">
@@ -757,8 +906,8 @@ export default function AdminSettings() {
                                     <div className="space-y-6 animate-fade-in">
                                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                                             <div>
-                                                <h3 className="text-xl font-black text-gray-900 tracking-tight">Sổ địa chỉ cá nhân</h3>
-                                                <p className="text-[13px] text-gray-500 font-medium italic mt-1">Dành cho việc nhận hàng mẫu hoặc quà tặng doanh nghiệp.</p>
+                                                <h3 className="text-xl font-black text-gray-900 tracking-tight">Hệ thống kho bãi & Văn phòng</h3>
+                                                <p className="text-[13px] text-gray-500 font-medium italic mt-1">Quản lý các địa điểm vận hành, kho hàng và trụ sở làm việc của hệ thống.</p>
                                             </div>
                                             <button onClick={() => setShowAddrForm(!showAddrForm)} className="bg-black text-white px-5 py-2.5 rounded-xl font-black shadow-lg flex items-center gap-2 active:scale-95 transition-all text-[10px] tracking-wider uppercase">
                                                 <PlusIcon className="w-4 h-4" />
@@ -789,7 +938,7 @@ export default function AdminSettings() {
                                                 </div>
                                                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                                                     <div className="flex gap-3">
-                                                        {['Nhà', 'Công ty', 'Khác'].map(label => (
+                                                        {['Văn phòng', 'Kho hàng', 'Trụ sở'].map(label => (
                                                             <button key={label} type="button" onClick={() => setAddrForm({...addrForm, label})} className={`flex-1 py-2 rounded-lg font-black text-[9px] transition-all uppercase tracking-tighter ${addrForm.label === label ? 'bg-black text-white shadow-md' : 'bg-white text-gray-400 border'}`}>{label}</button>
                                                         ))}
                                                     </div>
@@ -807,7 +956,7 @@ export default function AdminSettings() {
                                                         <div>
                                                             <div className="flex items-center justify-between mb-3">
                                                                 <div className={`p-2 rounded-lg ${addr.isDefault ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                                                                    {addr.label === 'Nhà' ? <HomeIcon className="w-5 h-5" /> : addr.label === 'Công ty' ? <BriefcaseIcon className="w-5 h-5" /> : <MapPinIcon className="w-5 h-5" />}
+                                                                    {addr.label === 'Văn phòng' ? <BriefcaseIcon className="w-5 h-5" /> : addr.label === 'Kho hàng' ? <ArchiveBoxIcon className="w-5 h-5" /> : <MapPinIcon className="w-5 h-5" />}
                                                                 </div>
                                                                 <div className="flex flex-col items-end gap-1.5">
                                                                     {addr.isDefault && <span className="bg-green-600 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm">MẶC ĐỊNH</span>}
@@ -840,8 +989,8 @@ export default function AdminSettings() {
                                 {activeTab === 'privacy' && (
                                     <div className="space-y-6 animate-fade-in">
                                         <div>
-                                            <h3 className="text-xl font-black text-gray-900 tracking-tight">Quyền riêng tư & Dữ liệu</h3>
-                                            <p className="text-[13px] text-gray-500 font-medium italic mt-1">Quyền kiểm soát dữ liệu cá nhân của bạn theo tiêu chuẩn bảo mật quốc tế.</p>
+                                            <h3 className="text-xl font-black text-gray-900 tracking-tight">Lưu trữ & Trích xuất dữ liệu</h3>
+                                            <p className="text-[13px] text-gray-500 font-medium italic mt-1">Quyền kiểm soát và trích xuất dữ liệu vận hành theo tiêu chuẩn bảo mật.</p>
                                         </div>
 
                                         <div className="grid md:grid-cols-2 gap-6">
@@ -850,8 +999,8 @@ export default function AdminSettings() {
                                                     <ArchiveBoxIcon className="w-5 h-5" />
                                                 </div>
                                                 <div>
-                                                    <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Xuất dữ liệu cá nhân</h4>
-                                                    <p className="text-[11px] text-gray-500 font-medium italic mt-1.5">Chúng tôi sẽ tạo một bản sao dữ liệu của bạn ở định dạng JSON. Quá trình này có thể mất vài phút.</p>
+                                                    <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Trích xuất hồ sơ quản trị</h4>
+                                                    <p className="text-[11px] text-gray-500 font-medium italic mt-1.5">Chúng tôi sẽ tạo một bản sao toàn bộ cấu hình và hồ sơ quản trị của bạn ở định dạng JSON để lưu trữ ngoại tuyến.</p>
                                                 </div>
                                                 <button onClick={handleExportData} className="w-full py-3 bg-black text-white rounded-xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-gray-800 transition-all shadow-lg active:scale-95">BẮT ĐẦU TRÍCH XUẤT</button>
                                             </div>

@@ -88,7 +88,10 @@ public class Coupon {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    // ====== Relationships ======
+    /**
+     * Danh sách người dùng được phép sử dụng mã này nếu isPrivate = true.
+     * Dùng cho các chiến dịch quà tặng cá nhân hoặc bồi thường khách hàng.
+     */
     @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

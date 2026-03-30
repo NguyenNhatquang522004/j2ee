@@ -2,6 +2,8 @@ package nhom5.demo.security;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.GrantedAuthority;
+import java.util.Collection;
 
 public class SecurityUtils {
     public static String getCurrentUsername() {
@@ -14,6 +16,24 @@ public class SecurityUtils {
         } else {
             return principal.toString();
         }
+    }
+
+    public static boolean hasAnyRole(String... roles) {
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            return false;
+        }
+        Collection<? extends GrantedAuthority> authorities = 
+            SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+        
+        for (String role : roles) {
+            String roleWithPrefix = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+            for (GrantedAuthority authority : authorities) {
+                if (authority.getAuthority().equals(roleWithPrefix)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public static String sanitize(String html) {

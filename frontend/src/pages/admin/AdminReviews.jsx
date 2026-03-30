@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { reviewService } from '../../api/services';
 import AdminLayout from '../../components/AdminLayout';
+import { useConfirm } from '../../context/ModalContext';
 import toast from 'react-hot-toast';
 import { 
     CheckCircleIcon, 
@@ -18,6 +19,7 @@ import {
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
 export default function AdminReviews() {
+    const { confirm } = useConfirm();
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
@@ -66,7 +68,12 @@ export default function AdminReviews() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Xóa đánh giá này vĩnh viễn?')) return;
+        const ok = await confirm({
+            title: 'Xóa đánh giá',
+            message: 'Bạn có chắc chắn muốn xóa vĩnh viễn đánh giá này? Hành động này không thể hoàn tác.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await reviewService.delete(id);
             toast.success('Đã xóa');

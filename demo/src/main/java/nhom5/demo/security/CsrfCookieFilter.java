@@ -2,7 +2,6 @@ package nhom5.demo.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -11,7 +10,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Filter to write the CSRF token to a cookie for the client to read and send back in headers.
+ * Filter to write the CSRF token to a cookie for the client to read and send
+ * back in headers.
  * This is the "Enterprise Target Strict Match" approach for SPAs.
  */
 public class CsrfCookieFilter extends OncePerRequestFilter {
@@ -24,10 +24,11 @@ public class CsrfCookieFilter extends OncePerRequestFilter {
             // Render the token and its value to a cookie named XSRF-TOKEN
             // This is accessed by the frontend to send back as X-XSRF-TOKEN header
             csrfToken.getToken(); // Forces initialization
-            
+
             // Re-confirm if cookie was already set to prevent redundant writes
             // Actually Spring's CookieCsrfTokenRepository handles writing the token,
-            // but we call getToken() to ensure it's loaded as part of the request lifecycle.
+            // but we call getToken() to ensure it's loaded as part of the request
+            // lifecycle.
         }
         filterChain.doFilter(request, response);
     }

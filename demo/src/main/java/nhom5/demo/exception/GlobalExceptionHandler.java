@@ -14,9 +14,16 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Bộ xử lý lỗi tập trung cho toàn bộ ứng dụng (Global Exception Handler).
+ * Chuyển đổi các Exception thành Json ApiResponse chuẩn để Frontend dễ dàng xử lý.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * Xử lý lỗi không tìm thấy tài nguyên (404 Not Found).
+     */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -29,12 +36,19 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
     }
 
+    /**
+     * Xử lý các lỗi nghiệp vụ chung (400 Bad Request).
+     */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
     }
 
+    /**
+     * Xử lý lỗi Validation dữ liệu đầu vào (400 Bad Request).
+     * Trả về danh sách chi tiết các trường bị lỗi và lý do tương ứng.
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationException(
             MethodArgumentNotValidException ex) {
@@ -69,11 +83,19 @@ public class GlobalExceptionHandler {
                         "File upload quá lớn. Kích thước tối đa là 100MB"));
     }
 
+    /**
+     * Chốt chặn cuối cùng cho các lỗi không mong muốn (500 Internal Server Error).
+     * Tự động trích xuất thông tin chi tiết về lỗi để hỗ trợ Debug nhanh trên Frontend.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
-        // Log locally if needed: ex.printStackTrace();
+        ex.printStackTrace(); // Log stack trace ra Console phục vụ Debug
+        String detail = ex.getClass().getName() + ": " + ex.getMessage();
+        if (ex.getCause() != null) {
+            detail += " | Cause: " + ex.getCause().getMessage();
+        }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "Lỗi hệ thống: " + ex.getMessage()));
+                        "Lỗi hệ thống: " + detail));
     }
 }
