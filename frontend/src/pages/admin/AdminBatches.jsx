@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { batchService, productService } from '../../api/services';
 import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../context/ModalContext';
 import { 
     PlusIcon, 
     PencilSquareIcon, 
@@ -18,6 +19,7 @@ const TODAY = new Date().toISOString().split('T')[0];
 const EMPTY = { batchCode: '', productId: '', quantity: '', importDate: TODAY, productionDate: '', expiryDate: '', note: '' };
 
 export default function AdminBatches() {
+    const { confirm } = useConfirm();
     const [batches, setBatches] = useState([]);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -115,7 +117,12 @@ export default function AdminBatches() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Xoá lô hàng này?')) return;
+        const ok = await confirm({
+            title: 'Xoá lô hàng',
+            message: 'Bạn có chắc chắn muốn xoá vĩnh viễn lô hàng này? Dữ liệu về hạn sử dụng và tồn kho liên quan sẽ bị loại bỏ.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await batchService.delete(id);
             toast.success('Đã xoá lô hàng');
@@ -145,13 +152,13 @@ export default function AdminBatches() {
                     <div className="flex gap-2">
                         <button
                             onClick={() => setNearExpiry((v) => !v)}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all shadow-sm text-xs border ${
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black transition-all shadow-sm text-xs border ${
                                 nearExpiry 
-                                ? 'bg-amber-100 text-amber-700 border-amber-300 ring-2 ring-amber-500/20' 
+                                ? 'bg-white text-gray-900 border-amber-300 ring-4 ring-amber-500/10 shadow-lg shadow-amber-500/10' 
                                 : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-100'
                             }`}
                         >
-                            <ExclamationTriangleIcon className="w-5 h-5" />
+                            <ExclamationTriangleIcon className={`w-5 h-5 ${nearExpiry ? 'text-amber-500' : 'text-gray-400'}`} />
                             <span>Sắp hết hạn</span>
                         </button>
                         <button 
@@ -221,12 +228,12 @@ export default function AdminBatches() {
                                         </td>
                                         <td className="px-5 py-2.5 text-center">
                                             {b.daysUntilExpiry != null && (
-                                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${
-                                                    b.daysUntilExpiry <= 3 ? 'bg-red-100 text-red-700 border-red-200' : 
-                                                    b.daysUntilExpiry <= 7 ? 'bg-amber-100 text-amber-700 border-amber-200' : 
-                                                    'bg-green-100 text-green-700 border-green-200'
+                                                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm ${
+                                                    b.daysUntilExpiry <= 3 ? 'bg-rose-50 text-rose-600 border-rose-100' : 
+                                                    b.daysUntilExpiry <= 7 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                                                    'bg-green-50 text-green-600 border-green-100'
                                                 }`}>
-                                                    còn {b.daysUntilExpiry} ngày
+                                                    CÒN {b.daysUntilExpiry} NGÀY
                                                 </span>
                                             )}
                                         </td>

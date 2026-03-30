@@ -78,18 +78,18 @@ export default function Compare() {
                                             {row.type === 'text' && (
                                                 <span className="text-sm font-bold text-gray-800">{item[row.key] || 'N/A'}</span>
                                             )}
-                                            {row.type === 'price' && (
+                                             {row.type === 'price' && (
                                                 <div className="flex flex-col items-center">
                                                     {item.flashSalePrice ? (
                                                         <>
-                                                            <span className="text-[10px] text-gray-300 line-through font-bold mb-0.5">{item.price?.toLocaleString('vi-VN')}₫</span>
+                                                            <span className="text-[10px] text-gray-300 line-through font-bold mb-0.5">{(item.price || 0).toLocaleString('vi-VN')}₫</span>
                                                             <span className="text-xl font-black text-red-600 flex items-center gap-1">
                                                                 <BoltIcon className="w-4 h-4" />
-                                                                {item.flashSalePrice.toLocaleString('vi-VN')}₫
+                                                                {(item.flashSalePrice || 0).toLocaleString('vi-VN')}₫
                                                             </span>
                                                         </>
                                                     ) : (
-                                                        <span className="text-xl font-black text-green-700">{item[row.key]?.toLocaleString('vi-VN')}₫</span>
+                                                        <span className="text-xl font-black text-green-700">{(item[row.key] || 0).toLocaleString('vi-VN')}₫</span>
                                                     )}
                                                 </div>
                                             )}

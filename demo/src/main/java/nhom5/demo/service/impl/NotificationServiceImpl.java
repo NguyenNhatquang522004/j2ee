@@ -9,10 +9,14 @@ import nhom5.demo.security.SecurityUtils;
 import nhom5.demo.service.NotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +24,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ChannelTopic notificationTopic;
 
     @Override
     @Transactional
@@ -31,7 +37,19 @@ public class NotificationServiceImpl implements NotificationService {
                 .link(link)
                 .isRead(false)
                 .build();
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+
+        // Publish to Redis for real-time broadcast
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("id", saved.getId());
+        payload.put("userId", user.getId());
+        payload.put("username", user.getUsername());
+        payload.put("message", message);
+        payload.put("type", type);
+        payload.put("link", link);
+        payload.put("createdAt", saved.getCreatedAt().toString());
+
+        redisTemplate.convertAndSend(notificationTopic.getTopic(), payload);
     }
 
     @Override

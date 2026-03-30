@@ -1,9 +1,7 @@
 package nhom5.demo.config;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nhom5.demo.entity.*;
-import nhom5.demo.enums.BatchStatusEnum;
 import nhom5.demo.enums.CertificationEnum;
 import nhom5.demo.enums.RoleEnum;
 import nhom5.demo.repository.*;
@@ -13,22 +11,35 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Arrays;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final FarmRepository farmRepository;
     private final ProductRepository productRepository;
-    private final ProductBatchRepository batchRepository;
     private final AddressRepository addressRepository;
     private final SystemSettingRepository settingRepository;
     private final PasswordEncoder passwordEncoder;
+
+    public DataInitializer(UserRepository userRepository,
+                           CategoryRepository categoryRepository,
+                           FarmRepository farmRepository,
+                           ProductRepository productRepository,
+                           AddressRepository addressRepository,
+                           SystemSettingRepository settingRepository,
+                           PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
+        this.farmRepository = farmRepository;
+        this.productRepository = productRepository;
+        this.addressRepository = addressRepository;
+        this.settingRepository = settingRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     @Transactional
@@ -60,20 +71,28 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedSystemSettings() {
-        SystemSetting maintenance = SystemSetting.builder()
-                .settingKey("MAINTENANCE_MODE")
-                .settingValue("false")
-                .description("Bật/tắt chế độ bảo trì toàn hệ thống")
-                .build();
+        saveSetting("MAINTENANCE_MODE", "false", "Bật/tắt chế độ bảo trì toàn hệ thống");
+        saveSetting("2FA_ENFORCED", "false", "Bắt buộc xác thực 2 bước cho tất cả Admin");
+        saveSetting("STORE_NAME", "FreshFood", "Tên cửa hàng");
+        saveSetting("CONTACT_EMAIL", "support@freshfood.com", "Email liên hệ");
+        saveSetting("CONTACT_PHONE", "0123 456 789", "Số điện thoại liên hệ");
+        saveSetting("ADDRESS", "123 Đường Sạch, TP. Hồ Chí Minh", "Địa chỉ cửa hàng");
+        saveSetting("FB_LINK", "https://facebook.com/freshfood", "Facebook Fanpage");
+        saveSetting("TWITTER_LINK", "https://twitter.com/freshfood", "Twitter Profile");
+        saveSetting("INSTA_LINK", "https://instagram.com/freshfood", "Instagram Profile");
+        saveSetting("YOUTUBE_LINK", "https://youtube.com/freshfood", "Youtube Channel");
 
-        SystemSetting twoFactor = SystemSetting.builder()
-                .settingKey("2FA_ENFORCED")
-                .settingValue("false")
-                .description("Bắt buộc xác thực 2 bước cho tất cả Admin")
-                .build();
+        log.info("Đã khởi tạo các cài đặt hệ thống mặc định.");
+    }
 
-        settingRepository.saveAll(Arrays.asList(maintenance, twoFactor));
-        log.info("Đã tạo các cài đặt hệ thống mặc định.");
+    private void saveSetting(String key, String value, String desc) {
+        if (!settingRepository.existsBySettingKey(key)) {
+            settingRepository.save(SystemSetting.builder()
+                    .settingKey(key)
+                    .settingValue(value)
+                    .description(desc)
+                    .build());
+        }
     }
 
     private void seedUsersAndAddresses() {
@@ -234,17 +253,4 @@ public class DataInitializer implements CommandLineRunner {
                 .build();
     }
 
-    private void createBatch(Product product, String code, int qty, int daysToExpiry) {
-        ProductBatch batch = ProductBatch.builder()
-                .batchCode(code)
-                .product(product)
-                .importDate(LocalDate.now())
-                .productionDate(LocalDate.now().minusDays(2))
-                .expiryDate(LocalDate.now().plusDays(daysToExpiry))
-                .quantity(qty)
-                .remainingQuantity(qty)
-                .status(BatchStatusEnum.ACTIVE)
-                .build();
-        batchRepository.save(batch);
-    }
 }

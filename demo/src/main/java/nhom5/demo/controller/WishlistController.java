@@ -13,7 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Tag(name = "Wishlist", description = "Quản lý sản phẩm yêu thích")
 @SecurityRequirement(name = "bearerAuth")

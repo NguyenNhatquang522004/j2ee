@@ -56,11 +56,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public void deleteCategory(Long id) {
         Category category = findById(id);
-        // "Sản phẩm ở trong danh mục đó phải còn" - Set category to null for orphaned products
-        for (nhom5.demo.entity.Product product : category.getProducts()) {
-            product.setCategory(null);
-        }
-        categoryRepository.delete(category);
+        category.setIsActive(false);
+        categoryRepository.save(category);
     }
 
     @Override

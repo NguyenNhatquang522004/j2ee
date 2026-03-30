@@ -37,6 +37,10 @@ public class ReviewServiceImpl implements ReviewService {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", request.getProductId()));
 
+        if (!product.getIsActive()) {
+            throw new BusinessException("Sản phẩm này đã ngừng kinh doanh, không thể đánh giá");
+        }
+
         // Validate: user must have purchased and received this product
         if (!orderItemRepository.existsByOrderUserIdAndProductIdAndOrderStatus(
                 user.getId(), product.getId(), nhom5.demo.enums.OrderStatusEnum.DELIVERED)) {
@@ -59,7 +63,15 @@ public class ReviewServiceImpl implements ReviewService {
 
         if (files != null && !files.isEmpty()) {
             for (org.springframework.web.multipart.MultipartFile file : files) {
-                String resourceType = file.getContentType() != null && file.getContentType().startsWith("video") ? "video" : "image";
+                String contentType = file.getContentType();
+                boolean isVideo = contentType != null && contentType.startsWith("video");
+                long maxSize = isVideo ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
+                
+                if (file.getSize() > maxSize) {
+                    throw new BusinessException((isVideo ? "Video" : "Hình ảnh") + " đánh giá không được vượt quá " + (maxSize / (1024 * 1024)) + "MB");
+                }
+
+                String resourceType = isVideo ? "video" : "image";
                 java.util.Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), 
                         com.cloudinary.utils.ObjectUtils.asMap("resource_type", resourceType, "folder", "reviews"));
                 

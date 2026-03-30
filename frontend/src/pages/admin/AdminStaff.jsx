@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import AdminLayout from '../../components/AdminLayout';
+import { useConfirm } from '../../context/ModalContext';
 import { 
     PlusIcon, 
     PencilSquareIcon, 
@@ -24,6 +25,7 @@ const ALL_PERMISSIONS = [
     { key: 'view:farms', name: 'Xem trang trại', group: 'Trang trại' },
     { key: 'manage:farms', name: 'Quản lý trang trại', group: 'Trang trại' },
     { key: 'manage:orders', name: 'Quản lý đơn hàng', group: 'Bán hàng' },
+    { key: 'manage:refunds', name: 'Quản lý hoàn trả', group: 'Bán hàng' },
     { key: 'manage:users', name: 'Quản lý người dùng', group: 'Hệ thống' },
     { key: 'manage:reviews', name: 'Quản lý đánh giá', group: 'Hệ thống' },
     { key: 'view:reports', name: 'Xem báo cáo', group: 'Báo cáo' },
@@ -36,6 +38,7 @@ const ROLES = [
 ];
 
 export default function AdminStaff() {
+    const { confirm } = useConfirm();
     const [staff, setStaff] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -140,7 +143,13 @@ export default function AdminStaff() {
     };
 
     const handleDelete = async (user) => {
-        if (!window.confirm(`Bạn có chắc muốn xoá nhân sự ${user.fullName}? Hành động này không thể hoàn tác.`)) return;
+        const ok = await confirm({
+            title: 'Xoá nhân sự',
+            message: `Bạn có chắc muốn xoá nhân sự ${user.fullName}? Hành động này không thể hoàn tác.`,
+            type: 'danger'
+        });
+        if (!ok) return;
+
         try {
             await axios.delete(`/users/${user.id}`);
             toast.success('Đã xoá nhân sự');

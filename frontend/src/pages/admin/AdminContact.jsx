@@ -45,7 +45,12 @@ export default function AdminContact() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xoá lời nhắn này?')) return;
+        const ok = await confirm({
+            title: 'Xóa lời nhắn',
+            message: 'Bạn có chắc chắn muốn xóa vĩnh viễn lời nhắn này? Hành động này sẽ loại bỏ thông tin khách hàng khỏi hộp thư quản trị.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await contactService.delete(id);
             setMessages(messages.filter(m => m.id !== id));

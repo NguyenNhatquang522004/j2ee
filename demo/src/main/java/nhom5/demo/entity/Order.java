@@ -1,7 +1,6 @@
 package nhom5.demo.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -46,11 +45,41 @@ public class Order {
     @Column(name = "shipping_address", nullable = false, length = 300)
     private String shippingAddress;
 
+    @Column(name = "address_detail", length = 300)
+    private String addressDetail;
+
+    @Column(name = "ward", length = 100)
+    private String ward;
+
+    @Column(name = "district", length = 100)
+    private String district;
+
+    @Column(name = "province", length = 100)
+    private String province;
+
     @Column(name = "phone", length = 20)
     private String phone;
 
+    @Column(name = "receiver_name", length = 100)
+    private String receiverName;
+
+    @Column(name = "tracking_number", length = 50)
+    private String trackingNumber;
+
+    @Column(name = "estimated_arrival")
+    private LocalDateTime estimatedArrival;
+
     @Column(name = "note", length = 500)
     private String note;
+
+    @Column(name = "return_reason", length = 500)
+    private String returnReason;
+
+    @Column(name = "return_media", length = 500)
+    private String returnMedia;
+
+    @Column(name = "reject_reason", length = 500)
+    private String rejectReason;
 
     @NotNull
     @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
@@ -60,23 +89,34 @@ public class Order {
     @Builder.Default
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
+    @Column(name = "shipping_fee", precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal shippingFee = BigDecimal.ZERO;
+
     @NotNull
     @Column(name = "final_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal finalAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = false, length = 50)
     @Builder.Default
     private OrderStatusEnum status = OrderStatusEnum.PENDING;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method", nullable = false)
+    @Column(name = "payment_method", nullable = false, length = 50)
     @Builder.Default
     private PaymentMethodEnum paymentMethod = PaymentMethodEnum.COD;
 
     @Column(name = "is_paid", nullable = false)
     @Builder.Default
     private Boolean isPaid = false;
+
+    @Column(name = "is_refunded", nullable = false)
+    @Builder.Default
+    private Boolean isRefunded = false;
+
+    @Column(name = "refunded_at")
+    private LocalDateTime refundedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -89,6 +129,9 @@ public class Order {
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
 
+    @Column(name = "packaging_at")
+    private LocalDateTime packagingAt;
+
     @Column(name = "shipped_at")
     private LocalDateTime shippedAt;
 
@@ -97,6 +140,15 @@ public class Order {
 
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    @Column(name = "return_requested_at")
+    private LocalDateTime returnRequestedAt;
+
+    @Column(name = "returned_at")
+    private LocalDateTime returnedAt;
 
     // ====== Relationships ======
 

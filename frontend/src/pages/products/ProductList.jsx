@@ -39,6 +39,7 @@ export default function ProductList() {
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('keyword') || '');
 
     const keyword = searchParams.get('keyword') || '';
     const categoryId = searchParams.get('categoryId') || '';
@@ -95,11 +96,18 @@ export default function ProductList() {
         setSearchParams({ ...Object.fromEntries(searchParams), sortBy: sort, direction: dir, page: 0 });
     };
 
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            const newParams = { ...Object.fromEntries(searchParams) };
+            if (searchTerm) newParams.keyword = searchTerm; else delete newParams.keyword;
+            newParams.page = 0;
+            setSearchParams(newParams);
+        }, 500);
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchTerm]);
+
     const handleSearch = (val) => {
-        const newParams = { ...Object.fromEntries(searchParams) };
-        if (val) newParams.keyword = val; else delete newParams.keyword;
-        newParams.page = 0;
-        setSearchParams(newParams);
+        setSearchTerm(val);
     };
 
     const handlePriceFilter = (e) => {
@@ -136,7 +144,7 @@ export default function ProductList() {
                     <div className="relative group">
                         <input 
                             name="keyword" 
-                            value={keyword} 
+                            value={searchTerm} 
                             onChange={(e) => handleSearch(e.target.value)}
                             placeholder="Tìm kiếm sản phẩm..." 
                             className="w-[300px] pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all shadow-sm font-medium" 
@@ -376,6 +384,7 @@ function ProductCard({ product }) {
     const { addToCart } = useCart();
     const { compareItems, addToCompare, removeFromCompare } = useCompare();
     const [isLiked, setIsLiked] = useState(false);
+    const [adding, setAdding] = useState(false);
 
     useEffect(() => {
         if (user && product.id) {
@@ -397,8 +406,10 @@ function ProductCard({ product }) {
     const handleAdd = async (e) => {
         e.preventDefault(); e.stopPropagation();
         if (!user) { toast.error('Vui lòng đăng nhập'); return; }
+        setAdding(true);
         try { await addToCart(product.id, 1); toast.success('Đã thêm vào giỏ hàng'); }
         catch (err) { toast.error(err.response?.data?.message || 'Lỗi'); }
+        finally { setAdding(false); }
     };
 
     return (
@@ -419,11 +430,11 @@ function ProductCard({ product }) {
                     {product.flashSalePrice ? (
                         <span className="bg-red-600 text-white text-[7px] sm:text-[9px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20 animate-pulse flex items-center gap-0.5 sm:gap-1">
                             <BoltIcon className="w-2 sm:w-3 h-2 sm:h-3" />
-                            -{Math.round((product.price - product.flashSalePrice) / product.price * 100)}%
+                            -{Math.round(((product.price || 0) - (product.flashSalePrice || 0)) / (product.price || 1) * 100)}%
                         </span>
                     ) : (product.originalPrice > product.price && (
                         <span className="bg-red-600 text-white text-[7px] sm:text-[9px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20">
-                            -{Math.round((product.originalPrice - product.price) / product.originalPrice * 100)}%
+                            -{Math.round(((product.originalPrice || 0) - (product.price || 0)) / (product.originalPrice || 1) * 100)}%
                         </span>
                     ))}
                 </div>
@@ -464,21 +475,21 @@ function ProductCard({ product }) {
                             {product.flashSalePrice ? (
                                 <>
                                     <span className="text-gray-400 line-through text-[8px] sm:text-[10px] font-bold italic leading-none mb-0.5 sm:mb-1">
-                                        {product.price.toLocaleString('vi-VN')}đ
+                                        {(product.price || 0).toLocaleString('vi-VN')}đ
                                     </span>
                                     <span className="text-red-600 font-black text-xs sm:text-xl leading-none">
-                                        {product.flashSalePrice.toLocaleString('vi-VN')}đ
+                                        {(product.flashSalePrice || 0).toLocaleString('vi-VN')}đ
                                     </span>
                                 </>
                             ) : (
                                 <>
                                     {product.originalPrice > product.price && (
                                         <span className="text-gray-400 line-through text-[8px] sm:text-[10px] font-bold italic leading-none mb-0.5 sm:mb-1">
-                                            {product.originalPrice.toLocaleString('vi-VN')}đ
+                                            {(product.originalPrice || 0).toLocaleString('vi-VN')}đ
                                         </span>
                                     )}
                                     <span className="text-green-700 font-black text-xs sm:text-xl leading-none">
-                                        {product.price?.toLocaleString('vi-VN')}đ
+                                        {(product.price || 0).toLocaleString('vi-VN')}đ
                                     </span>
                                 </>
                             )}
@@ -486,9 +497,14 @@ function ProductCard({ product }) {
                     </div>
                     <button 
                         onClick={handleAdd} 
-                        className="w-7 h-7 sm:w-11 sm:h-11 bg-green-600 text-white rounded-lg sm:rounded-2xl flex items-center justify-center hover:bg-black transition-all shadow-xl shadow-green-100 hover:shadow-black/20 group/btn"
+                        disabled={adding}
+                        className="w-7 h-7 sm:w-11 sm:h-11 bg-green-600 text-white rounded-lg sm:rounded-2xl flex items-center justify-center hover:bg-black transition-all shadow-xl shadow-green-100 hover:shadow-black/20 group/btn disabled:opacity-50"
                     >
-                        <ShoppingBagIcon className="w-3 h-3 sm:w-5 sm:h-5 group-hover/btn:scale-110 transition-transform" />
+                        {adding ? (
+                            <div className="w-3 h-3 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                            <ShoppingBagIcon className="w-3 h-3 sm:w-5 sm:h-5 group-hover/btn:scale-110 transition-transform" />
+                        )}
                     </button>
                 </div>
             </div>

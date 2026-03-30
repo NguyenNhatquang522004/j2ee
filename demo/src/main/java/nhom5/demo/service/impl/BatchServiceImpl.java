@@ -21,6 +21,11 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+/**
+ * Triển khai nghiệp vụ quản lý Lô hàng (Batch Management).
+ * Sử dụng chiến lược FEFO (First Expired First Out) để quản lý hàng tồn kho thực phẩm sạch,
+ * đảm bảo sản phẩm có hạn sử dụng gần nhất sẽ được xuất kho trước.
+ */
 @Service
 @RequiredArgsConstructor
 public class BatchServiceImpl implements BatchService {
@@ -133,9 +138,11 @@ public class BatchServiceImpl implements BatchService {
     }
 
     /**
-     * FEFO (First Expired, First Out) stock deduction.
-     * Deducts stock from the earliest-expiring batches first.
-     * Returns 0 on success, remaining quantity if insufficient stock.
+     * Xuất kho theo chiến lược FEFO.
+     * @param productId ID sản phẩm cần trừ kho.
+     * @param quantity Số lượng cần trừ.
+     * @return Số lượng còn lại (thường là 0 nếu thành công).
+     * @throws InsufficientStockException Nếu tổng số lượng trong tất cả các lô không đủ.
      */
     @Override
     @Transactional
@@ -198,6 +205,10 @@ public class BatchServiceImpl implements BatchService {
         return total != null ? total : 0L;
     }
 
+    /**
+     * Hoàn kho khi đơn hàng bị hủy hoặc trả hàng.
+     * Ưu tiên hoàn vào các lô hàng có hạn sử dụng xa nhất để tối ưu hóa thời gian bán.
+     */
     @Override
     @Transactional
     public void returnStock(Long productId, int quantity) {

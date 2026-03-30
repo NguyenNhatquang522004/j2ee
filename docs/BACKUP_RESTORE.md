@@ -24,11 +24,16 @@ Hình ảnh và video không được lưu trong DB gốc mà lưu trữ trên C
 - Thay thế file `freshfood.mv.db` bằng bản sao lưu.
 - Khởi động lại ứng dụng.
 
-### 🐘 MySQL Database
-- **Lệnh thực hiện**:
+### 🐘 MySQL Database (Docker)
+- **Lệnh phục hồi trực tiếp (Từ máy host)**:
     ```bash
-    mysql -u [username] -p [database_name] < backup_[date].sql
+    docker exec -i [mysql-container-name] mysql -u root -p[password] [database_name] < [path-to-sql-file]
     ```
+- **Phục hồi từ bên trong container (MySQL Shell)**:
+    1. Copy file vào container: `docker cp data.sql mysql:/tmp/`
+    2. Truy cập mysql: `docker exec -it mysql mysql -u root -p`
+    3. Chạy lệnh: `USE clean_food_db; SOURCE /tmp/data.sql;`
+
 
 ---
 © 2026 FreshFood Project. Bảo lưu mọi quyền.

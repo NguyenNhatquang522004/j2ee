@@ -29,6 +29,7 @@ public class ContactMessage {
     private String content;
 
     @Column(name = "is_read")
+    @Builder.Default
     private boolean isRead = false;
 
     private LocalDateTime createdAt;

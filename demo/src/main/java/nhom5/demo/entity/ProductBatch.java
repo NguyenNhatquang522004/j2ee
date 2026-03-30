@@ -28,7 +28,10 @@ import java.time.LocalDateTime;
         @Index(name = "idx_batch_expiry", columnList = "expiry_date"),
         @Index(name = "idx_batch_status", columnList = "status"),
         @Index(name = "idx_batch_code", columnList = "batch_code")
+}, uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"batch_code"})
 })
+@org.hibernate.annotations.Check(constraints = "remaining_quantity <= quantity")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -82,4 +85,12 @@ public class ProductBatch {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
+
+    @PrePersist
+    @PreUpdate
+    public void validateStock() {
+        if (remainingQuantity != null && quantity != null && remainingQuantity > quantity) {
+            remainingQuantity = quantity;
+        }
+    }
 }

@@ -45,7 +45,12 @@ export default function AdminNewsletters() {
     }, []);
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Bạn có chắc muốn xóa người đăng ký này?')) return;
+        const ok = await confirm({
+            title: 'Hủy đăng ký',
+            message: 'Bạn có chắc chắn muốn xóa vĩnh viễn người đăng ký này khỏi hệ thống nhận bản tin? Họ sẽ không còn nhận được các thông tin khuyến mãi và cập nhật từ RawFood.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await newsletterService.delete(id);
             toast.success('Đã xóa thành công');

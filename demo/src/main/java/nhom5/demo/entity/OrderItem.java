@@ -52,8 +52,10 @@ public class OrderItem {
     @Column(name = "product_image_url")
     private String productImageUrl; // Snapshot at order time
 
-    @Column(name = "flash_sale_item_id")
-    private Long flashSaleItemId; // Id of flash sale item if used
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "flash_sale_item_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    private FlashSaleItem flashSaleItem;
 
     // ====== Relationships ======
     @JsonIgnore

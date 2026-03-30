@@ -88,9 +88,9 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("Tài khoản của bạn đã bị khoá bởi Quản trị viên");
         }
 
-        if (user.getLockUntil() != null && user.getLockUntil().isAfter(LocalDateTime.now())) {
+        if (user.getLockoutUntil() != null && user.getLockoutUntil().isAfter(LocalDateTime.now())) {
             throw new BusinessException("Tài khoản bị tạm khoá do nhập sai quá nhiều. Hãy thử lại sau " + 
-                java.time.Duration.between(LocalDateTime.now(), user.getLockUntil()).toMinutes() + " phút.");
+                java.time.Duration.between(LocalDateTime.now(), user.getLockoutUntil()).toMinutes() + " phút.");
         }
 
         try {
@@ -99,16 +99,16 @@ public class AuthServiceImpl implements AuthService {
             
             // Success: Reset failed attempts
             user.setFailedLoginAttempts(0);
-            user.setLockUntil(null);
+            user.setLockoutUntil(null);
             userRepository.save(user);
 
         } catch (org.springframework.security.authentication.BadCredentialsException e) {
-            // Failure: Increment counter
+            // Tăng đếm lỗi đăng nhập. Nếu >= 5 lần, khóa tài khoản trong 30 phút.
             int attempts = (user.getFailedLoginAttempts() != null ? user.getFailedLoginAttempts() : 0) + 1;
             user.setFailedLoginAttempts(attempts);
             
             if (attempts >= 5) {
-                user.setLockUntil(LocalDateTime.now().plusMinutes(30)); // Lock for 30 mins
+                user.setLockoutUntil(LocalDateTime.now().plusMinutes(30)); 
                 userRepository.save(user);
                 throw new BusinessException("Tài khoản đã bị khoá 30 phút do nhập sai mật khẩu 5 lần.");
             }
@@ -216,7 +216,8 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
-        user.setTokenVersion(user.getTokenVersion() + 1); // Invalidate all current sessions
+        // Tăng token version để thu hồi (invalidate) toàn bộ JWT đã cấp trước đó.
+        user.setTokenVersion(user.getTokenVersion() + 1); 
         userRepository.save(user);
     }
 

@@ -9,6 +9,7 @@ import nhom5.demo.constant.AppConstants;
 import nhom5.demo.dto.request.ProductRequest;
 import nhom5.demo.dto.response.ApiResponse;
 import nhom5.demo.dto.response.ProductResponse;
+import nhom5.demo.dto.response.PageResponse;
 import nhom5.demo.service.ProductService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,7 +28,7 @@ public class ProductController {
 
     @Operation(summary = "Tìm kiếm & lọc sản phẩm (public/Admin)")
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<ProductResponse>>> searchProducts(
+    public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> searchProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long farmId,
@@ -63,17 +64,17 @@ public class ProductController {
 
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<ProductResponse> data = productService.searchProducts(name, categoryId, farmId, finalIsActive, minPrice, maxPrice, isNew, isSale, pageable);
-        return ResponseEntity.ok(ApiResponse.success(data));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(data)));
     }
 
     @Operation(summary = "Top sản phẩm bán chạy (public)")
     @GetMapping("/top-selling")
-    public ResponseEntity<ApiResponse<Page<ProductResponse>>> getTopSelling(
+    public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getTopSelling(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<ProductResponse> data = productService.getTopSellingProducts(pageable);
-        return ResponseEntity.ok(ApiResponse.success(data));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(data)));
     }
 
     @Operation(summary = "Chi tiết sản phẩm (public)")

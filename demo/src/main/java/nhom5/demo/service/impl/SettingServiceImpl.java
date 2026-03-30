@@ -9,7 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +23,19 @@ public class SettingServiceImpl implements SettingService {
     @Override
     public List<SystemSetting> getAllSettings() {
         return repository.findAll();
+    }
+
+    private static final Set<String> PUBLIC_KEYS = new HashSet<>(Arrays.asList(
+        "MAINTENANCE_MODE", "STORE_NAME", "CONTACT_EMAIL", 
+        "CONTACT_PHONE", "ADDRESS", "FB_LINK", 
+        "TWITTER_LINK", "INSTA_LINK", "YOUTUBE_LINK"
+    ));
+
+    @Override
+    public List<SystemSetting> getPublicSettings() {
+        return repository.findAll().stream()
+                .filter(s -> PUBLIC_KEYS.contains(s.getSettingKey()))
+                .collect(Collectors.toList());
     }
 
     @Override

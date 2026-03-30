@@ -5,8 +5,10 @@ import { notificationService } from '../api/services';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../context/ModalContext';
 
 export default function NotificationDropdown() {
+    const { confirm } = useConfirm();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
@@ -27,8 +29,15 @@ export default function NotificationDropdown() {
 
     useEffect(() => {
         fetchNotifications();
-        // Cập nhật sau mỗi 30s
-        const interval = setInterval(fetchNotifications, 30000);
+        
+        // Listen for real-time notifications
+        const handleNewNotification = (event) => {
+            const newNotif = event.detail;
+            setNotifications(prev => [newNotif, ...prev].slice(0, 10)); // Keep latest 10
+            setUnreadCount(prev => prev + 1);
+        };
+
+        window.addEventListener('notification-received', handleNewNotification);
         
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -38,7 +47,7 @@ export default function NotificationDropdown() {
         document.addEventListener('mousedown', handleClickOutside);
         
         return () => {
-            clearInterval(interval);
+            window.removeEventListener('notification-received', handleNewNotification);
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
@@ -75,7 +84,12 @@ export default function NotificationDropdown() {
     };
 
     const clearAll = async () => {
-        if (!window.confirm('Xóa tất cả thông báo?')) return;
+        const ok = await confirm({
+            title: 'Xóa tất cả thông báo',
+            message: 'Bạn có chắc chắn muốn xóa vĩnh viễn toàn bộ thông báo trong hộp thư? Hành động này không thể hoàn tác.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await notificationService.deleteAll();
             setNotifications([]);

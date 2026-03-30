@@ -1,8 +1,6 @@
 package nhom5.demo.dto.response;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import nhom5.demo.enums.OrderStatusEnum;
 import nhom5.demo.enums.PaymentMethodEnum;
 
@@ -13,14 +11,27 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class OrderResponse {
     private Long id;
     private String orderCode;
     private String shippingAddress;
+    private String addressDetail;
+    private String ward;
+    private String district;
+    private String province;
     private String phone;
+    private String receiverName;
+    private String trackingNumber;
+    private LocalDateTime estimatedArrival;
     private String note;
+    private String returnReason;
+    private String returnMedia;
+    private String rejectReason;
     private BigDecimal totalAmount;
     private BigDecimal discountAmount;
+    private BigDecimal shippingFee;
     private BigDecimal finalAmount;
     private OrderStatusEnum status;
     private String statusDisplayName;
@@ -33,13 +44,20 @@ public class OrderResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime confirmedAt;
+    private LocalDateTime packagingAt;
     private LocalDateTime shippedAt;
     private LocalDateTime deliveredAt;
     private LocalDateTime cancelledAt;
+    private LocalDateTime refundedAt;
+    private LocalDateTime returnRequestedAt;
+    private LocalDateTime returnedAt;
+    private LocalDateTime paidAt;
+    private Boolean isRefunded;
 
     @Getter
     @Setter
-    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class OrderItemResponse {
         private Long orderItemId;
         private Long productId;

@@ -13,6 +13,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Triển khai nghiệp vụ Quản lý người dùng.
+ * Bao gồm: Cập nhật hồ sơ, Quản lý ảnh đại diện (Cloudinary), Hệ thống tích điểm và Phân quyền (RBAC).
+ */
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -54,9 +58,10 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("Email '" + newEmail + "' đã được sử dụng");
         }
 
-        user.setEmail(newEmail);
-        user.setFullName(request.getFullName());
-        user.setPhone(request.getPhone());
+        // Sử dụng SecurityUtils.sanitize để loại bỏ các ký tự nguy hiểm (XSS) trước khi lưu DB.
+        user.setEmail(nhom5.demo.security.SecurityUtils.sanitize(newEmail));
+        user.setFullName(nhom5.demo.security.SecurityUtils.sanitize(request.getFullName()));
+        user.setPhone(nhom5.demo.security.SecurityUtils.sanitize(request.getPhone()));
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             if (request.getOldPassword() == null || request.getOldPassword().isBlank()) {
@@ -96,6 +101,9 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    /**
+     * Đăng xuất khỏi mọi thiết bị bằng cách tăng Token Version (Security Stamp).
+     */
     @Override
     @Transactional
     public void logoutAllDevices(String username) {
@@ -107,10 +115,10 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException("User", "id", id);
-        }
-        userRepository.deleteById(id);
+        User user = findById(id);
+        user.setIsActive(false);
+        userRepository.save(user);
+        auditService.log(nhom5.demo.security.SecurityUtils.getCurrentUsername(), "SOFT_DELETE_USER", "User", id.toString(), "Soft-deleted user (isActive=false): " + user.getUsername());
     }
 
     @Override
@@ -127,10 +135,10 @@ public class UserServiceImpl implements UserService {
     public UserResponse adminUpdateUser(Long id, nhom5.demo.dto.request.AdminUserUpdateRequest request) {
         User user = findById(id);
         
-        if (request.getFullName() != null) user.setFullName(request.getFullName());
-        if (request.getEmail() != null) user.setEmail(request.getEmail());
-        if (request.getPhone() != null) user.setPhone(request.getPhone());
-        if (request.getAddress() != null) user.setAddress(request.getAddress());
+        if (request.getFullName() != null) user.setFullName(nhom5.demo.security.SecurityUtils.sanitize(request.getFullName()));
+        if (request.getEmail() != null) user.setEmail(nhom5.demo.security.SecurityUtils.sanitize(request.getEmail()));
+        if (request.getPhone() != null) user.setPhone(nhom5.demo.security.SecurityUtils.sanitize(request.getPhone()));
+        if (request.getAddress() != null) user.setAddress(nhom5.demo.security.SecurityUtils.sanitize(request.getAddress()));
         if (request.getRole() != null) user.setRole(request.getRole());
         if (request.getIsActive() != null) user.setIsActive(request.getIsActive());
         if (request.getCustomPermissions() != null) {
@@ -194,7 +202,8 @@ public class UserServiceImpl implements UserService {
                 .gender(user.getGender())
                 .membershipTier(user.getMembershipTier())
                 .avatarUrl(user.getAvatarUrl())
-                .points(user.getPoints())
+                .lifetimePoints(user.getLifetimePoints())
+                .availablePoints(user.getAvailablePoints())
                 .emailNotifications(user.getEmailNotifications())
                 .promoNotifications(user.getPromoNotifications())
                 .role(user.getRole())

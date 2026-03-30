@@ -6,6 +6,7 @@ import nhom5.demo.dto.response.AiFreshnessResponse;
 import nhom5.demo.service.AiService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -16,6 +17,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Triển khai dịch vụ AI Phân tích độ tươi (Freshness Analysis).
+ * Kết nối với một Python Flask Server chạy mô hình YOLOv8 để xử lý hình ảnh thực phẩm.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -42,13 +47,19 @@ public class AiServiceImpl implements AiService {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
             log.info("Calling AI service at: {}", aiApiUrl);
-            ResponseEntity<Map> response = restTemplate.postForEntity(aiApiUrl, requestEntity, Map.class);
+            
+            // Thực hiện POST hình ảnh sang Server Python AI
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    aiApiUrl,
+                    HttpMethod.POST,
+                    requestEntity,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
             log.info("AI service response status: {}", response.getStatusCode());
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 log.info("AI service response body: {}", response.getBody());
-                @SuppressWarnings("unchecked")
-                Map<String, Object> result = (Map<String, Object>) response.getBody();
+                Map<String, Object> result = response.getBody();
                 String label = String.valueOf(result.getOrDefault("label", "UNKNOWN"));
                 double confidence = result.containsKey("confidence")
                         ? Double.parseDouble(String.valueOf(result.get("confidence")))

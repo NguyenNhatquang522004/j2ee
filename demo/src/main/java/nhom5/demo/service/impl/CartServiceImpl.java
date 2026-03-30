@@ -31,6 +31,7 @@ public class CartServiceImpl implements CartService {
     private final ProductBatchRepository batchRepository;
     private final UserRepository userRepository;
     private final nhom5.demo.repository.FlashSaleItemRepository flashSaleItemRepository;
+    private final nhom5.demo.repository.SystemSettingRepository systemSettingRepository;
 
     @Override
     @Transactional
@@ -94,6 +95,9 @@ public class CartServiceImpl implements CartService {
         if (quantity <= 0) {
             cartItemRepository.delete(item);
         } else {
+            if (!item.getProduct().getIsActive()) {
+                throw new BusinessException("Sản phẩm hiện không còn kinh doanh");
+            }
             long stock = batchRepository.sumRemainingQuantityByProductId(item.getProduct().getId());
             if (quantity > stock) {
                 throw new BusinessException("Chỉ còn " + stock + " " + item.getProduct().getUnit() + " trong kho");
@@ -161,6 +165,7 @@ public class CartServiceImpl implements CartService {
                             .quantity(item.getQuantity())
                             .subtotal(subtotal)
                             .availableStock((int) stock)
+                            .isActive(item.getProduct().getIsActive())
                             .build();
                 }).toList();
 
@@ -168,10 +173,29 @@ public class CartServiceImpl implements CartService {
                 .map(CartResponse.CartItemResponse::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Calculate shipping fee based on system settings
+        BigDecimal shippingFee = BigDecimal.ZERO;
+        try {
+            BigDecimal fee = systemSettingRepository.findBySettingKey("SHIPPING_FEE")
+                    .map(s -> new BigDecimal(s.getSettingValue()))
+                    .orElse(BigDecimal.ZERO);
+            BigDecimal threshold = systemSettingRepository.findBySettingKey("FREE_SHIPPING_THRESHOLD")
+                    .map(s -> new BigDecimal(s.getSettingValue()))
+                    .orElse(BigDecimal.valueOf(Long.MAX_VALUE));
+
+            if (total.compareTo(threshold) < 0 && total.compareTo(BigDecimal.ZERO) > 0) {
+                shippingFee = fee;
+            }
+        } catch (Exception e) {
+            // Log error or fall back to zero fee
+        }
+
         return CartResponse.builder()
                 .cartId(cart.getId())
                 .items(items)
                 .totalAmount(total)
+                .shippingFee(shippingFee)
+                .finalAmount(total.add(shippingFee))
                 .totalItems(items.size())
                 .build();
     }

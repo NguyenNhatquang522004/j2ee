@@ -68,7 +68,12 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Xóa file này khỏi thư viện?')) return;
+        const ok = await confirm({
+            title: 'Xóa tệp tin',
+            message: 'Bạn có chắc chắn muốn xóa vĩnh viễn tệp media này khỏi hệ thống? Các sản phẩm hoặc bài viết đang sử dụng tệp này có thể bị lỗi hiển thị.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await mediaService.delete(id);
             toast.success('Đã xóa');

@@ -13,6 +13,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository quản lý các Lô hàng sản phẩm (Product Batch).
+ * Chịu trách nhiệm thực thi chiến lược FEFO (First Expired, First Out) và bảo vệ kho hàng khỏi tranh chấp dữ liệu.
+ */
 @Repository
 public interface ProductBatchRepository extends JpaRepository<ProductBatch, Long> {
 
@@ -51,7 +55,7 @@ public interface ProductBatchRepository extends JpaRepository<ProductBatch, Long
     @Query("SELECT b FROM ProductBatch b WHERE b.expiryDate > :today " +
             "AND b.expiryDate <= :warningDate " +
             "AND b.remainingQuantity > 0 " +
-            "AND b.status = nhom5.demo.enums.BatchStatusEnum.ACTIVE")
+            "AND b.status IN (nhom5.demo.enums.BatchStatusEnum.ACTIVE, nhom5.demo.enums.BatchStatusEnum.DISCOUNT)")
     List<ProductBatch> findBatchesNearExpiry(
             @Param("today") LocalDate today,
             @Param("warningDate") LocalDate warningDate);

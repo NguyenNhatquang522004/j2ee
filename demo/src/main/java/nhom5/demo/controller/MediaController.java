@@ -24,7 +24,7 @@ public class MediaController {
     private final MediaService mediaService;
 
     @Operation(summary = "Tải ảnh/video lên Cloudinary")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/upload")
     public ResponseEntity<ApiResponse<MediaResponse>> uploadFile(
             @RequestParam("file") MultipartFile file) throws IOException {

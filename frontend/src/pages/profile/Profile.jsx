@@ -29,10 +29,12 @@ import {
     EyeSlashIcon,
     ShoppingBagIcon
 } from '@heroicons/react/24/outline';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
+import ConfirmModal from '../../components/ConfirmModal';
 
 export default function Profile() {
     const { user: authUser, setUser, logout } = useAuth();
+    const navigate = useNavigate();
     const [user, setUserData] = useState(null);
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -61,6 +63,8 @@ export default function Profile() {
     // Reviews state
     const [myReviews, setMyReviews] = useState([]);
     const [reviewsLoading, setReviewsLoading] = useState(false);
+
+    const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'info', onConfirm: () => {} });
 
     const handleTwoFactorClick = () => {
         if (user.isTwoFactorEnabled) {
@@ -166,13 +170,20 @@ export default function Profile() {
         label: 'Nhà',
         fullName: '',
         phone: '',
-        details: '',
+        province: '',
+        district: '',
+        ward: '',
+        street: '',
         isDefault: false
     });
 
     const { search } = useLocation();
     
     useEffect(() => {
+        if (authUser?.role === 'ROLE_ADMIN') {
+            navigate('/admin/settings');
+            return;
+        }
         loadData();
         
         // Auto trigger 2FA setup if coming from redirect
@@ -310,30 +321,57 @@ export default function Profile() {
         }
     };
 
-    const handleDeleteAccount = async () => {
-        if (window.confirm('CẢNH BÁO: Bạn có chắc chắn muốn xóa tài khoản vĩnh viễn? Mọi dữ liệu đơn hàng và điểm thưởng sẽ bị mất và KHÔNG thể khôi phục.')) {
-            const password = window.prompt('Vui lòng nhập mật khẩu để xác nhận xóa tài khoản:');
-            if (!password) return;
-
-            try {
-                toast.loading('Đang xử lý yêu cầu hủy tài khoản...', { id: 'delete' });
-                await userService.toggleActive(user.id); // Or a specific deleteMe endpoint if exists
-                toast.success('Yêu cầu đã được ghi lại. Chào tạm biệt!', { id: 'delete' });
-                logout();
-            } catch (err) {
-                toast.error(err.response?.data?.message || 'Không thể thực hiện lúc này', { id: 'delete' });
+    const handleDeleteAccount = () => {
+        setModal({
+            isOpen: true,
+            title: 'Hủy kích hoạt tài khoản',
+            message: 'CẢNH BÁO: Bạn có chắc chắn muốn xóa tài khoản vĩnh viễn? Mọi dữ liệu đơn hàng và điểm thưởng sẽ bị mất và KHÔNG thể khôi phục.',
+            type: 'danger',
+            onConfirm: () => {
+                setModal({
+                    isOpen: true,
+                    title: 'Xác thực mật khẩu',
+                    message: 'Vui lòng nhập mật khẩu của bạn để xác nhận yêu cầu xóa tài khoản vĩnh viễn:',
+                    type: 'prompt',
+                    placeholder: 'Mật khẩu của bạn...',
+                    onConfirm: async (password) => {
+                        if (!password) return toast.error('Vui lòng nhập mật khẩu');
+                        setModal(prev => ({ ...prev, isOpen: false }));
+                        try {
+                            toast.loading('Đang xử lý yêu cầu hủy tài khoản...', { id: 'delete' });
+                            await userService.toggleActive(user.id, { password }); // Pass password to verification
+                            toast.success('Yêu cầu đã được ghi lại. Chào tạm biệt!', { id: 'delete' });
+                            logout();
+                        } catch (err) {
+                            toast.error(err.response?.data?.message || 'Không thể thực hiện lúc này', { id: 'delete' });
+                        }
+                    }
+                });
             }
-        }
+        });
     };
 
     const handleAddrSubmit = async (e) => {
         e.preventDefault();
+        if (!addrForm.street?.trim() || !addrForm.ward?.trim() || !addrForm.district?.trim() || !addrForm.province?.trim()) {
+            toast.error('Vui lòng nhập đầy đủ thông tin địa chỉ');
+            return;
+        }
         try {
+            const fullAddress = `${addrForm.street}, ${addrForm.ward}, ${addrForm.district}, ${addrForm.province}`;
+            const payload = { 
+                label: addrForm.label,
+                fullName: addrForm.fullName,
+                phone: addrForm.phone,
+                details: fullAddress,
+                isDefault: addrForm.isDefault
+            };
+            
             if (editingAddrId) {
-                await addressService.update(editingAddrId, addrForm);
+                await addressService.update(editingAddrId, payload);
                 toast.success('Đã cập nhật địa chỉ');
             } else {
-                await addressService.create(addrForm);
+                await addressService.create(payload);
                 toast.success('Đã thêm địa chỉ mới');
             }
             setShowAddrForm(false);
@@ -342,7 +380,10 @@ export default function Profile() {
                 label: 'Nhà',
                 fullName: user.fullName,
                 phone: user.phone,
-                details: '',
+                province: '',
+                district: '',
+                ward: '',
+                street: '',
                 isDefault: false
             });
             loadData();
@@ -353,11 +394,15 @@ export default function Profile() {
 
     const handleEditAddress = (addr) => {
         setEditingAddrId(addr.id);
+        const parts = addr.details ? addr.details.split(', ') : [];
         setAddrForm({
             label: addr.label,
             fullName: addr.fullName,
             phone: addr.phone,
-            details: addr.details,
+            street: parts[0] || addr.details || '',
+            ward: parts[1] || '',
+            district: parts[2] || '',
+            province: parts[3] || '',
             isDefault: addr.isDefault
         });
         setShowAddrForm(true);
@@ -365,14 +410,22 @@ export default function Profile() {
     };
 
     const handleDeleteAddress = async (id) => {
-        if (!window.confirm('Bạn có chắc muốn xoá địa chỉ này?')) return;
-        try {
-            await addressService.delete(id);
-            toast.success('Đã xoá địa chỉ');
-            loadData();
-        } catch (err) {
-            toast.error('Lỗi khi xoá địa chỉ');
-        }
+        setModal({
+            isOpen: true,
+            title: 'Xóa địa chỉ',
+            message: 'Bạn có chắc chắn muốn xoá vĩnh viễn địa chỉ giao hàng này?',
+            type: 'danger',
+            onConfirm: async () => {
+                setModal(prev => ({ ...prev, isOpen: false }));
+                try {
+                    await addressService.delete(id);
+                    toast.success('Đã xoá địa chỉ');
+                    loadData();
+                } catch (err) {
+                    toast.error('Lỗi khi xoá địa chỉ');
+                }
+            }
+        });
     };
 
     const handleSetDefault = async (id) => {
@@ -491,10 +544,17 @@ export default function Profile() {
                         <div className="mt-auto pt-6 border-t border-gray-100">
                             <button 
                                 onClick={() => {
-                                    if(window.confirm('Bạn có chắc chắn muốn đăng xuất?')) {
-                                        logout();
-                                        toast.success('Đã đăng xuất thành công');
-                                    }
+                                    setModal({
+                                        isOpen: true,
+                                        title: 'Đăng xuất',
+                                        message: 'Bạn có chắc chắn muốn đăng xuất khỏi phiên làm việc hiện tại?',
+                                        type: 'warning',
+                                        onConfirm: () => {
+                                            setModal(prev => ({ ...prev, isOpen: false }));
+                                            logout();
+                                            toast.success('Đã đăng xuất thành công');
+                                        }
+                                    });
                                 }}
                                 className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] text-red-400 hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100 shadow-sm hover:shadow-md"
                             >
@@ -939,15 +999,47 @@ export default function Profile() {
                                                     required
                                                 />
                                             </div>
-                                            <div className="md:col-span-2 space-y-2">
-                                                <label className="text-[10px] font-black text-gray-400 ml-3 uppercase tracking-widest">Địa chỉ chi tiết (Thành phố, Quận, Phường, Tên đường...)</label>
-                                                <textarea
-                                                    className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold text-gray-900 shadow-sm focus:border-green-600 outline-none transition-all"
-                                                    rows={2}
-                                                    value={addrForm.details}
-                                                    onChange={(e) => setAddrForm({ ...addrForm, details: e.target.value })}
-                                                    required
-                                                />
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-gray-400 ml-3 uppercase tracking-widest">Tỉnh/Thành phố *</label>
+                                                    <input
+                                                        className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold text-gray-900 shadow-sm focus:border-green-600 outline-none transition-all"
+                                                        value={addrForm.province}
+                                                        onChange={(e) => setAddrForm({ ...addrForm, province: e.target.value })}
+                                                        required
+                                                        placeholder="Tỉnh/Thành phố"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-gray-400 ml-3 uppercase tracking-widest">Quận/Huyện *</label>
+                                                    <input
+                                                        className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold text-gray-900 shadow-sm focus:border-green-600 outline-none transition-all"
+                                                        value={addrForm.district}
+                                                        onChange={(e) => setAddrForm({ ...addrForm, district: e.target.value })}
+                                                        required
+                                                        placeholder="Quận/Huyện"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-gray-400 ml-3 uppercase tracking-widest">Phường/Xã *</label>
+                                                    <input
+                                                        className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold text-gray-900 shadow-sm focus:border-green-600 outline-none transition-all"
+                                                        value={addrForm.ward}
+                                                        onChange={(e) => setAddrForm({ ...addrForm, ward: e.target.value })}
+                                                        required
+                                                        placeholder="Phường/Xã"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-gray-400 ml-3 uppercase tracking-widest">Số nhà, tên đường *</label>
+                                                    <input
+                                                        className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold text-gray-900 shadow-sm focus:border-green-600 outline-none transition-all"
+                                                        value={addrForm.street}
+                                                        onChange={(e) => setAddrForm({ ...addrForm, street: e.target.value })}
+                                                        required
+                                                        placeholder="Số nhà, tên đường"
+                                                    />
+                                                </div>
                                             </div>
                                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
                                                 <div className="space-y-2">
@@ -1170,6 +1262,11 @@ export default function Profile() {
                     </main>
                 </div>
             </div>
+
+            <ConfirmModal 
+                {...modal} 
+                onCancel={() => setModal(prev => ({ ...prev, isOpen: false }))} 
+            />
         </ProfileLayout>
     );
 }

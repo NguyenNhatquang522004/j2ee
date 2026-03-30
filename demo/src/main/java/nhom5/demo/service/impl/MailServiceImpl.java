@@ -156,6 +156,22 @@ public class MailServiceImpl implements MailService {
         }
     }
 
+    @Override
+    @Async
+    public void sendTierUpgradeNotification(String toEmail, String fullName, String newTier) {
+        try {
+            Context context = new Context();
+            context.setVariable("fullName", fullName);
+            context.setVariable("newTier", newTier.toUpperCase());
+            context.setVariable("template", "email-tier-upgrade");
+
+            String html = templateEngine.process("email-layout", context);
+            sendHtmlEmail(toEmail, "Chúc mừng! Bạn đã thăng hạng lên thành viên " + newTier.toUpperCase(), html);
+        } catch (Exception e) {
+            log.error("Failed to send tier upgrade email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
     private void sendHtmlEmail(String to, String subject, String html) throws MessagingException, java.io.UnsupportedEncodingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");

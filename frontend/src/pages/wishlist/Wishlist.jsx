@@ -145,21 +145,21 @@ export default function Wishlist() {
                                                  {product.flashSalePrice ? (
                                                      <>
                                                          <span className="text-gray-400 line-through text-[10px] font-bold italic leading-none mb-1">
-                                                             {product.price.toLocaleString('vi-VN')}đ
+                                                             {(product.price || 0).toLocaleString('vi-VN')}đ
                                                          </span>
                                                          <span className="text-red-600 font-black text-xl leading-none">
-                                                             {product.flashSalePrice.toLocaleString('vi-VN')}đ
+                                                             {(product.flashSalePrice || 0).toLocaleString('vi-VN')}đ
                                                          </span>
                                                      </>
                                                  ) : (
                                                      <>
                                                          {product.originalPrice > product.price && (
                                                              <span className="text-gray-400 line-through text-[10px] font-bold italic leading-none mb-1">
-                                                                 {product.originalPrice.toLocaleString('vi-VN')}đ
+                                                                 {(product.originalPrice || 0).toLocaleString('vi-VN')}đ
                                                              </span>
                                                          )}
                                                          <span className="text-green-700 font-black text-xl leading-none">
-                                                             {product.price?.toLocaleString('vi-VN')}đ
+                                                             {(product.price || 0).toLocaleString('vi-VN')}đ
                                                          </span>
                                                      </>
                                                  )}

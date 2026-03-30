@@ -15,10 +15,10 @@ import java.util.List;
 
 /**
  * Entity sản phẩm thực phẩm sạch.
- *
- * QUAN TRỌNG: Entity này KHÔNG có trường inventory.
- * Tồn kho được tính từ SUM(remainingQuantity) của tất cả ProductBatch còn hạn.
- * Xem: {@link ProductBatch} và logic FEFO trong BatchService.
+ * Bao gồm thông tin cơ bản: Tên, Giá, Đơn vị tính và Hình ảnh.
+ * 
+ * QUAN TRỌNG: Entity này KHÔNG lưu số lượng tồn kho trực tiếp.
+ * Tồn kho được tính động từ SUM(remainingQuantity) của các lô hàng (ProductBatch) còn hạn.
  */
 @Entity
 @Table(name = "products", indexes = {
@@ -56,6 +56,9 @@ public class Product {
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
+    /**
+     * Trạng thái kinh doanh của sản phẩm (true: đang bán, false: ngừng bán).
+     */
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
@@ -82,6 +85,9 @@ public class Product {
     @JoinColumn(name = "category_id", nullable = true)
     private Category category;
 
+    /**
+     * Trang trại cung cấp sản phẩm này.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "farm_id", nullable = false)
     private Farm farm;

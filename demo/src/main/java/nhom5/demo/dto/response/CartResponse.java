@@ -16,6 +16,8 @@ public class CartResponse {
     private String username;
     private List<CartItemResponse> items;
     private BigDecimal totalAmount;
+    private BigDecimal shippingFee;
+    private BigDecimal finalAmount;
     private int totalItems;
 
     @Getter
@@ -30,5 +32,6 @@ public class CartResponse {
         private Integer quantity;
         private BigDecimal subtotal;
         private int availableStock;
+        private boolean isActive;
     }
 }

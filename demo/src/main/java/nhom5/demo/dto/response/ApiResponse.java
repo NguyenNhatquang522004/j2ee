@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -17,11 +18,13 @@ import java.time.format.DateTimeFormatter;
 @Setter
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ApiResponse<T> {
+public class ApiResponse<T> implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private int status;
     private String message;
     private T data;
+    // Trigger restart 
     private String timestamp;
 
     public static <T> ApiResponse<T> success(T data) {

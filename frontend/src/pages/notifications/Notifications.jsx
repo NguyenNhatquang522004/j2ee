@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { notificationService } from '../../api/services';
+import { useConfirm } from '../../context/ModalContext';
+import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout';
+import AdminLayout from '../../components/AdminLayout';
 import { 
     BellIcon, 
     CheckCircleIcon, 
@@ -21,6 +24,8 @@ import { Link } from 'react-router-dom';
 const PAGE_SIZE = 10;
 
 export default function Notifications() {
+    const { confirm } = useConfirm();
+    const { user } = useAuth();
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
@@ -81,7 +86,12 @@ export default function Notifications() {
     };
 
     const clearAll = async () => {
-        if (!window.confirm('Xóa tất cả thông báo?')) return;
+        const ok = await confirm({
+            title: 'Xóa tất cả thông báo',
+            message: 'Bạn có chắc chắn muốn xóa vĩnh viễn toàn bộ thông báo trong hộp thư? Hành động này không thể hoàn tác.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await notificationService.deleteAll();
             setNotifications([]);
@@ -104,9 +114,11 @@ export default function Notifications() {
         }
     };
 
+    const LayoutComponent = user?.role?.name === 'ROLE_ADMIN' ? AdminLayout : Layout;
+
     return (
-        <Layout>
-            <div className="max-w-4xl mx-auto py-10 px-4">
+        <LayoutComponent>
+            <div className={user?.role?.name === 'ROLE_ADMIN' ? 'py-4' : 'max-w-4xl mx-auto py-10 px-4'}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
@@ -246,6 +258,6 @@ export default function Notifications() {
                     )}
                 </div>
             </div>
-        </Layout>
+        </LayoutComponent>
     );
 }

@@ -40,6 +40,7 @@ export default function ProductDetail() {
     const [flashSaleItem, setFlashSaleItem] = useState(null);
     const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
     const [flashSaleEndTime, setFlashSaleEndTime] = useState(null);
+    const [addingToCart, setAddingToCart] = useState(false);
 
     useEffect(() => {
         if (user && id) {
@@ -119,11 +120,14 @@ export default function ProductDetail() {
 
     const handleAddToCart = async () => {
         if (!user) { toast.error('Vui lòng đăng nhập'); return; }
+        setAddingToCart(true);
         try {
             await addToCart(product.id, quantity);
             toast.success(`Đã thêm ${quantity} ${product.unit} vào giỏ hàng!`);
         } catch (err) {
             toast.error(err.response?.data?.message || 'Lỗi');
+        } finally {
+            setAddingToCart(false);
         }
     };
 
@@ -222,10 +226,10 @@ export default function ProductDetail() {
                                     <div>
                                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1">Giá sốc độc quyền</p>
                                         <div className="flex items-baseline gap-3">
-                                            <span className="text-3xl font-black text-red-600">{flashSaleItem.flashSalePrice?.toLocaleString()}đ</span>
-                                            <span className="text-gray-300 line-through text-sm font-bold italic">{product.price.toLocaleString()}đ</span>
+                                            <span className="text-3xl font-black text-red-600">{(flashSaleItem.flashSalePrice || 0).toLocaleString()}đ</span>
+                                            <span className="text-gray-300 line-through text-sm font-bold italic">{(product.price || 0).toLocaleString()}đ</span>
                                             <span className="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg animate-bounce">
-                                                -{Math.round((product.price - flashSaleItem.flashSalePrice) / product.price * 100)}%
+                                                -{Math.round(((product.price || 0) - (flashSaleItem.flashSalePrice || 0)) / (product.price || 1) * 100)}%
                                             </span>
                                         </div>
                                     </div>
@@ -248,16 +252,16 @@ export default function ProductDetail() {
                     {!flashSaleItem && (
                         <div className="flex items-baseline gap-4 mb-4">
                             <div className="text-4xl font-black text-green-700">
-                                {product.price?.toLocaleString('vi-VN')}đ
+                                {(product.price || 0).toLocaleString('vi-VN')}đ
                                 <span className="text-lg font-bold text-gray-400">/{product.unit}</span>
                             </div>
                             {product.originalPrice > product.price && (
                                 <div className="flex items-center gap-3">
                                     <div className="text-xl font-bold text-gray-300 line-through italic">
-                                        {product.originalPrice.toLocaleString('vi-VN')}đ
+                                        {(product.originalPrice || 0).toLocaleString('vi-VN')}đ
                                     </div>
                                     <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-xl shadow-lg border border-white/20">
-                                        -{Math.round((product.originalPrice - product.price) / product.originalPrice * 100)}%
+                                        -{Math.round(((product.originalPrice || 0) - (product.price || 0)) / (product.originalPrice || 1) * 100)}%
                                     </span>
                                 </div>
                             )}
@@ -303,9 +307,17 @@ export default function ProductDetail() {
                                     <PlusIcon className="w-5 h-5" />
                                 </button>
                             </div>
-                            <button onClick={handleAddToCart} className="btn-primary flex-1 py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-green-100 shadow-xl">
-                                <ShoppingCartIcon className="w-6 h-6 text-white/90" />
-                                Thêm vào giỏ
+                            <button 
+                                onClick={handleAddToCart} 
+                                disabled={addingToCart}
+                                className="btn-primary flex-1 py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-green-100 shadow-xl disabled:opacity-75 transition-all"
+                            >
+                                {addingToCart ? (
+                                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <ShoppingCartIcon className="w-6 h-6 text-white/90" />
+                                )}
+                                {addingToCart ? 'Đang thêm...' : 'Thêm vào giỏ'}
                             </button>
                             <button 
                                 onClick={toggleWishlist}

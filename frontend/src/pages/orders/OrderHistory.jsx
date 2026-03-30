@@ -1,23 +1,38 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { orderService } from '../../api/services';
+import { Link, useNavigate } from 'react-router-dom';
+import { orderService, cartService } from '../../api/services';
+import { useConfirm } from '../../context/ModalContext';
 import Layout from '../../components/Layout';
 import toast from 'react-hot-toast';
-import { ArchiveBoxIcon, MapPinIcon, ChevronRightIcon, ChevronDownIcon, XCircleIcon, ClockIcon, CheckBadgeIcon, TruckIcon, HomeIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { 
+    ArchiveBoxIcon, 
+    MapPinIcon, 
+    ChevronRightIcon, 
+    XCircleIcon, 
+    ClockIcon, 
+    ArrowPathIcon, 
+    PrinterIcon 
+} from '@heroicons/react/24/outline';
 
 const STATUS_MAP = {
     PENDING: { label: 'Chờ xác nhận', color: 'bg-yellow-100 text-yellow-800', icon: ClockIcon },
-    CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800', icon: CheckBadgeIcon },
+    CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800', icon: ClockIcon },
     PACKAGING: { label: 'Đang đóng gói', color: 'bg-purple-100 text-purple-800', icon: ArchiveBoxIcon },
-    SHIPPING: { label: 'Đang giao', color: 'bg-orange-100 text-orange-800', icon: TruckIcon },
+    SHIPPING: { label: 'Đang giao', color: 'bg-orange-100 text-orange-800', icon: ClockIcon },
     DELIVERED: { label: 'Đã giao', color: 'bg-green-100 text-green-800', icon: CheckCircleIcon },
     CANCELLED: { label: 'Đã hủy', color: 'bg-red-100 text-red-800', icon: XCircleIcon },
+    RETURN_REQUESTED: { label: 'Yêu cầu trả hàng', color: 'bg-orange-100 text-orange-800', icon: ClockIcon },
+    RETURNED: { label: 'Đã trả hàng', color: 'bg-gray-100 text-gray-800', icon: ArchiveBoxIcon },
+    RETURN_REJECTED: { label: 'Từ chối trả hàng', color: 'bg-red-100 text-red-800', icon: XCircleIcon },
 };
+
+import { CheckCircleIcon } from '@heroicons/react/24/outline';
 
 export default function OrderHistory() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [expandedId, setExpandedId] = useState(null);
+    const { confirm } = useConfirm();
+    const navigate = useNavigate();
 
     useEffect(() => {
         orderService.myOrders({ page: 0, size: 20 })
@@ -27,7 +42,12 @@ export default function OrderHistory() {
     }, []);
 
     const handleCancel = async (orderId) => {
-        if (!confirm('Bạn có chắc muốn hủy đơn hàng này?')) return;
+        const ok = await confirm({
+            title: 'Hủy đơn hàng',
+            message: 'Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác.',
+            type: 'danger'
+        });
+        if (!ok) return;
         try {
             await orderService.cancel(orderId);
             toast.success('Đã hủy đơn hàng');
@@ -37,6 +57,94 @@ export default function OrderHistory() {
         } catch (err) {
             toast.error(err.response?.data?.message || 'Không thể hủy đơn hàng');
         }
+    };
+
+    const handleBuyAgain = async (order) => {
+        const loadingToast = toast.loading('Đang thêm vào giỏ hàng...');
+        try {
+            await Promise.all(order.orderItems.map(item => 
+                cartService.addItem({
+                    productId: item.productId,
+                    quantity: item.quantity
+                })
+            ));
+            window.dispatchEvent(new Event('cart-updated'));
+            toast.success('Đã thêm sản phẩm vào giỏ hàng', { id: loadingToast });
+            navigate('/cart');
+        } catch (err) {
+            toast.error('Có lỗi khi thêm sản phẩm vào giỏ hàng', { id: loadingToast });
+        }
+    };
+
+    const handlePrintInvoice = (order) => {
+        const printWindow = window.open('', '_blank');
+        const itemsHtml = order.orderItems.map(item => `
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px 0;">${item.productName}</td>
+                <td style="padding: 10px 0; text-align: center;">${item.quantity}</td>
+                <td style="padding: 10px 0; text-align: right;">${(item.unitPrice || 0).toLocaleString('vi-VN')}đ</td>
+                <td style="padding: 10px 0; text-align: right; font-weight: bold;">${(item.subtotal || 0).toLocaleString('vi-VN')}đ</td>
+            </tr>
+        `).join('');
+
+        printWindow.document.write(`
+            <html>
+                <head><title>Hóa đơn #${order.orderCode}</title></head>
+                <body style="padding: 40px; font-family: sans-serif;">
+                    <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px;">
+                        <h1 style="margin: 0; color: #166534;">FRESHFOOD</h1>
+                        <p style="margin: 5px 0; color: #666; font-size: 14px;">Thực phẩm sạch - Cuộc sống xanh</p>
+                    </div>
+
+                    <h2 style="text-align: center; color: #333;">HÓA ĐƠN BÁN HÀNG</h2>
+                    <div style="margin-bottom: 30px;">
+                        <p><strong>Mã đơn hàng:</strong> ${order.orderCode}</p>
+                        <p><strong>Ngày tạo:</strong> ${order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : 'N/A'}</p>
+                        <p><strong>Người nhận:</strong> ${order.userId}</p>
+                        <p><strong>Địa chỉ:</strong> ${order.shippingAddress}</p>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left;">Sản phẩm</th>
+                                <th style="padding: 12px; text-align: center;">SL</th>
+                                <th style="padding: 12px; text-align: right;">Đơn giá</th>
+                                <th style="padding: 12px; text-align: right;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>${itemsHtml}</tbody>
+                    </table>
+
+                    <div style="width: 300px; margin-left: auto; border-top: 1px solid #eee; padding-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>Tạm tính:</span>
+                            <span style="font-weight: bold;">${(order.totalAmount || 0).toLocaleString('vi-VN')}đ</span>
+                        </div>
+                        ${order.discountAmount > 0 ? `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #dc2626;">
+                            <span>Chiết khấu:</span>
+                            <span>-${(order.discountAmount || 0).toLocaleString('vi-VN')}đ</span>
+                        </div>` : ''}
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>Phí vận chuyển:</span>
+                            <span style="font-weight: bold;">${(order.shippingFee || 0).toLocaleString('vi-VN')}đ</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-top: 2px solid #166534; padding-top: 10px; margin-top: 10px; font-size: 18px;">
+                            <span style="font-weight: 800; color: #166534;">TỔNG CỘNG:</span>
+                            <span style="font-weight: 800; color: #166534;">${(order.finalAmount || 0).toLocaleString('vi-VN')}đ</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 50px; text-align: center; color: #94a3b8; font-size: 12px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                        <p>Cảm ơn quý khách đã tin dùng sản phẩm của FreshFood!</p>
+                        <p>Mọi thắc mắc vui lòng liên hệ hệ thống chăm sóc khách hàng.</p>
+                    </div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
     };
 
     const fmtFullDate = (s) => {
@@ -64,20 +172,6 @@ export default function OrderHistory() {
                 <div className="space-y-4">
                     {orders.map((order) => {
                         const statusInfo = STATUS_MAP[order.status] || { label: order.status, color: 'bg-gray-100 text-gray-800', icon: ClockIcon };
-                        const isExpanded = expandedId === order.id;
-
-                        const timeline = [
-                            { label: 'Đặt hàng thành công', time: order.createdAt, active: true, icon: ClockIcon },
-                            { label: 'Shop đã xác nhận', time: order.confirmedAt, active: !!order.confirmedAt, icon: CheckBadgeIcon },
-                            { label: 'Đang đóng gói', time: order.confirmedAt ? (order.shippedAt || order.updatedAt) : null, active: !!order.confirmedAt, icon: ArchiveBoxIcon },
-                            { label: 'Đang giao hàng', time: order.shippedAt, active: !!order.shippedAt, icon: TruckIcon },
-                            { label: 'Giao hàng thành công', time: order.deliveredAt, active: !!order.deliveredAt, icon: HomeIcon },
-                        ].filter(t => t.active || (order.status !== 'CANCELLED'));
-
-                        if (order.status === 'CANCELLED') {
-                            timeline.push({ label: 'Đã hủy đơn', time: order.cancelledAt || order.updatedAt, active: true, icon: XCircleIcon, error: true });
-                        }
-
                         return (
                             <div key={order.id} className="card overflow-hidden">
                                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -86,16 +180,12 @@ export default function OrderHistory() {
                                             <span className="font-bold text-gray-900">Đơn #{order.id}</span>
                                             <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-mono uppercase tracking-widest">{order.orderCode}</span>
                                         </div>
-                                        <span className="text-sm text-gray-500">
-                                            {fmtFullDate(order.createdAt)}
-                                        </span>
+                                        <span className="text-sm text-gray-500">{fmtFullDate(order.createdAt)}</span>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <div className="text-right">
                                             <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">Tổng thanh toán</p>
-                                            <p className="font-black text-green-700 text-lg">
-                                                {order.finalAmount?.toLocaleString('vi-VN')}đ
-                                            </p>
+                                            <p className="font-black text-green-700 text-lg">{order.finalAmount?.toLocaleString('vi-VN')}đ</p>
                                         </div>
                                         <span className={`text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 ${statusInfo.color}`}>
                                             <statusInfo.icon className="w-4 h-4" />
@@ -104,130 +194,41 @@ export default function OrderHistory() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pt-4 border-t border-gray-50">
-                                    <div className="space-y-2">
-                                        <p className="text-xs text-gray-500 flex items-start gap-2">
-                                            <MapPinIcon className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                                            <span>
-                                                <span className="font-bold text-gray-700">Giao tới:</span> {order.shippingAddress}
-                                            </span>
-                                        </p>
-                                        <p className="text-xs text-gray-500 flex items-center gap-2">
-                                            <ArchiveBoxIcon className="w-4 h-4 text-gray-400 shrink-0" />
-                                            <span>
-                                                <span className="font-bold text-gray-700">SĐT:</span> {order.phone}
-                                            </span>
-                                        </p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="text-xs text-gray-500 flex items-center gap-2">
-                                            <div className={`w-2 h-2 rounded-full ${order.isPaid ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'}`}></div>
-                                            <span>
-                                                <span className="font-bold text-gray-700">Thanh toán:</span> {
-                                                    order.paymentMethod === 'COD' ? 'Khi nhận hàng (COD)' : 
-                                                    order.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' :
-                                                    order.paymentMethod === 'MOMO' ? 'Ví MoMo' : 'VNPay'
-                                                } ({order.isPaid ? 'Đã trả' : 'Chưa trả'})
-                                            </span>
-                                        </div>
-                                        {order.note && (
-                                            <p className="text-xs text-gray-500 italic">
-                                                <span className="font-bold text-gray-700 not-italic">Ghi chú:</span> "{order.note}"
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={() => setExpandedId(isExpanded ? null : order.id)}
+                                <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-50">
+                                    <Link
+                                        to={`/orders/${order.id}`}
                                         className="btn-secondary py-1.5 px-4 text-sm flex items-center gap-2"
                                     >
-                                        {isExpanded ? <ChevronDownIcon className="w-4 h-4" /> : <ChevronRightIcon className="w-4 h-4" />}
-                                        {isExpanded ? 'Ẩn bớt' : `Xem chi tiết & ${order.orderItems?.length || 0} sản phẩm`}
+                                        <ChevronRightIcon className="w-4 h-4" />
+                                        Xem chi tiết
+                                    </Link>
+                                    
+                                    <button 
+                                        onClick={() => handleBuyAgain(order)}
+                                        className="btn-primary py-1.5 px-4 text-sm flex items-center gap-2"
+                                    >
+                                        <ArrowPathIcon className="w-4 h-4" />
+                                        Mua lại
                                     </button>
+
+                                    <button 
+                                        onClick={() => handlePrintInvoice(order)}
+                                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-1.5 px-4 rounded-xl text-sm transition-all flex items-center gap-2"
+                                    >
+                                        <PrinterIcon className="w-4 h-4" />
+                                        In hóa đơn
+                                    </button>
+
                                     {order.status === 'PENDING' && (
                                         <button 
                                             onClick={() => handleCancel(order.id)} 
-                                            className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
+                                            className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 ml-2"
                                         >
                                             <XCircleIcon className="w-4 h-4" />
                                             Hủy đơn
                                         </button>
                                     )}
                                 </div>
-
-                                {isExpanded && (
-                                    <div className="mt-6 space-y-8 animate-in slide-in-from-top-2 duration-300">
-                                        {/* Timeline Section */}
-                                        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-                                            <h3 className="text-sm font-black text-gray-900 mb-6 flex items-center gap-2">
-                                                <ClockIcon className="w-5 h-5 text-green-600" />
-                                                Tiến trình đơn hàng
-                                            </h3>
-                                            <div className="relative pl-8 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
-                                                {timeline.map((step, idx) => (
-                                                    <div key={idx} className="relative">
-                                                        <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center ${
-                                                            step.active ? (step.error ? 'bg-red-500' : 'bg-green-500') : 'bg-gray-200'
-                                                        }`}>
-                                                            <step.icon className="w-3 h-3 text-white" />
-                                                        </div>
-                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                                                            <p className={`text-sm font-bold ${step.active ? 'text-gray-900' : 'text-gray-400'}`}>{step.label}</p>
-                                                            {step.time && (
-                                                                <p className="text-[10px] font-black text-gray-400 uppercase">{fmtFullDate(step.time)}</p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Product List */}
-                                        <div className="bg-gray-50/50 rounded-3xl p-6 border border-gray-100">
-                                            <div className="space-y-4">
-                                                {order.orderItems?.map((item) => (
-                                                    <div key={item.orderItemId} className="flex items-center gap-4">
-                                                        <div className="w-16 h-16 rounded-xl bg-white border border-gray-100 flex-shrink-0 overflow-hidden shadow-sm">
-                                                            {item.productImageUrl ? (
-                                                                <img src={item.productImageUrl} className="w-full h-full object-cover" alt="" />
-                                                            ) : (
-                                                                <div className="w-full h-full flex items-center justify-center text-gray-200">
-                                                                    <ArchiveBoxIcon className="w-8 h-8" />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="font-bold text-gray-800 text-sm truncate">{item.productName}</p>
-                                                            <p className="text-xs text-gray-500">{item.unitPrice?.toLocaleString('vi-VN')}đ x {item.quantity}</p>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className="font-bold text-gray-900 text-sm">{item.subtotal?.toLocaleString('vi-VN')}đ</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            
-                                            <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
-                                                <div className="flex justify-between text-xs text-gray-500">
-                                                    <span>Tạm tính</span>
-                                                    <span>{order.totalAmount?.toLocaleString('vi-VN')}đ</span>
-                                                </div>
-                                                {order.discountAmount > 0 && (
-                                                    <div className="flex justify-between text-xs text-green-600 font-bold">
-                                                        <span>Giảm giá</span>
-                                                        <span>-{order.discountAmount?.toLocaleString('vi-VN')}đ</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex justify-between text-base font-black text-gray-900 pt-2">
-                                                    <span>Tổng cộng</span>
-                                                    <span>{order.finalAmount?.toLocaleString('vi-VN')}đ</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         );
                     })}

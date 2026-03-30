@@ -18,4 +18,10 @@ public interface OrderService {
     OrderResponse updateOrderStatus(Long id, OrderStatusEnum status);
 
     void cancelOrder(Long id, String username);
+
+    OrderResponse markAsRefunded(Long id);
+    OrderResponse requestReturn(Long id, String reason, String returnMedia, String username);
+    OrderResponse confirmReturn(Long id);
+    OrderResponse rejectReturn(Long id, String reason);
+    Page<OrderResponse> getRefundRequests(String query, Pageable pageable);
 }
