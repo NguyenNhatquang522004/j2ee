@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import nhom5.demo.service.RateLimitService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.lang.NonNull;
 
 import java.io.IOException;
 
@@ -23,18 +24,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final nhom5.demo.repository.IpBlocklistRepository ipBlocklistRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         
         String uri = request.getRequestURI();
-        
-        // WebSocket requests bypass security filters
-        if (uri.startsWith("/ws")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
 
-        String ip = request.getRemoteAddr();
+        // Lấy IP thực: ưu tiên X-Forwarded-For (reverse proxy) rồi mới lấy remoteAddr
+        String ip = getClientIp(request);
         
         // KIỂM TRA DANH SÁCH ĐEN IP (Blocklist)
         // Nếu IP đã bị đánh dấu nguy hiểm bởi Admin, chặn truy cập ngay lập tức để tiết kiệm tài nguyên.
@@ -51,10 +47,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
         
         // - Login/Register: 5 lần/phút để chống Brute-force.
         // - Newsletter: 3 lần/phút để chống Spam email.
+        // - Payment: 5 lần/phút để chống lạm dụng thanh toán.
+        // - Forgot Password: 3 lần/phút để chống email enumeration.
         if (uri.contains("/api/v1/auth/login") || uri.contains("/api/v1/auth/register")) {
             limit = 5;
             window = 60;
         } else if (uri.contains("/api/v1/newsletters/subscribe")) {
+            limit = 3;
+            window = 60;
+        } else if (uri.contains("/api/v1/payment/vnpay/create")) {
+            limit = 5;
+            window = 60;
+        } else if (uri.contains("/api/v1/auth/forgot-password")) {
             limit = 3;
             window = 60;
         }
@@ -68,5 +72,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Lấy IP thực của client, ưu tiên X-Forwarded-For (khi qua reverse proxy).
+     * Thống nhất với AdminIpWhitelistFilter để tránh IP spoofing inconsistency.
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }

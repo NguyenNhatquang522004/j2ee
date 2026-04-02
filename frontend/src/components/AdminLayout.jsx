@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import AdminSidebar from './AdminSidebar';
-import { Toaster } from 'react-hot-toast';
 import NotificationDropdown from './NotificationDropdown';
 import { useAuth } from '../context/AuthContext';
 import { UserIcon } from '@heroicons/react/24/outline';
@@ -21,16 +20,16 @@ export default function AdminLayout({ children }) {
 
             {/* Sidebar */}
             <aside 
-                className={`fixed lg:static inset-y-0 left-0 z-[60] lg:z-auto w-72 bg-white border-r border-gray-100 transform ${
+                className={`fixed lg:static inset-y-0 left-0 z-[60] lg:z-auto w-72 bg-transparent transform ${
                     isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-                } transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none shrink-0`}
+                } transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none shrink-0 overflow-hidden`}
             >
                 <AdminSidebar onClose={() => setIsSidebarOpen(false)} />
             </aside>
 
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Admin Header */}
-                <header className="h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shrink-0">
+                <header className="h-16 bg-white/95 sm:bg-white/90 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shrink-0">
                     <div className="flex items-center gap-3">
                         <button 
                             className="lg:hidden p-2.5 text-gray-500 hover:bg-gray-100 rounded-xl transition-all active:scale-90 shadow-sm border border-gray-50"
@@ -42,7 +41,7 @@ export default function AdminLayout({ children }) {
                         </button>
                         <div className="flex flex-col">
                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-0.5 leading-none hidden xs:block">Hệ thống quản lý</p>
-                            <h2 className="text-xs sm:text-sm font-black text-gray-900 border-l-2 border-green-500 pl-3 leading-none italic uppercase tracking-tighter">RawFood Admin</h2>
+                            <h2 className="text-xs sm:text-sm font-black text-gray-900 border-l-2 border-green-500 pl-3 leading-none italic uppercase tracking-tighter">FreshFood Admin</h2>
                         </div>
                     </div>
 
@@ -87,14 +86,16 @@ export default function AdminLayout({ children }) {
                         </div>
                     </div>
                 </header>
-
                 <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-[1280px] mx-auto">
+                    <div className="max-w-[1280px] mx-auto min-h-full">
                         {children}
                     </div>
                 </main>
+                <footer className="h-10 bg-white/95 sm:bg-white/90 backdrop-blur-xl border-t border-gray-100 flex items-center justify-between px-6 shrink-0 z-40">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">© 2026 RawFood Eco-System</p>
+                    <p className="text-[10px] font-black text-green-600 uppercase tracking-widest italic">Hệ thống quản trị thông minh</p>
+                </footer>
             </div>
-            <Toaster position="top-right" />
         </div>
     );
 }

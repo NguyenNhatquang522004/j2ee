@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@OpenAPIDefinition(info = @Info(title = "Clean Food E-Commerce API", version = "1.0", description = "REST API cho Website Kinh Doanh Thực Phẩm Sạch - Nhóm 5"))
+@OpenAPIDefinition(info = @Info(title = "Clean Food E-Commerce API", version = "1.0", description = "REST API cho Website Kinh Doanh Thực Phẩm Sạch"))
 @SecurityScheme(name = "bearerAuth", type = SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "JWT")
 public class OpenApiConfig {
 }

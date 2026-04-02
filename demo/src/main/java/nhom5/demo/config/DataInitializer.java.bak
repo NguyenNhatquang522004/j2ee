@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Objects;
 
 @Slf4j
 @Component
@@ -26,12 +27,12 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(UserRepository userRepository,
-                           CategoryRepository categoryRepository,
-                           FarmRepository farmRepository,
-                           ProductRepository productRepository,
-                           AddressRepository addressRepository,
-                           SystemSettingRepository settingRepository,
-                           PasswordEncoder passwordEncoder) {
+            CategoryRepository categoryRepository,
+            FarmRepository farmRepository,
+            ProductRepository productRepository,
+            AddressRepository addressRepository,
+            SystemSettingRepository settingRepository,
+            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.farmRepository = farmRepository;
@@ -87,11 +88,11 @@ public class DataInitializer implements CommandLineRunner {
 
     private void saveSetting(String key, String value, String desc) {
         if (!settingRepository.existsBySettingKey(key)) {
-            settingRepository.save(SystemSetting.builder()
+            settingRepository.save(Objects.requireNonNull(SystemSetting.builder()
                     .settingKey(key)
                     .settingValue(value)
                     .description(desc)
-                    .build());
+                    .build()));
         }
     }
 
@@ -116,7 +117,7 @@ public class DataInitializer implements CommandLineRunner {
                 .isActive(true)
                 .build();
 
-        userRepository.saveAll(Arrays.asList(admin, user));
+        userRepository.saveAll(Objects.requireNonNull(Arrays.asList(admin, user)));
         log.info("Đã tạo user mẫu: admin/admin123 và user/user123");
 
         Address addr1 = Address.builder()
@@ -137,7 +138,7 @@ public class DataInitializer implements CommandLineRunner {
                 .user(user)
                 .build();
 
-        addressRepository.saveAll(Arrays.asList(addr1, addr2));
+        addressRepository.saveAll(Objects.requireNonNull(Arrays.asList(addr1, addr2)));
         log.info("Đã tạo 2 địa chỉ cho 'user'");
     }
 
@@ -159,7 +160,7 @@ public class DataInitializer implements CommandLineRunner {
                     .isDefault(false)
                     .user(user)
                     .build();
-            addressRepository.saveAll(Arrays.asList(addr1, addr2));
+            addressRepository.saveAll(Objects.requireNonNull(Arrays.asList(addr1, addr2)));
             log.info("Đã bổ sung địa chỉ mẫu cho 'user'");
         });
     }
@@ -170,7 +171,7 @@ public class DataInitializer implements CommandLineRunner {
         Category traiCay = Category.builder().name("Trái cây").description("Trái cây hữu cơ nhập khẩu & nội địa").build();
         Category thit = Category.builder().name("Thịt & Hải sản").description("Thịt sạch, cá tươi sống").build();
         Category doKho = Category.builder().name("Đồ khô & Gia vị").description("Gia vị, gạo sạch").build();
-        categoryRepository.saveAll(Arrays.asList(rauCu, traiCay, thit, doKho));
+        categoryRepository.saveAll(Objects.requireNonNull(Arrays.asList(rauCu, traiCay, thit, doKho)));
 
         // Farms
         Farm dalat = Farm.builder()
@@ -194,10 +195,10 @@ public class DataInitializer implements CommandLineRunner {
                 .certification(CertificationEnum.ORGANIC)
                 .isActive(true)
                 .build();
-        farmRepository.saveAll(Arrays.asList(dalat, hoabinh, tiengiang));
+        farmRepository.saveAll(Objects.requireNonNull(Arrays.asList(dalat, hoabinh, tiengiang)));
 
         // 30 Products
-        productRepository.saveAll(Arrays.asList(
+        productRepository.saveAll(Objects.requireNonNull(Arrays.asList(
                 // Rau củ
                 p("Rau muống xanh", 15000, 20000, "Bó", rauCu, dalat, "https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?auto=format&fit=crop&w=500&q=80", true),
                 p("Cải bó xôi Đà Lạt", 35000, 45000, "Kg", rauCu, dalat, "https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=500&q=80", true),
@@ -235,11 +236,12 @@ public class DataInitializer implements CommandLineRunner {
                 p("Tiêu đen Đắk Lắk", 120000, 0, "Kg", doKho, tiengiang, "https://images.unsplash.com/photo-1599819177371-04a71ac1a0ad?auto=format&fit=crop&w=500&q=80", false),
                 p("Đậu xanh hữu cơ", 45000, 50000, "Kg", doKho, hoabinh, "https://images.unsplash.com/photo-1515942400420-2b98fed1f515?auto=format&fit=crop&w=500&q=80", false),
                 p("Nấm hương rừng", 60000, 0, "Gói 100g", doKho, hoabinh, "https://images.unsplash.com/photo-1574041164913-731383569420?auto=format&fit=crop&w=500&q=80", false)
-        ));
+        )));
     }
 
     private Product p(String name, double price, double oldPrice, String unit, Category cat, Farm farm, String img, boolean isNew) {
         return Product.builder()
+            
                 .name(name)
                 .description("Sản phẩm " + name + " sạch, an toàn cho sức khỏe từ " + farm.getName())
                 .price(BigDecimal.valueOf(price))
@@ -252,5 +254,5 @@ public class DataInitializer implements CommandLineRunner {
                 .isNew(isNew)
                 .build();
     }
-
 }
+// File DataInitializer.java verified.

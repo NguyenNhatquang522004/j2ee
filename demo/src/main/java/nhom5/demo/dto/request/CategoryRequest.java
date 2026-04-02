@@ -12,6 +12,7 @@ public class CategoryRequest {
     private String name;
 
     private String description;
+    private String slug;
     private String imageUrl;
     private Boolean isActive = true;
 }

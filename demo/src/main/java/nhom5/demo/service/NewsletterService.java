@@ -1,11 +1,15 @@
 package nhom5.demo.service;
 
+import org.springframework.lang.NonNull;
+import java.util.List;
+import nhom5.demo.entity.NewsletterSubscriber;
+
 public interface NewsletterService {
-    void subscribe(String email);
-    void unsubscribe(String email);
+    void subscribe(@NonNull String email);
+    void unsubscribe(@NonNull String email);
     
     // Admin methods
-    java.util.List<nhom5.demo.entity.NewsletterSubscriber> getAllSubscribers();
-    void sendNewsletterToAll(String subject, String content);
-    void deleteSubscriber(Long id);
+    List<NewsletterSubscriber> getAllSubscribers();
+    void sendNewsletterToAll(@NonNull String subject, @NonNull String content);
+    void deleteSubscriber(@NonNull Long id);
 }

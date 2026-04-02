@@ -11,6 +11,8 @@ import nhom5.demo.repository.ProductRepository;
 import nhom5.demo.service.CategoryService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
+import java.util.Objects;
 
 import java.util.List;
 
@@ -23,29 +25,35 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public CategoryResponse createCategory(CategoryRequest request) {
-        if (categoryRepository.existsByName(request.getName())) {
-            throw new BusinessException("Danh mục '" + request.getName() + "' đã tồn tại");
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
+    public CategoryResponse createCategory(@NonNull CategoryRequest request) {
+        String name = Objects.requireNonNull(request.getName());
+        if (categoryRepository.existsByName(name)) {
+            throw new BusinessException("Danh mục '" + name + "' đã tồn tại");
         }
         Category category = Category.builder()
-                .name(request.getName())
+                .name(name)
                 .description(request.getDescription())
+                .slug(request.getSlug())
                 .imageUrl(request.getImageUrl())
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                 .build();
-        return toResponse(categoryRepository.save(category));
+        return toResponse(categoryRepository.save(Objects.requireNonNull(category)));
     }
 
     @Override
     @Transactional
-    public CategoryResponse updateCategory(Long id, CategoryRequest request) {
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
+    public CategoryResponse updateCategory(@NonNull Long id, @NonNull CategoryRequest request) {
         Category category = findById(id);
-        if (!category.getName().equals(request.getName()) &&
-                categoryRepository.existsByName(request.getName())) {
-            throw new BusinessException("Danh mục '" + request.getName() + "' đã tồn tại");
+        String name = Objects.requireNonNull(request.getName());
+        if (!Objects.requireNonNull(category.getName()).equals(name) &&
+                categoryRepository.existsByName(name)) {
+            throw new BusinessException("Danh mục '" + name + "' đã tồn tại");
         }
-        category.setName(request.getName());
+        category.setName(name);
         category.setDescription(request.getDescription());
+        category.setSlug(request.getSlug());
         category.setImageUrl(request.getImageUrl());
         if (request.getIsActive() != null)
             category.setIsActive(request.getIsActive());
@@ -54,7 +62,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public void deleteCategory(Long id) {
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
+    public void deleteCategory(@NonNull Long id) {
         Category category = findById(id);
         category.setIsActive(false);
         categoryRepository.save(category);
@@ -62,8 +71,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public CategoryResponse getCategoryById(Long id) {
-        return toResponse(findById(id));
+    public CategoryResponse getCategoryById(@NonNull Long id) {
+        return toResponse(Objects.requireNonNull(findById(id)));
     }
 
     @Override
@@ -82,26 +91,30 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public void toggleCategoryStatus(Long id) {
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
+    public void toggleCategoryStatus(@NonNull Long id) {
         Category category = findById(id);
-        category.setIsActive(!category.getIsActive());
+        category.setIsActive(!Boolean.TRUE.equals(category.getIsActive()));
         categoryRepository.save(category);
     }
 
-    private Category findById(Long id) {
+    private Category findById(@NonNull Long id) {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", id));
     }
 
-    private CategoryResponse toResponse(Category category) {
-        long productCount = productRepository.countByCategoryId(category.getId());
+    private CategoryResponse toResponse(@NonNull Category category) {
+        Long catId = Objects.requireNonNull(category.getId());
+        long productCount = productRepository.countByCategoryId(catId);
         return CategoryResponse.builder()
-                .id(category.getId())
+                .id(catId)
                 .name(category.getName())
                 .description(category.getDescription())
                 .imageUrl(category.getImageUrl())
                 .isActive(category.getIsActive())
                 .productCount((int) productCount)
+                .slug(category.getSlug())
+                .createdAt(category.getCreatedAt())
                 .build();
     }
 }

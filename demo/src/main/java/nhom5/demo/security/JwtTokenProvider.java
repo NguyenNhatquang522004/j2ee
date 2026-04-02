@@ -27,8 +27,19 @@ public class JwtTokenProvider {
     private long jwtExpirationMs;
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-        return Keys.hmacShaKeyFor(keyBytes);
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            // Default fallback for development
+            byte[] keyBytes = "freshfood_super_secret_master_key_123_at_least_256_bits".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            return Keys.hmacShaKeyFor(keyBytes);
+        }
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            // Fallback to UTF-8 bytes if not valid Base64
+            byte[] keyBytes = jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            return Keys.hmacShaKeyFor(keyBytes);
+        }
     }
 
     public String generateToken(Authentication authentication, Integer tokenVersion) {

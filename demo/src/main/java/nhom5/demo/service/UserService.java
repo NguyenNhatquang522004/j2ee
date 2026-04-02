@@ -4,28 +4,33 @@ import nhom5.demo.dto.request.UserUpdateRequest;
 import nhom5.demo.dto.response.UserResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 public interface UserService {
-    UserResponse getProfile(String username);
+    UserResponse getProfile(@NonNull String username);
 
-    UserResponse updateProfile(String username, UserUpdateRequest request);
+    UserResponse updateProfile(@NonNull String username, @NonNull UserUpdateRequest request);
 
-    UserResponse updateAvatar(String username, org.springframework.web.multipart.MultipartFile file)
-            throws java.io.IOException;
+    UserResponse updateAvatar(@NonNull String username, @NonNull MultipartFile file)
+            throws IOException;
 
-    Page<UserResponse> getAllUsers(String query, nhom5.demo.enums.RoleEnum role, Boolean isActive, Pageable pageable);
+    UserResponse deleteAvatar(@NonNull String username);
 
-    UserResponse getUserById(Long id);
+    Page<UserResponse> getAllUsers(String query, nhom5.demo.enums.RoleEnum role, Boolean isActive, @NonNull Pageable pageable);
 
-    void toggleUserStatus(Long id);
+    UserResponse getUserById(@NonNull Long id);
 
-    void logoutAllDevices(String username);
+    void toggleUserStatus(@NonNull Long id);
 
-    void deleteUser(Long id);
+    void logoutAllDevices(@NonNull String username);
 
-    Page<UserResponse> getStaff(Pageable pageable);
+    void deleteUser(@NonNull Long id);
 
-    UserResponse adminUpdateUser(Long id, nhom5.demo.dto.request.AdminUserUpdateRequest request);
+    Page<UserResponse> getStaff(@NonNull Pageable pageable);
 
-    UserResponse createStaff(nhom5.demo.dto.request.RegisterRequest request, nhom5.demo.enums.RoleEnum role);
+    UserResponse adminUpdateUser(@NonNull Long id, @NonNull nhom5.demo.dto.request.AdminUserUpdateRequest request);
+
+    UserResponse createStaff(@NonNull nhom5.demo.dto.request.RegisterRequest request, @NonNull nhom5.demo.enums.RoleEnum role);
 }

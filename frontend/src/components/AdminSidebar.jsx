@@ -39,9 +39,10 @@ const MENU_ITEMS = [
     { name: 'Flash Sale', path: '/admin/flash-sales', icon: BoltIcon, permission: 'manage:promotions' },
     { name: 'Đánh giá', path: '/admin/reviews', icon: UserIcon, permission: 'manage:reviews' },
     { name: 'Nhân sự', path: '/admin/staff', icon: ShieldCheckIcon, permission: 'manage:users' },
-    { name: 'Nhật ký', path: '/admin/audit', icon: ClockIcon, permission: 'view:reports' },
+    { name: 'Nhật ký', path: '/admin/audit-logs', icon: ClockIcon, permission: 'view:reports' },
     { name: 'Thư viện', path: '/admin/media', icon: PhotoIcon, permission: 'manage:products' },
     { name: 'Bản tin', path: '/admin/newsletters', icon: NewspaperIcon, permission: 'manage:newsletters' },
+    { name: 'Thông báo', path: '/admin/notifications', icon: BellIcon, permission: 'view:reports' },
     { name: 'Cài đặt', path: '/admin/settings', icon: Cog8ToothIcon, permission: 'manage:settings' },
     { name: 'Hộp thư', path: '/admin/contacts', icon: ChatBubbleLeftRightIcon, permission: 'manage:users' },
     { name: 'Hướng dẫn', path: '/admin/guide', icon: InformationCircleIcon, permission: 'view:reports' },
@@ -81,19 +82,24 @@ export default function AdminSidebar({ onClose }) {
     const filteredMenu = MENU_ITEMS.filter(item => {
         if (item.path === '/admin') return true; // Everyone in management can see Dashboard
         if (item.path === '/admin/settings') return true; // Settings for profile/security
+        
+        // Handle combined permission check (allow view OR manage)
+        if (item.permission && item.permission.includes(':')) {
+            const domain = item.permission.split(':')[1];
+            return hasPermission(`view:${domain}`) || hasPermission(`manage:${domain}`);
+        }
+
         return hasPermission(item.permission);
     });
 
     return (
-        <aside className="h-full bg-white border-r flex flex-col shadow-[rgba(0,0,0,0.05)_5px_0px_15px]">
+        <aside className="h-full bg-white/90 backdrop-blur-xl border-r border-gray-100 flex flex-col shadow-[rgba(0,0,0,0.02)_10px_0px_30px] relative z-20">
             <div className="p-5 border-b">
-                <Link to="/" onClick={handleItemClick} className="flex items-center gap-2 group">
-                    <span className="text-green-600 group-hover:scale-110 transition-transform duration-300">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
-                    </span>
-                    <span className="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-green-700 to-green-500 uppercase">
+                <Link to="/" onClick={handleItemClick} className="flex items-center gap-3 group">
+                    <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:scale-110 border border-gray-100 p-0">
+                        <img src="/logo.png" alt="FreshFood" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-green-700 to-green-500 uppercase">
                         Admin <span className="text-xs text-gray-400 font-normal">Panel</span>
                     </span>
                 </Link>
@@ -107,12 +113,15 @@ export default function AdminSidebar({ onClose }) {
                             key={item.path} 
                             to={item.path}
                             onClick={handleItemClick}
-                            className={`flex items-center gap-3 px-3.5 py-2 rounded-xl transition-all duration-200 group ${
+                            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300 group relative overflow-hidden ${
                                 isActive 
-                                ? 'bg-green-600 text-white shadow-lg shadow-green-100' 
-                                : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
+                                ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-100 scale-[1.02]' 
+                                : 'text-gray-500 hover:bg-green-50 hover:text-green-600'
                             }`}
                         >
+                            {isActive && (
+                                <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
+                            )}
                             <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-green-600 font-bold'}`} />
                             <span className="font-semibold text-sm flex-1">{item.name}</span>
                             {item.path === '/admin/contacts' && unreadContacts > 0 && (

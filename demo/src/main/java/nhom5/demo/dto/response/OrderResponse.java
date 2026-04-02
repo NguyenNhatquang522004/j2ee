@@ -7,6 +7,7 @@ import nhom5.demo.enums.PaymentMethodEnum;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Getter
 @Setter
@@ -36,6 +37,7 @@ public class OrderResponse {
     private OrderStatusEnum status;
     private String statusDisplayName;
     private PaymentMethodEnum paymentMethod;
+    @JsonProperty("isPaid")
     private Boolean isPaid;
     private Long userId;
     private String username;
@@ -52,6 +54,7 @@ public class OrderResponse {
     private LocalDateTime returnRequestedAt;
     private LocalDateTime returnedAt;
     private LocalDateTime paidAt;
+    @JsonProperty("isRefunded")
     private Boolean isRefunded;
 
     @Getter

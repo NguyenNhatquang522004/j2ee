@@ -50,11 +50,11 @@ export default function Login() {
         <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#f0fdf4' }}>
             <div className="card w-full max-w-md shadow-xl border-0 animate-fade-in translate-y-0 transition-all">
                 <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6 border-4 border-white shadow-sm">
-                        <SparklesIcon className="w-12 h-12 text-green-600" />
+                    <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-white mb-6 border-4 border-white shadow-2xl overflow-hidden group hover:scale-110 transition-all duration-500 ring-8 ring-green-100/30 p-0">
+                        <img src="/logo.png" alt="FreshFood" className="w-full h-full object-cover" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Đăng nhập</h1>
-                    <p className="text-gray-500 font-medium">FreshFood - Nhóm 5</p>
+                    <p className="text-gray-700 font-bold italic">FreshFood</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -118,12 +118,12 @@ export default function Login() {
                                 placeholder="..."
                             />
                             <p className="mt-4 text-xs text-gray-500 text-center">
-                                {twoFactorMethod === 'EMAIL' 
-                                    ? 'Vui lòng kiểm tra hòm thư của bạn để lấy mã xác nhận.' 
+                                {twoFactorMethod === 'EMAIL'
+                                    ? 'Vui lòng kiểm tra hòm thư của bạn để lấy mã xác nhận.'
                                     : 'Mở ứng dụng Google Authenticator trên điện thoại để lấy mã.'}
                             </p>
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 onClick={() => setTwoFactorNeeded(false)}
                                 className="mt-4 w-full text-sm font-bold text-gray-400 hover:text-gray-600 transition-all"
                             >
@@ -154,7 +154,7 @@ export default function Login() {
                         <div className="w-full border-t border-gray-200"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                        <span className="px-2 bg-white text-gray-400 uppercase tracking-widest text-xs font-bold">Hoặc đăng nhập bằng</span>
+                        <span className="px-2 bg-white text-gray-600 uppercase tracking-widest text-[10px] font-black">Hoặc đăng nhập bằng</span>
                     </div>
                 </div>
 

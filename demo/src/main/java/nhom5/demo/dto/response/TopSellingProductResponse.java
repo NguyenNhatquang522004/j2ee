@@ -1,6 +1,8 @@
 package nhom5.demo.dto.response;
 
 import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,6 +11,8 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TopSellingProductResponse {
     private Long productId;
     private String productName;

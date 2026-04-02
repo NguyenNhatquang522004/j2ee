@@ -8,6 +8,8 @@ import nhom5.demo.enums.OrderStatusEnum;
 import nhom5.demo.enums.PaymentMethodEnum;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,13 +26,16 @@ import java.util.List;
         @Index(name = "idx_order_user", columnList = "user_id"),
         @Index(name = "idx_order_code", columnList = "order_code"),
         @Index(name = "idx_order_status", columnList = "status"),
-        @Index(name = "idx_order_created", columnList = "created_at")
+        @Index(name = "idx_order_created", columnList = "created_at"),
+        @Index(name = "idx_order_deleted_at", columnList = "deleted_at")
 })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE orders SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class Order {
 
     @Id
@@ -125,6 +130,9 @@ public class Order {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;

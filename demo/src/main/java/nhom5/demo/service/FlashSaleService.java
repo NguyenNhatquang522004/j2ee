@@ -13,4 +13,5 @@ public interface FlashSaleService {
     void deleteFlashSale(Long id);
     void toggleStatus(Long id);
     List<FlashSaleResponse> getAllFlashSales();
+    void deactivateExpiredFlashSales();
 }

@@ -18,7 +18,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
+/**
+ * REST CONTROLLER: BatchController
+ * ---------------------------------------------------------
+ * Manages physical inventory batches for products.
+ * Handles stock intake, expiration dates, and real-time inventory levels.
+ * 
+ * Safety Logic: Ensures products are tracked by batch ID at the warehouse level.
+ */
 @Tag(name = "Batches", description = "Quản lý lô hàng (Admin)")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -28,14 +37,20 @@ public class BatchController {
 
     private final BatchService batchService;
 
+    /**
+     * addBatch: Registers a new intake of product inventory.
+     */
     @Operation(summary = "Thêm lô hàng mới")
     @PostMapping
     public ResponseEntity<ApiResponse<BatchResponse>> addBatch(
             @Valid @RequestBody BatchRequest request) {
-        BatchResponse data = batchService.addBatch(request);
+        BatchResponse data = batchService.addBatch(Objects.requireNonNull(request));
         return ResponseEntity.status(201).body(ApiResponse.created(data));
     }
 
+    /**
+     * getAllBatches: Paginated overview of all registered batches in the system.
+     */
     @Operation(summary = "Danh sách tất cả lô hàng (Admin)")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<BatchResponse>>> getAllBatches(
@@ -49,12 +64,18 @@ public class BatchController {
         return ResponseEntity.ok(ApiResponse.success(batchService.getAllBatches(query, pageable)));
     }
 
+    /**
+     * getById: Direct lookup for a specific intake batch.
+     */
     @Operation(summary = "Chi tiết lô hàng theo ID")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BatchResponse>> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(batchService.getBatchById(id)));
+        return ResponseEntity.ok(ApiResponse.success(batchService.getBatchById(Objects.requireNonNull(id))));
     }
 
+    /**
+     * getByProduct: Retrieves inventory history for a specific catalog item.
+     */
     @Operation(summary = "Danh sách lô hàng theo sản phẩm")
     @GetMapping("/product/{productId}")
     public ResponseEntity<ApiResponse<Page<BatchResponse>>> getByProduct(
@@ -65,10 +86,13 @@ public class BatchController {
             @RequestParam(defaultValue = "asc") String direction) {
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<BatchResponse> data = batchService.getBatchesByProduct(productId, pageable);
+        Page<BatchResponse> data = batchService.getBatchesByProduct(Objects.requireNonNull(productId), pageable);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
+    /**
+     * getNearExpiry: Proactive alert system for items reaching their best-before date.
+     */
     @Operation(summary = "Danh sách lô hàng sắp hết hạn")
     @GetMapping("/near-expiry")
     public ResponseEntity<ApiResponse<List<BatchResponse>>> getNearExpiry(
@@ -77,26 +101,35 @@ public class BatchController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
+    /**
+     * updateBatch: Modifies existing batch data (Quantity, Price, Expiry).
+     */
     @Operation(summary = "Cập nhật lô hàng")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<BatchResponse>> updateBatch(
             @PathVariable Long id,
             @Valid @RequestBody BatchRequest request) {
-        BatchResponse data = batchService.updateBatch(id, request);
+        BatchResponse data = batchService.updateBatch(Objects.requireNonNull(id), Objects.requireNonNull(request));
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
+    /**
+     * deleteBatch: Removes an intake record from the database.
+     */
     @Operation(summary = "Xóa lô hàng")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteBatch(@PathVariable Long id) {
-        batchService.deleteBatch(id);
+        batchService.deleteBatch(Objects.requireNonNull(id));
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
+    /**
+     * getTotalStock: Aggregates inventory volume across all active batches for a single product.
+     */
     @Operation(summary = "Tổng tồn kho của sản phẩm")
     @GetMapping("/stock/{productId}")
     public ResponseEntity<ApiResponse<Long>> getTotalStock(@PathVariable Long productId) {
-        long stock = batchService.getTotalStock(productId);
+        long stock = batchService.getTotalStock(Objects.requireNonNull(productId));
         return ResponseEntity.ok(ApiResponse.success(stock));
     }
 }

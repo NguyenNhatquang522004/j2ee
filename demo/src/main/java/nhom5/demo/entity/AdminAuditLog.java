@@ -3,16 +3,22 @@ package nhom5.demo.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "admin_audit_logs")
+@Table(name = "admin_audit_logs", indexes = {
+        @Index(name = "idx_audit_deleted_at", columnList = "deleted_at")
+})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE admin_audit_logs SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class AdminAuditLog {
 
     @Id
@@ -40,4 +46,7 @@ public class AdminAuditLog {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

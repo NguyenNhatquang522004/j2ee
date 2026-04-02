@@ -10,6 +10,8 @@ import nhom5.demo.service.MediaService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.lang.NonNull;
+import java.util.Objects;
 
 import java.io.IOException;
 import java.util.List;
@@ -37,23 +39,20 @@ public class MediaServiceImpl implements MediaService {
             throw new RuntimeException(type + " không được vượt quá " + (maxSize / (1024 * 1024)) + "MB");
         }
 
-        String resourceType = "auto";
-        if (contentType.startsWith("video")) {
-            resourceType = "video";
-        }
+        String resourceType = contentType.startsWith("video") ? "video" : "image";
 
         Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), 
                 ObjectUtils.asMap("resource_type", resourceType));
 
         Media media = Media.builder()
-                .url(uploadResult.get("secure_url").toString())
-                .publicId(uploadResult.get("public_id").toString())
+                .url(Objects.requireNonNull(uploadResult.get("secure_url")).toString())
+                .publicId(Objects.requireNonNull(uploadResult.get("public_id")).toString())
                 .fileName(file.getOriginalFilename())
                 .fileType(file.getContentType())
                 .fileSize(file.getSize())
                 .build();
 
-        Media saved = mediaRepository.save(media);
+        Media saved = mediaRepository.save(Objects.requireNonNull(media));
         return toResponse(saved);
     }
 
@@ -67,7 +66,7 @@ public class MediaServiceImpl implements MediaService {
     @Override
     @Transactional
     public void deleteMedia(Long id) throws IOException {
-        Media media = mediaRepository.findById(id)
+        Media media = mediaRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new RuntimeException("Media not found"));
         
         String resourceType = media.getFileType() != null && media.getFileType().startsWith("video") ? "video" : "image";
@@ -75,7 +74,7 @@ public class MediaServiceImpl implements MediaService {
         mediaRepository.delete(media);
     }
 
-    private MediaResponse toResponse(Media media) {
+    private MediaResponse toResponse(@NonNull Media media) {
         return MediaResponse.builder()
                 .id(media.getId())
                 .url(media.getUrl())

@@ -26,6 +26,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 import java.time.LocalDateTime;
 
 @Service
@@ -45,35 +47,48 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new BusinessException("Tên đăng nhập '" + request.getUsername() + "' đã tồn tại");
+        // Normalize Data
+        String username = request.getUsername().trim();
+        String email = request.getEmail().trim().toLowerCase();
+        String phone = request.getPhone().replaceAll("[^0-9+]", "");
+        if (phone.startsWith("+84")) {
+            phone = "0" + phone.substring(3);
+        } else if (phone.startsWith("84")) {
+            phone = "0" + phone.substring(2);
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException("Email '" + request.getEmail() + "' đã được sử dụng");
+
+        if (userRepository.existsByUsername(username)) {
+            throw new BusinessException("Tên đăng nhập '" + username + "' đã tồn tại");
+        }
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException("Email '" + email + "' đã được sử dụng");
+        }
+        if (userRepository.existsByPhone(phone)) {
+            throw new BusinessException("Số điện thoại '" + phone + "' đã được sử dụng");
         }
 
         User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
+                .username(username)
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
-                .fullName(request.getFullName())
-                .phone(request.getPhone())
-                .address(request.getAddress())
+                .fullName(request.getFullName().trim())
+                .phone(phone)
                 .role(RoleEnum.ROLE_USER)
                 .isActive(true)
                 .provider("LOCAL")
                 .build();
 
-        userRepository.save(user);
+        userRepository.save(Objects.requireNonNull(user));
 
         // Create cart for new user
         Cart cart = Cart.builder().user(user).build();
-        cartRepository.save(cart);
+        cartRepository.save(Objects.requireNonNull(cart));
 
-        String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername(), user.getTokenVersion());
+        String token = jwtTokenProvider.generateTokenFromUsername(Objects.requireNonNull(user.getUsername()), user.getTokenVersion());
         
         // Thông báo tạo tài khoản
         notificationService.createNotification(user, "Chào mừng bạn đến với FreshFood! Tài khoản của bạn đã sẵn sàng.", "SUCCESS", "/profile");
+        mailService.sendWelcomeEmail(user.getEmail(), user.getFullName());
         
         return buildAuthResponse(user, token);
     }
@@ -122,7 +137,7 @@ public class AuthServiceImpl implements AuthService {
         
         if (Boolean.TRUE.equals(user.getIsTwoFactorEnabled())) {
             if ("EMAIL".equals(user.getTwoFactorMethod())) {
-                String code = String.format("%06d", new java.util.Random().nextInt(1000000));
+                String code = String.format("%06d", new java.security.SecureRandom().nextInt(1000000));
                 user.setEmail2faCode(code);
                 user.setEmail2faCodeExpiry(LocalDateTime.now().plusMinutes(5));
                 userRepository.save(user);
@@ -145,7 +160,7 @@ public class AuthServiceImpl implements AuthService {
         // This is to avoid locking them out of the setup profile page.
         // We will warn them in the UI instead.
 
-        String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername(), user.getTokenVersion());
+        String token = jwtTokenProvider.generateTokenFromUsername(Objects.requireNonNull(user.getUsername()), user.getTokenVersion());
         
         // Notify login
         notificationService.createNotification(user, "Đăng nhập thành công", "LOGIN", null);
@@ -180,7 +195,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (verified) {
-            String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername(), user.getTokenVersion());
+            String token = jwtTokenProvider.generateTokenFromUsername(Objects.requireNonNull(user.getUsername()), user.getTokenVersion());
             return buildAuthResponse(user, token);
         } else {
             throw new BusinessException("Mã xác thực không hợp lệ hoặc đã hết hạn");
@@ -200,7 +215,7 @@ public class AuthServiceImpl implements AuthService {
         user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(15));
         userRepository.save(user);
 
-        mailService.sendResetPasswordEmail(user.getEmail(), token);
+        mailService.sendResetPasswordEmail(Objects.requireNonNull(user.getEmail()), token);
     }
 
     @Override
@@ -209,7 +224,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByResetToken(request.getToken())
                 .orElseThrow(() -> new BusinessException("Mã xác nhận không hợp lệ hoặc đã hết hạn"));
 
-        if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+        if (Objects.requireNonNull(user.getResetTokenExpiry()).isBefore(LocalDateTime.now())) {
             throw new BusinessException("Mã xác nhận đã hết hạn");
         }
 
@@ -219,6 +234,9 @@ public class AuthServiceImpl implements AuthService {
         // Tăng token version để thu hồi (invalidate) toàn bộ JWT đã cấp trước đó.
         user.setTokenVersion(user.getTokenVersion() + 1); 
         userRepository.save(user);
+
+        // Gửi cảnh báo bảo mật: Thay đổi mật khẩu thành công
+        mailService.sendSecurityAlert(user.getEmail(), user.getFullName(), "Khôi phục mật khẩu thành công");
     }
 
     @Override
@@ -227,7 +245,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByProviderAndProviderId(request.getProvider(), request.getProviderId())
                 .orElseGet(() -> {
                     // Try to find by email
-                    User existingByEmail = userRepository.findByEmail(request.getEmail())
+                    User existingByEmail = userRepository.findByEmail(request.getEmail().toLowerCase().trim())
                             .orElse(null);
 
                     if (existingByEmail != null) {
@@ -235,17 +253,18 @@ public class AuthServiceImpl implements AuthService {
                         existingByEmail.setProvider(request.getProvider());
                         existingByEmail.setProviderId(request.getProviderId());
                         if (existingByEmail.getFullName() == null || existingByEmail.getFullName().isBlank()) {
-                            existingByEmail.setFullName(request.getFullName());
+                            existingByEmail.setFullName(request.getFullName().trim());
                         }
                         return userRepository.save(existingByEmail);
                     }
 
                     // Create new user
-                    String username = request.getEmail().split("@")[0] + "_" + request.getProviderId().substring(0, 4);
+                    String email = request.getEmail().toLowerCase().trim();
+                    String username = email.split("@")[0] + "_" + request.getProviderId().substring(0, 4);
                     User newUser = User.builder()
                             .username(username)
-                            .email(request.getEmail())
-                            .fullName(request.getFullName())
+                            .email(email)
+                            .fullName(request.getFullName().trim())
                             .password(passwordEncoder.encode(java.util.UUID.randomUUID().toString()))
                             .role(RoleEnum.ROLE_USER)
                             .isActive(true)
@@ -253,9 +272,9 @@ public class AuthServiceImpl implements AuthService {
                             .providerId(request.getProviderId())
                             .build();
 
-                    User savedUser = userRepository.save(newUser);
+                    User savedUser = userRepository.save(Objects.requireNonNull(newUser));
                     // Create cart
-                    cartRepository.save(Cart.builder().user(savedUser).build());
+                    cartRepository.save(Objects.requireNonNull(Cart.builder().user(savedUser).build()));
                     return savedUser;
                 });
 
@@ -263,7 +282,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("Tài khoản của bạn đã bị khoá");
         }
 
-        String token = jwtTokenProvider.generateTokenFromUsername(user.getUsername(), user.getTokenVersion());
+        String token = jwtTokenProvider.generateTokenFromUsername(Objects.requireNonNull(user.getUsername()), user.getTokenVersion());
         
         // Thông báo đăng nhập mạng xã hội
         notificationService.createNotification(user, "Bạn đã đăng nhập thành công qua " + request.getProvider(), "LOGIN", null);

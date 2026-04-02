@@ -6,9 +6,11 @@ import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../context/ModalContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function NotificationDropdown() {
     const { confirm } = useConfirm();
+    const { isManagement } = useAuth();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
@@ -207,7 +209,7 @@ export default function NotificationDropdown() {
 
                     {notifications.length > 0 && (
                         <Link
-                            to="/notifications"
+                            to={isManagement ? "/admin/notifications" : "/notifications"}
                             className="block p-3 text-center text-xs font-black text-gray-500 hover:bg-gray-50 border-t border-gray-50 transition-colors"
                             onClick={() => setIsOpen(false)}
                         >

@@ -11,7 +11,8 @@ import {
     TagIcon,
     XMarkIcon,
     EyeIcon,
-    EyeSlashIcon
+    EyeSlashIcon,
+    InformationCircleIcon
 } from '@heroicons/react/24/outline';
 
 const EMPTY = { name: '', description: '', imageUrl: '', isActive: true };
@@ -24,6 +25,7 @@ export default function AdminCategories() {
     const [editing, setEditing] = useState(null);
     const [form, setForm] = useState(EMPTY);
     const [saving, setSaving] = useState(false);
+    const [isViewOnly, setIsViewOnly] = useState(false);
 
     const fetchCategories = useCallback(async () => {
         setLoading(true);
@@ -37,8 +39,21 @@ export default function AdminCategories() {
 
     useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
-    const openCreate = () => { setEditing(null); setForm(EMPTY); setShowModal(true); };
+    const openCreate = () => { setIsViewOnly(false); setEditing(null); setForm(EMPTY); setShowModal(true); };
     const openEdit = (c) => {
+        setIsViewOnly(false);
+        setEditing(c);
+        setForm({
+            name: c.name || '',
+            description: c.description || '',
+            imageUrl: c.imageUrl || '',
+            isActive: c.isActive ?? true
+        });
+        setShowModal(true);
+    };
+
+    const openView = (c) => {
+        setIsViewOnly(true);
         setEditing(c);
         setForm({
             name: c.name || '',
@@ -148,7 +163,7 @@ export default function AdminCategories() {
                                             </div>
                                             <div>
                                                 <p className="font-black text-gray-900 leading-tight text-sm">{c.name}</p>
-                                                <p className="text-[10px] text-gray-400 font-bold mt-0.5 line-clamp-1 italic italic italic italic italic italic italic italic italic italic italic italic italic italic italic italic italic italic italic italic leading-none">{c.description || 'Không có mô tả'}</p>
+                                                <p className="text-[10px] text-gray-400 font-bold mt-0.5 line-clamp-1 italic leading-none">{c.description || 'Không có mô tả'}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -166,6 +181,13 @@ export default function AdminCategories() {
                                     </td>
                                     <td className="px-5 py-2.5 text-center pr-8">
                                         <div className="flex items-center justify-center gap-1">
+                                            <button 
+                                                onClick={() => openView(c)} 
+                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                                                title="Xem chi tiết"
+                                            >
+                                                <InformationCircleIcon className="w-5 h-5" />
+                                            </button>
                                             <button 
                                                 onClick={() => handleToggle(c.id)} 
                                                 className={`p-1.5 rounded-lg transition-all ${c.isActive ? 'text-gray-400 hover:bg-gray-50' : 'text-green-600 hover:bg-green-50'}`}
@@ -200,9 +222,9 @@ export default function AdminCategories() {
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50 bg-gray-50/30">
-                            <div>
-                                <h2 className="text-xl font-black text-gray-900 tracking-tight">{editing ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới'}</h2>
-                                <p className="text-[11px] text-gray-500 font-medium font-vietnam leading-none">Thông tin phân loại sản phẩm.</p>
+                             <div>
+                                <h2 className="text-xl font-black text-gray-900 tracking-tight">{isViewOnly ? 'Chi tiết danh mục' : editing ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới'}</h2>
+                                <p className="text-[11px] text-gray-500 font-medium font-vietnam leading-none">{isViewOnly ? 'Thông tin phân loại sản phẩm.' : 'Thông tin phân loại sản phẩm mới.'}</p>
                             </div>
                             <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all">
                                 <XMarkIcon className="w-5 h-5 stroke-[3]" />
@@ -214,11 +236,12 @@ export default function AdminCategories() {
                                 <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
                                     <TagIcon className="w-5 h-5" /> Tên danh mục
                                 </label>
-                                <input 
+                                 <input 
                                     required 
                                     value={form.name} 
                                     onChange={(e) => setForm({ ...form, name: e.target.value })} 
-                                    className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 transition-all outline-none border border-transparent focus:border-green-500 text-sm"
+                                    disabled={isViewOnly}
+                                    className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 transition-all outline-none border border-transparent focus:border-green-500 text-sm disabled:opacity-75"
                                     placeholder="Ví dụ: Rau sạch, Trái cây tươi..."
                                 />
                             </div>
@@ -227,10 +250,11 @@ export default function AdminCategories() {
                                 <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1 font-vietnam">
                                     <PhotoIcon className="w-5 h-5" /> URL hình ảnh
                                 </label>
-                                <input 
+                                 <input 
                                     value={form.imageUrl} 
                                     onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} 
-                                    className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 transition-all outline-none border border-transparent focus:border-green-500 text-sm"
+                                    disabled={isViewOnly}
+                                    className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 transition-all outline-none border border-transparent focus:border-green-500 text-sm disabled:opacity-75"
                                     placeholder="https://..." 
                                 />
                             </div>
@@ -239,41 +263,45 @@ export default function AdminCategories() {
                                 <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1 font-vietnam">
                                     Mô tả
                                 </label>
-                                <textarea 
+                                 <textarea 
                                     rows={2} 
                                     value={form.description} 
                                     onChange={(e) => setForm({ ...form, description: e.target.value })} 
-                                    className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-medium text-gray-900 focus:ring-4 focus:ring-green-500/10 transition-all outline-none border border-transparent focus:border-green-500 resize-none font-vietnam text-sm" 
+                                    disabled={isViewOnly}
+                                    className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-medium text-gray-900 focus:ring-4 focus:ring-green-500/10 transition-all outline-none border border-transparent focus:border-green-500 resize-none font-vietnam text-sm disabled:opacity-75" 
                                     placeholder="Mô tả ngắn về danh mục..."
                                 />
                             </div>
 
                             <div className="flex items-center gap-3 p-3 bg-green-50/50 rounded-xl border border-green-100">
-                                <input 
+                                 <input 
                                     type="checkbox" 
                                     id="isActiveCat" 
                                     checked={form.isActive} 
                                     onChange={(e) => setForm({ ...form, isActive: e.target.checked })} 
-                                    className="w-5 h-5 rounded-lg text-green-600 focus:ring-green-500 border-none" 
+                                    disabled={isViewOnly}
+                                    className="w-5 h-5 rounded-lg text-green-600 focus:ring-green-500 border-none disabled:opacity-50" 
                                 />
                                 <label htmlFor="isActiveCat" className="text-sm font-bold text-green-800 font-vietnam">Cho phép hiển thị danh mục này</label>
                             </div>
 
-                            <div className="flex gap-4 pt-2">
+                             <div className="flex gap-4 pt-2">
                                 <button 
                                     type="button" 
                                     onClick={() => setShowModal(false)} 
                                     className="flex-1 px-6 py-3 bg-white border border-gray-100 rounded-xl font-black text-gray-500 hover:bg-gray-100 transition-all font-vietnam text-sm"
                                 >
-                                    Hủy
+                                    {isViewOnly ? 'Đóng' : 'Hủy'}
                                 </button>
-                                <button 
-                                    type="submit" 
-                                    disabled={saving} 
-                                    className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl font-black shadow-lg shadow-green-100 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50 font-vietnam text-sm"
-                                >
-                                    {saving ? 'Đang lưu...' : 'Lưu lại'}
-                                </button>
+                                {!isViewOnly && (
+                                    <button 
+                                        type="submit" 
+                                        disabled={saving} 
+                                        className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl font-black shadow-lg shadow-green-100 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50 font-vietnam text-sm"
+                                    >
+                                        {saving ? 'Đang lưu...' : 'Lưu lại'}
+                                    </button>
+                                )}
                             </div>
                         </form>
                     </div>

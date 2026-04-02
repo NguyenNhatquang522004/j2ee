@@ -29,8 +29,19 @@ public class Address {
     @Column(name = "phone", length = 20)
     private String phone;
 
-    @Column(name = "details", nullable = false, length = 255)
-    private String details;
+    @Column(name = "address_detail", nullable = false, length = 255)
+    private String addressDetail;
+
+    @Column(name = "ward", length = 100)
+    private String ward;
+
+    @Column(name = "district", length = 100)
+    private String district;
+
+    @Column(name = "province", length = 100)
+    private String province;
+
+    private String details; // Backward compatibility or derived if needed
 
     @Column(name = "is_default")
     @Builder.Default

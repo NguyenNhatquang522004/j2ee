@@ -1,0 +1,28 @@
+<div th:fragment="content">
+    <div style="text-align: center; margin-bottom: 25px;">
+        <h2 style="color: #065f46; font-size: 26px; margin-bottom: 10px;">Xin chúc mừng! <span th:text="${fullName}">Anh/Chị</span></h2>
+        <p style="font-size: 18px; color: #111827;">Bạn đã chính thức đạt được một thành tựu mới tại FreshFood!</p>
+    </div>
+    
+    <div style="background-color: #f0fdf9; border: 2px solid #10b981; border-radius: 20px; padding: 30px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.1);">
+        <p style="font-size: 16px; color: #065f46; font-weight: 500; text-transform: uppercase; letter-spacing: 2px;">Xếp hạng thành viên hiện tại:</p>
+        <h1 th:text="${newTier}" style="font-size: 48px; margin: 15px 0; color: #10b981; letter-spacing: -2px; text-shadow: 1px 1px 1px rgba(0,0,0,0.05);">PLATINUM</h1>
+        <p style="color: #047857; font-size: 16px;">Tận hưởng ngay các đặc quyền dành riêng cho khách hàng VIP của chúng tôi!</p>
+    </div>
+    
+    <h3 style="font-size: 18px; color: #111827; margin-bottom: 15px;">Đặc quyền hạng thành viên mới:</h3>
+    <ul style="color: #4b5563;">
+        <li>Ưu tiên chuẩn bị và giao hàng nhanh hơn.</li>
+        <li>Tích điểm thưởng với tỷ lệ cao hơn cho mỗi đơn hàng (VIP Multiplier).</li>
+        <li>Mã giảm giá độc quyền định kỳ gửi vào hòm thư.</li>
+        <li>Quà tặng sinh nhật bất ngờ hàng năm.</li>
+    </ul>
+    
+    <div class="divider"></div>
+    <div style="text-align: center;">
+        <p>Bắt đầu trải nghiệm các đặc quyền mới ngay hôm nay!</p>
+        <a th:href="${frontendUrl} + '/profile'" class="btn">Kiểm tra thông tin thành viên</a>
+    </div>
+    
+    <p style="margin-top: 30px; font-size: 14px; color: #6b7280; text-align: center; font-style: italic;">Cảm ơn Anh/Chị luôn là khách hàng trung thành của FreshFood!</p>
+</div>

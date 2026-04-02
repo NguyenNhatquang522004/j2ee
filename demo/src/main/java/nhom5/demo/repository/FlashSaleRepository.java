@@ -18,4 +18,8 @@ public interface FlashSaleRepository extends JpaRepository<FlashSale, Long> {
 
     @Query("SELECT f FROM FlashSale f WHERE f.startTime > :now AND f.isActive = true ORDER BY f.startTime ASC")
     List<FlashSale> findUpcomingFlashSales(@Param("now") LocalDateTime now);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE FlashSale f SET f.isActive = false WHERE f.endTime < :now AND f.isActive = true")
+    int deactivateExpiredFlashSales(@Param("now") LocalDateTime now);
 }

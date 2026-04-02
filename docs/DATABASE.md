@@ -8,16 +8,22 @@ Dự án FreshFood bao gồm các thực thể cốt lõi sau:
 
 ### 👤 Người dùng (`users`)
 - **`id`**: Khóa chính (Long).
-- **`username`**, **`password`**: Thông tin đăng nhập.
-- **`fullName`**, **`email`**: Thông tin cá nhân.
+- **`username`**: Tên đăng nhập (**Unique, Not Null**).
+- **`password`**: Mật khẩu đã mã hóa (BCrypt).
+- **`fullName`**: Họ tên đầy đủ (**Not Null**, Chỉ Unicode chữ cái & dấu cách).
+- **`email`**: Địa chỉ email (**Unique, Not Null**, Định dạng RFC).
+- **`phone`**: Số điện thoại (**Unique, Not Null**, Định dạng 10 số di động VN).
 - **`avatarUrl`**: Link ảnh đại diện (Lưu trên Cloudinary).
 - **`role`**: Vai trò (`ROLE_USER`, `ROLE_ADMIN`).
 - **`twoFactorEnabled`**, **`twoFactorMethod`**: Cấu hình bảo mật nâng cao.
 
-### 📦 Sản phẩm & Kho (`products`, `categories`, `batches`)
+### 📦 Sản phẩm & Kho (`products`, `categories`, `product_batches`)
 - **`Category`**: Nhóm sản phẩm (Rau, Củ, Quả, Thịt...).
 - **`Product`**: Chi tiết sản phẩm, giá, ảnh, thuộc về một `Category` và `Farm`.
-- **`Batch`**: Quản lý từng lô hàng cụ thể cho một `Product`, ghi nhận ngày nhập, ngày hết hạn và số lượng thực tế.
+- **`ProductBatch`**: Quản lý từng lô hàng cụ thể.
+    - Trạng thái: `ACTIVE`, `DISCOUNT`, `EXPIRED`, `DISCONTINUED`.
+    - Ràng buộc: `productionDate` <= `importDate` < `expiryDate`.
+    - Tự động hóa: Chuyển sang `DISCONTINUED` khi hết hàng, `EXPIRED` khi quá hạn.
 
 ### 🚜 Đối tác (`farms`)
 - **`Farm`**: Thông tin nhà nông/trang trại cung cấp thực phẩm.
@@ -25,7 +31,11 @@ Dự án FreshFood bao gồm các thực thể cốt lõi sau:
 
 ### 🛒 Đơn hàng & Giỏ hàng (`orders`, `order_items`, `cart_items`)
 - **`Order`**: Thông tin đơn hàng (Tổng cộng, Trạng thái, Phương thức thanh toán).
-- **`OrderItem`**: Chi tiết các sản phẩm và số lượng trong từng đơn hàng.
+    - **Định danh**: `orderCode` (ORD-...) bảo mật, chống IDOR.
+    - **Thanh toán**: `isPaid` (Đã thanh toán), `isRefunded` (Đã hoàn tiền), `paidAt`, `refundedAt`.
+    - **Logistics**: Địa chỉ 4 tầng (`addressDetail`, `ward`, `district`, `province`) đồng bộ hóa hoàn toàn.
+    - **Hậu mãi**: `returnReason`, `returnMedia` (Ảnh bằng chứng), `rejectReason`, `returnRequestedAt`.
+- **`OrderItem`**: Chi tiết sản phẩm, số lượng và giá chốt (Price Snapshot) tại thời điểm mua.
 
 ### ⭐ Tương tác & Bảo mật (`reviews`, `coupons`, `admin_audit_logs`)
 - **`Review`**: Nhận xét khách hàng, điểm đánh giá (1-5), trạng thái duyệt và phản hồi của Admin.

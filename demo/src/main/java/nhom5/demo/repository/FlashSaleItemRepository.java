@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface FlashSaleItemRepository extends JpaRepository<FlashSaleItem, Long> {
@@ -19,4 +20,7 @@ public interface FlashSaleItemRepository extends JpaRepository<FlashSaleItem, Lo
 
     @Query("SELECT i FROM FlashSaleItem i WHERE i.product.id = :productId AND i.product.isActive = true AND i.flashSale.isActive = true AND i.flashSale.startTime <= :now AND i.flashSale.endTime >= :now")
     Optional<FlashSaleItem> findActiveByProductId(@Param("productId") Long productId, @Param("now") LocalDateTime now);
+
+    @Query("SELECT i FROM FlashSaleItem i WHERE i.product.id IN :productIds AND i.product.isActive = true AND i.flashSale.isActive = true AND i.flashSale.startTime <= :now AND i.flashSale.endTime >= :now")
+    List<FlashSaleItem> findActiveByProductIds(@Param("productIds") List<Long> productIds, @Param("now") LocalDateTime now);
 }

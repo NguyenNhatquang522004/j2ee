@@ -71,12 +71,18 @@ export default function Compare() {
                                             )}
 
                                             {row.type === 'image' && (
-                                                <div className="w-32 h-32 mx-auto rounded-3xl overflow-hidden shadow-sm border border-gray-100 group-hover:scale-110 transition-transform duration-500">
+                                                <Link to={`/products/${item.slug}`} className="w-32 h-32 mx-auto rounded-3xl overflow-hidden shadow-sm border border-gray-100 group-hover:scale-110 transition-transform duration-500 block">
                                                     <img src={item[row.key]} alt="" className="w-full h-full object-cover" />
-                                                </div>
+                                                </Link>
                                             )}
                                             {row.type === 'text' && (
-                                                <span className="text-sm font-bold text-gray-800">{item[row.key] || 'N/A'}</span>
+                                                row.key === 'name' ? (
+                                                    <Link to={`/products/${item.slug}`} className="text-sm font-black text-gray-800 hover:text-green-700 transition-colors uppercase tracking-tight line-clamp-2">
+                                                        {item[row.key]}
+                                                    </Link>
+                                                ) : (
+                                                    <span className="text-sm font-bold text-gray-800">{item[row.key] || 'N/A'}</span>
+                                                )
                                             )}
                                              {row.type === 'price' && (
                                                 <div className="flex flex-col items-center">

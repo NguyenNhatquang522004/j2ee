@@ -40,4 +40,21 @@ public class SecurityUtils {
         if (html == null) return null;
         return org.jsoup.Jsoup.clean(html, org.jsoup.safety.Safelist.relaxed());
     }
+
+    public static String toSlug(String input) {
+        if (input == null || input.isEmpty()) return "";
+        
+        // Remove diacritics
+        String normalized = java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD);
+        String noDiacritics = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        
+        // Replace 'đ' and 'Đ' specifically
+        String processed = noDiacritics.replace("đ", "d").replace("Đ", "D");
+        
+        return processed.toLowerCase()
+                .replaceAll("[^a-z0-9\\s]", "")
+                .replaceAll("\\s+", "-")
+                .replaceAll("^-+|-+$", "")
+                .trim();
+    }
 }

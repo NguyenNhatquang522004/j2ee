@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { orderService, cartService, mediaService } from '../../api/services';
 import Layout from '../../components/Layout';
+import AdminLayout from '../../components/AdminLayout';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { 
     ChevronLeftIcon, 
@@ -23,6 +25,11 @@ import {
     TrashIcon
 } from '@heroicons/react/24/outline';
 
+/**
+ * STATIC CONFIGURATION:
+ * Standard delivery steps for the progress tracker.
+ * Used to render the visual timeline at the top of the detail page.
+ */
 const STEPS = [
     { key: 'PENDING', label: 'Đặt hàng', icon: ClockIcon },
     { key: 'CONFIRMED', label: 'Đã xác nhận', icon: CheckCircleIcon },
@@ -30,23 +37,52 @@ const STEPS = [
     { key: 'DELIVERED', label: 'Giao hàng thành công', icon: ArchiveBoxIcon },
 ];
 
+/**
+ * PAGE COMPONENT: OrderDetail
+ * ---------------------------------------------------------
+ * Displays exhaustive information about a single order.
+ * This page serves as the final touchpoint for customer-order interaction.
+ * 
+ * Major Features:
+ * 1. Visual Progress Tracking: Real-time status updates with timestamps.
+ * 2. Order Management: Support for "Buy Again," "Cancel Order," and "Return/Refund."
+ * 3. Media Upload: Handles image/video evidence for return requests.
+ * 4. Invoice Printing: Generates a professional PDF-ready invoice view.
+ */
 export default function OrderDetail() {
+    // --- HOOKS & STATE ---
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+    const { user, isManagement } = useAuth();
+    
+    // Parse query params to detect view-only mode
+    const queryParams = new URLSearchParams(location.search);
+    const isViewOnly = queryParams.get('mode') === 'view';
+
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showReturnModal, setShowReturnModal] = useState(false);
     const [returnReason, setReturnReason] = useState('');
     const [selectedImage, setSelectedImage] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
+    const [updating, setUpdating] = useState(false);
 
+    // --- DATA FETCHING ---
     useEffect(() => {
-        orderService.getById(id)
+        orderService.getByCode(id)
             .then(res => setOrder(res.data))
             .catch(() => toast.error('Không thể tải chi tiết đơn hàng'))
             .finally(() => setLoading(false));
     }, [id]);
 
+    // --- ACTION HANDLERS ---
+
+    /**
+     * handleBuyAgain:
+     * Loops through all items in the current order and adds them back to the cart.
+     * Redirects to the cart page upon completion.
+     */
     const handleBuyAgain = async () => {
         const loadingToast = toast.loading('Đang thêm vào giỏ hàng...');
         try {
@@ -63,6 +99,11 @@ export default function OrderDetail() {
         }
     };
 
+    /**
+     * handleCancel:
+     * Triggers the cancellation flow for PENDING orders.
+     * Updates the local state to 'CANCELLED' immediately upon success.
+     */
     const handleCancel = async () => {
         if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
         const loadingToast = toast.loading('Đang xử lý hủy đơn...');
@@ -75,6 +116,11 @@ export default function OrderDetail() {
         }
     };
 
+    /**
+     * handleMediaChange:
+     * Validates and previews the evidence file for return requests.
+     * Supports both images and videos with specific size limits.
+     */
     const handleMediaChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -97,6 +143,11 @@ export default function OrderDetail() {
         setPreviewUrl(URL.createObjectURL(file));
     };
 
+    /**
+     * handleRequestReturn:
+     * Uploads media evidence to Cloudinary and then submits the return request to the backend.
+     * This follows a strict validation rule requiring both a reason and evidence.
+     */
     const handleRequestReturn = async () => {
         if (!returnReason.trim()) {
             toast.error('Vui lòng nhập lý do để chúng tôi có thể xử lý yêu cầu của bạn.');
@@ -130,6 +181,78 @@ export default function OrderDetail() {
         }
     };
 
+    // --- ADMINISTRATIVE ACTIONS (ADMIN ONLY) ---
+
+    const handleAdminStatusUpdate = async (newStatus) => {
+        setUpdating(true);
+        const loadingToast = toast.loading('Đang cập nhật trạng thái...');
+        try {
+            await orderService.updateStatus(order.id, newStatus);
+            const res = await orderService.getByCode(id);
+            setOrder(res.data);
+            toast.success('Đã cập nhật trạng thái đơn hàng', { id: loadingToast });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Cập nhật thất bại', { id: loadingToast });
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    const handleAdminConfirmReturn = async () => {
+        if (!window.confirm('Xác nhận đã nhận lại hàng và đồng ý hoàn tiền?')) return;
+        setUpdating(true);
+        const loadingToast = toast.loading('Đang xác nhận trả hàng...');
+        try {
+            await orderService.confirmReturn(order.id);
+            const res = await orderService.getByCode(id);
+            setOrder(res.data);
+            toast.success('Đã xác nhận trả hàng thành công', { id: loadingToast });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Xác nhận thất bại', { id: loadingToast });
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    const handleAdminRejectReturn = async () => {
+        const reason = window.prompt('Vui lòng nhập lý do từ chối trả hàng:');
+        if (!reason || !reason.trim()) return;
+        
+        setUpdating(true);
+        const loadingToast = toast.loading('Đang xử lý...');
+        try {
+            await orderService.rejectReturn(order.id, reason);
+            const res = await orderService.getByCode(id);
+            setOrder(res.data);
+            toast.success('Đã từ chối yêu cầu trả hàng', { id: loadingToast });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Thao tác thất bại', { id: loadingToast });
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    const handleAdminRefund = async () => {
+        if (!window.confirm('Xác nhận đã thực hiện chuyển khoản hoàn tiền cho khách?')) return;
+        setUpdating(true);
+        const loadingToast = toast.loading('Đang xử lý hoàn tiền...');
+        try {
+            await orderService.refund(order.id);
+            const res = await orderService.getByCode(id);
+            setOrder(res.data);
+            toast.success('Đã đánh dấu hoàn tiền thành công', { id: loadingToast });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Thao tác thất bại', { id: loadingToast });
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    /**
+     * handlePrintInvoice:
+     * Generates a separate document structure for printing.
+     * Uses template literals to build a professional-looking invoice.
+     */
     const handlePrintInvoice = () => {
         const printWindow = window.open('', '_blank');
         const itemsHtml = order.orderItems.map(item => `
@@ -206,15 +329,26 @@ export default function OrderDetail() {
         printWindow.print();
     };
 
+    /**
+     * Utility: Formats date string to Vi locale for user readability.
+     */
     const fmtFullDate = (s) => {
         if(!s) return null;
         const d = new Date(s);
         return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
     };
 
-    if (loading) return <Layout><div className="animate-pulse py-20 text-center">Đang tải...</div></Layout>;
-    if (!order) return <Layout><div className="py-20 text-center text-red-500 font-bold">Không tìm thấy đơn hàng</div></Layout>;
+    // --- RENDER LOGIC ---
 
+    const PageLayout = isManagement ? AdminLayout : Layout;
+
+    if (loading) return <PageLayout><div className="animate-pulse py-20 text-center text-gray-500 font-bold uppercase tracking-widest text-xs">Đang tải dữ liệu đơn hàng...</div></PageLayout>;
+    if (!order) return <PageLayout><div className="py-20 text-center text-red-500 font-bold">Không tìm thấy đơn hàng trong hệ thống</div></PageLayout>;
+
+    /**
+     * Step Resolver: 
+     * Dynamically determines which visual steps to show based on order lifecycle.
+     */
     let displaySteps = [];
     if (order.status === 'CANCELLED') {
         displaySteps = [
@@ -245,11 +379,47 @@ export default function OrderDetail() {
     }
 
     return (
-        <Layout>
-            <div className="min-h-screen bg-gray-50/30">
-                <div className="max-w-6xl mx-auto px-4 py-10 sm:py-16">
+        <PageLayout>
+            <div className={`min-h-screen ${isManagement ? 'bg-white' : 'bg-gray-50/30'}`}>
+                <div className={`${isManagement ? 'max-w-full' : 'max-w-6xl mx-auto'} px-4 py-6 sm:py-10`}>
+                    
+                    {/* Admin Action Panel */}
+                    {isManagement && (
+                        <div className="mb-8 p-6 bg-green-50 border border-green-100 rounded-3xl flex flex-wrap items-center justify-between gap-6 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div>
+                                <h4 className="text-sm font-black text-green-900 uppercase tracking-widest mb-1 italic">Bảng điều khiển Quản trị</h4>
+                                <p className="text-xs text-green-700 font-bold">Bạn đang xem đơn hàng với tư cách Quản lý hệ thống.</p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-green-200">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase italic">Trạng thái:</span>
+                                    <select 
+                                        value={order.status}
+                                        disabled={isViewOnly || updating}
+                                        onChange={(e) => handleAdminStatusUpdate(e.target.value)}
+                                        className={`bg-transparent text-xs font-black text-green-700 outline-none uppercase ${isViewOnly ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                    >
+                                        {['PENDING', 'CONFIRMED', 'PACKAGING', 'SHIPPING', 'DELIVERED', 'RETURN_REQUESTED', 'RETURNED', 'RETURN_REJECTED', 'CANCELLED'].map(s => (
+                                            <option key={s} value={s}>{s}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {order.status === 'RETURN_REQUESTED' && (
+                                    <>
+                                        <button onClick={handleAdminConfirmReturn} disabled={updating} className="px-6 py-2 bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-orange-100 hover:scale-105 transition-all">Đồng ý Trả hàng</button>
+                                        <button onClick={handleAdminRejectReturn} disabled={updating} className="px-6 py-2 bg-red-100 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-2xl border border-red-200 hover:bg-red-200 transition-all">Từ chối</button>
+                                    </>
+                                )}
+
+                                {((order.status === 'CANCELLED' && order.isPaid) || order.status === 'RETURNED') && !order.isRefunded && (
+                                    <button onClick={handleAdminRefund} disabled={updating} className="px-6 py-2 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-red-100 hover:scale-105 transition-all">Xác thực Hoàn tiền</button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     {/* Breadcrumbs & Header */}
-                    <Link to="/orders" className="inline-flex items-center gap-2 text-gray-400 hover:text-green-600 transition-all mb-8 group">
+                    <Link to={isManagement ? "/admin/orders" : "/orders"} className="inline-flex items-center gap-2 text-gray-400 hover:text-green-600 transition-all mb-8 group">
                         <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:-translate-x-1 transition-transform">
                             <ChevronLeftIcon className="w-4 h-4" />
                         </div>
@@ -326,7 +496,7 @@ export default function OrderDetail() {
                                                     <div className="min-h-[40px] flex flex-col items-center justify-start">
                                                         {step.time ? (
                                                             <p className="text-[10px] text-gray-400 font-bold bg-gray-50 px-3 py-1.5 rounded-full shadow-inner">
-                                                                {fmtFullDate(step.time)}
+                                                                 {fmtFullDate(step.time)}
                                                             </p>
                                                         ) : (
                                                             <div className="space-y-1 transform group-hover:translate-y-1 transition-transform">
@@ -355,8 +525,8 @@ export default function OrderDetail() {
                                 </div>
                                 <div className="space-y-8">
                                     {order.orderItems?.map((item) => (
-                                        <div key={item.orderItemId} className="flex items-center gap-8 p-6 rounded-[2rem] border border-transparent hover:border-green-100 hover:bg-green-50/20 transition-all duration-500 group">
-                                            <div className="w-24 h-24 rounded-3xl bg-gray-100 object-cover overflow-hidden border-4 border-white shadow-lg shrink-0 group-hover:scale-105 transition-transform duration-500">
+                                        <div key={item.orderItemId} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 p-6 rounded-[2rem] border border-transparent hover:border-green-100 hover:bg-green-50/20 transition-all duration-500 group">
+                                            <div className="w-20 h-20 rounded-2xl bg-gray-100 object-cover overflow-hidden border-2 border-white shadow-md shrink-0 group-hover:scale-105 transition-transform duration-500">
                                                 <img 
                                                     src={item.productImageUrl || 'https://via.placeholder.com/150'} 
                                                     alt={item.productName}
@@ -364,27 +534,27 @@ export default function OrderDetail() {
                                                 />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <h4 className="font-black text-gray-900 text-lg mb-2 group-hover:text-green-700 transition-colors uppercase tracking-tight">{item.productName}</h4>
-                                                <div className="flex items-center gap-4 text-sm font-bold">
+                                                <h4 className="font-black text-gray-900 text-base sm:text-lg mb-1 sm:mb-2 group-hover:text-green-700 transition-colors uppercase tracking-tight">{item.productName}</h4>
+                                                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs font-bold">
                                                     <span className="py-1 px-3 bg-gray-100 rounded-lg text-gray-500">{(item.unitPrice || 0).toLocaleString('vi-VN')}đ</span>
                                                     <span className="text-gray-400">×</span>
                                                     <span className="py-1 px-3 bg-green-50 text-green-700 rounded-lg">{item.quantity} sản phẩm</span>
                                                 </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-2xl font-black text-green-600 tabular-nums">{(item.subtotal || 0).toLocaleString('vi-VN')}đ</p>
+                                            <div className="w-full sm:w-auto text-right border-t sm:border-t-0 border-gray-50 pt-3 sm:pt-0">
+                                                <p className="text-xl sm:text-2xl font-black text-green-600 tabular-nums">{(item.subtotal || 0).toLocaleString('vi-VN')}đ</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Delivery & Payment Info (Dual Cards Grid) */}
+                            {/* Delivery & Payment Info */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
                                 <div className="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-md">
-                                     <h3 className="text-xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-50 flex items-center gap-2">
-                                        <div className="w-2 h-6 bg-green-500 rounded-full"></div>
-                                        Thông tin giao hàng
+                                     <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-8 pb-4 border-b border-gray-50 flex items-center gap-2">
+                                        <div className="w-2 h-6 bg-green-500 rounded-full shrink-0"></div>
+                                        <span className="truncate">Thông tin giao hàng</span>
                                      </h3>
                                      <div className="grid grid-cols-1 gap-4">
                                         <div className="space-y-1">
@@ -404,33 +574,33 @@ export default function OrderDetail() {
                                         <div className="space-y-1">
                                             <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-1">Số nhà, tên đường</p>
                                             <div className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 font-bold text-sm italic shadow-inner">
-                                                {order.shippingAddress?.split(', ')[0] || order.shippingAddress}
+                                                {order.addressDetail || order.shippingAddress?.split(', ')[0] || '---'}
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div className="space-y-4">
                                             <div className="space-y-1">
-                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-1">Phường/Xã</p>
-                                                <div className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 font-black text-[11px] shadow-inner">
-                                                    {order.shippingAddress?.split(', ')[1] || '---'}
+                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest ml-1">Phường/Xã</p>
+                                                <div className="w-full px-5 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 font-black text-sm shadow-inner leading-tight">
+                                                    {order.ward || order.shippingAddress?.split(', ')[1] || '---'}
                                                 </div>
                                             </div>
                                             <div className="space-y-1">
-                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-1">Quận/Huyện</p>
-                                                <div className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 font-black text-[11px] shadow-inner">
-                                                    {order.shippingAddress?.split(', ')[2] || '---'}
+                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest ml-1">Quận/Huyện</p>
+                                                <div className="w-full px-5 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 font-black text-sm shadow-inner leading-tight">
+                                                    {order.district || order.shippingAddress?.split(', ')[2] || '---'}
                                                 </div>
                                             </div>
                                             <div className="space-y-1">
-                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-1">Tỉnh/TP</p>
-                                                <div className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 font-black text-[11px] shadow-inner">
-                                                    {order.shippingAddress?.split(', ')[3] || '---'}
+                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest ml-1">Tỉnh/TP</p>
+                                                <div className="w-full px-5 py-3 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 font-black text-sm shadow-inner leading-tight">
+                                                    {order.province || order.shippingAddress?.split(', ')[3] || '---'}
                                                 </div>
                                             </div>
                                         </div>
 
                                         {order.note && (
-                                            <div className="mt-8 p-6 bg-gray-50 rounded-[1.5rem] border-l-4 border-green-500 relative overflow-hidden">
+                                            <div className="mt-4 p-6 bg-gray-50 rounded-[1.5rem] border-l-4 border-green-500 relative overflow-hidden">
                                                 <p className="text-[10px] text-gray-400 font-black uppercase mb-2 tracking-widest">Ghi chú vận chuyển</p>
                                                 <p className="text-gray-600 font-medium text-sm italic leading-relaxed">"{order.note}"</p>
                                             </div>
@@ -438,40 +608,38 @@ export default function OrderDetail() {
                                      </div>
                                 </div>
 
-                                <div className="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-md">
-                                     <h3 className="text-xl font-bold text-gray-900 mb-8 pb-4 border-b border-gray-50 flex items-center gap-2">
-                                        <div className="w-2 h-6 bg-blue-500 rounded-full"></div>
-                                        Hình thức thanh toán
+                                <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-md">
+                                     <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-8 pb-4 border-b border-gray-50 flex items-center gap-2">
+                                        <div className="w-2 h-6 bg-blue-500 rounded-full shrink-0"></div>
+                                        <span>Hình thức thanh toán</span>
                                      </h3>
                                      <div className="flex flex-col h-[calc(100%-80px)] justify-between">
                                         <div className="space-y-6">
-                                            <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 flex items-center gap-5">
-                                                <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center shrink-0">
-                                                    <CreditCardIcon className="w-6 h-6 text-blue-600" />
+                                            <div className="p-4 bg-blue-50/50 rounded-3xl border border-blue-100 flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 text-center sm:text-left transition-all duration-300">
+                                                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-white shadow-sm flex items-center justify-center shrink-0">
+                                                    <CreditCardIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                                                 </div>
-                                                <div>
-                                                    <p className="text-gray-400 text-[11px] font-bold uppercase tracking-wider mb-1">Phương thức</p>
-                                                    <p className="text-gray-900 font-black text-lg leading-none">
-                                                        {order.paymentMethod === 'COD' ? 'Thanh toán trực tiếp' : order.paymentMethod}
+                                                <div className="flex-1 min-w-0 w-full overflow-hidden">
+                                                    <p className="text-gray-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Phương thức</p>
+                                                    <p className="text-gray-900 font-extrabold text-[11px] sm:text-base leading-tight break-words" title={order.paymentMethod}>
+                                                        {order.paymentMethod === 'COD' ? 'Thu hộ (COD)' : 
+                                                         order.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' :
+                                                         order.paymentMethod === 'MOMO' ? 'Ví MoMo' :
+                                                         order.paymentMethod === 'VNPAY' ? 'Ví VNPay' :
+                                                         order.paymentMethod}
                                                     </p>
                                                 </div>
                                             </div>
 
-                                            <div className="p-6 bg-gray-50 rounded-3xl space-y-4">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-gray-500 text-sm font-medium">Trạng thái:</span>
-                                                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                                            <div className="p-4 sm:p-5 bg-gray-50 rounded-3xl">
+                                                <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-2.5 text-center sm:text-left">
+                                                    <span className="text-gray-500 text-[11px] sm:text-xs font-medium whitespace-nowrap shrink-0">Trạng thái:</span>
+                                                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border whitespace-nowrap shrink-0 ${
                                                         order.isPaid ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-100'
                                                     }`}>
                                                         {order.isPaid ? 'ĐÃ QUYẾT TOÁN' : 'CHƯA TRẢ'}
                                                     </span>
                                                 </div>
-                                                {order.deliveredAt && (
-                                                    <div className="flex justify-between items-center text-xs border-t border-gray-200/50 pt-4">
-                                                        <span className="text-gray-400 font-medium">Xác nhận ngày:</span>
-                                                        <span className="text-gray-900 font-bold">{fmtFullDate(order.deliveredAt)}</span>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
 
@@ -488,86 +656,67 @@ export default function OrderDetail() {
                             </div>
                         </div>
 
-                        {/* Right Column: Order Summary (Glassmorphism Sticky) */}
+                        {/* Right Column: Order Summary */}
                         <div className="space-y-8 sticky top-12">
-                            <div className="bg-white/80 backdrop-blur-3xl rounded-[2.5rem] p-10 border border-white shadow-[0_30px_60px_rgba(0,0,0,0.06)] relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
-                                <h3 className="text-2xl font-black text-gray-900 mb-10 tracking-tight">Thanh toán</h3>
+                            <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-gray-100 shadow-[0_30px_60px_rgba(0,0,0,0.06)] relative overflow-hidden">
+                                <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-10 tracking-tight">Thanh toán</h3>
                                 
                                 <div className="space-y-6">
-                                    <div className="flex justify-between items-center text-sm font-bold">
-                                        <span className="text-gray-400 uppercase tracking-widest">Tiền hàng</span>
-                                        <span className="text-gray-900 text-lg tracking-tight tabular-nums">{(order.totalAmount || 0).toLocaleString('vi-VN')}đ</span>
+                                    <div className="flex justify-between items-center gap-4 text-[11px] sm:text-sm font-bold text-gray-400 uppercase tracking-widest">
+                                        <span className="shrink-0">Tiền hàng</span>
+                                        <span className="text-gray-900 whitespace-nowrap">{(order.totalAmount || 0).toLocaleString('vi-VN')}đ</span>
                                     </div>
-                                    <div className="flex justify-between items-center text-sm font-bold">
-                                        <span className="text-gray-400 uppercase tracking-widest">Phí vận chuyển</span>
-                                        <span className={order.shippingFee === 0 ? "text-green-600 font-black" : "text-gray-900"}>
+                                    <div className="flex justify-between items-center gap-4 text-[11px] sm:text-sm font-bold text-gray-400 uppercase tracking-widest">
+                                        <span className="shrink-0">Phí vận chuyển</span>
+                                        <span className={order.shippingFee === 0 ? "text-green-600 whitespace-nowrap" : "text-gray-900 whitespace-nowrap"}>
                                             {order.shippingFee === 0 ? "Miễn phí" : `${(Number(order.shippingFee) || 0).toLocaleString('vi-VN')}đ`}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between items-center text-sm font-bold">
-                                        <span className="text-gray-400 uppercase tracking-widest">Thuế VAT (0%)</span>
-                                        <span className="text-gray-900 tracking-tight italic">0đ</span>
-                                    </div>
                                     {order.discountAmount > 0 && (
-                                        <div className="flex justify-between items-center text-sm font-bold px-4 py-3 bg-green-50 rounded-2xl border border-green-100">
-                                            <span className="text-green-700 uppercase tracking-[0.1em] flex items-center gap-2">
-                                                🔖 {order.couponCode || 'VOUCHER'}
-                                            </span>
-                                            <span className="text-green-700 font-black tracking-tight tabular-nums">-{(Number(order.discountAmount) || 0).toLocaleString('vi-VN')}đ</span>
+                                        <div className="flex flex-wrap justify-between items-center gap-2 px-4 py-3 bg-green-50 rounded-2xl border border-green-100">
+                                            <span className="text-green-700 text-[10px] sm:text-sm">🔖 GIẢM GIÁ</span>
+                                            <span className="text-green-700 font-black text-[10px] sm:text-sm whitespace-nowrap">-{(Number(order.discountAmount) || 0).toLocaleString('vi-VN')}đ</span>
                                         </div>
                                     )}
                                     
                                     <div className="pt-8 border-t border-gray-100 flex flex-col items-end gap-1">
-                                        <span className="font-black text-gray-400 text-xs uppercase tracking-widest mb-1">Tổng cộng</span>
-                                        <div className="text-5xl font-black text-green-600 tracking-tighter tabular-nums drop-shadow-sm">
-                                            {(Number(order.finalAmount) || 0).toLocaleString('vi-VN')}<span className="text-2xl ml-1">đ</span>
+                                        <span className="font-black text-gray-400 text-xs uppercase tracking-widest">Tổng cộng</span>
+                                        <div className="text-5xl font-black text-green-600 tracking-tighter tabular-nums">
+                                            {(Number(order.finalAmount) || 0).toLocaleString('vi-VN')}đ
                                         </div>
                                     </div>
 
-                                    {order.status === 'RETURN_REJECTED' && (
-                                        <div className="mt-6 p-6 bg-red-50/50 rounded-3xl border border-red-100 shadow-sm relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/5 rounded-full -mr-10 -mt-10"></div>
-                                            <div className="flex items-start gap-4">
-                                                <div className="w-10 h-10 rounded-2xl bg-red-100 flex items-center justify-center shrink-0">
-                                                    <XCircleIcon className="w-5 h-5 text-red-600" />
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-xs font-black text-red-600 uppercase tracking-widest mb-1">Yêu cầu bị từ chối</h4>
-                                                    <p className="text-gray-600 text-[11px] font-bold leading-relaxed italic pr-4">"{order.rejectReason || 'Không có lý do chi tiết'}"</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Actions */}
                                     <div className="mt-10 space-y-4">
-                                        <button 
-                                            onClick={handleBuyAgain} 
-                                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-green-100 transition-all duration-300 flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
-                                        >
-                                            <ArrowPathIcon className="w-5 h-5" />
-                                            MUA LẠI NGAY
-                                        </button>
-                                        
-                                        {order.status === 'DELIVERED' && (
-                                            <button 
-                                                onClick={() => setShowReturnModal(true)} 
-                                                className="w-full bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold py-4 rounded-2xl border border-orange-200 transition-all duration-300 flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
-                                            >
-                                                <ReceiptRefundIcon className="w-5 h-5" />
-                                                YÊU CẦU TRẢ HÀNG
-                                            </button>
-                                        )}
+                                        {!isManagement && (
+                                            <>
+                                                <button 
+                                                    onClick={handleBuyAgain} 
+                                                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
+                                                >
+                                                    <ArrowPathIcon className="w-5 h-5" />
+                                                    MUA LẠI NGAY
+                                                </button>
+                                                
+                                                {order.status === 'DELIVERED' && (
+                                                    <button 
+                                                        onClick={() => setShowReturnModal(true)} 
+                                                        className="w-full bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold py-4 rounded-2xl border border-orange-200 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
+                                                    >
+                                                        <ReceiptRefundIcon className="w-5 h-5" />
+                                                        YÊU CẦU TRẢ HÀNG
+                                                    </button>
+                                                )}
 
-                                        {order.status === 'PENDING' && (
-                                            <button 
-                                                onClick={handleCancel} 
-                                                className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-4 rounded-2xl border border-red-200 transition-all duration-300 flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
-                                            >
-                                                <XMarkIcon className="w-5 h-5" />
-                                                HỦY ĐƠN HÀNG
-                                            </button>
+                                                {order.status === 'PENDING' && (
+                                                    <button 
+                                                        onClick={handleCancel} 
+                                                        className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-4 rounded-2xl border border-red-200 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
+                                                    >
+                                                        <XMarkIcon className="w-5 h-5" />
+                                                        HỦY ĐƠN HÀNG
+                                                    </button>
+                                                )}
+                                            </>
                                         )}
 
                                         <button 
@@ -580,135 +729,64 @@ export default function OrderDetail() {
                                     </div>
                                 </div>
                             </div>
-                            
-                            <p className="text-center text-[10px] text-gray-300 font-bold uppercase tracking-[0.2em] px-10 leading-loose">
-                                Bạn cần hỗ trợ? <br/>
-                                Hotline: <span className="text-green-500">1900-FRESHFOOD</span> (8:00 - 21:00)
-                            </p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Premium Return Reason Modal */}
+            {/* Return Modal */}
             {showReturnModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-                    {/* Backdrop */}
-                    <div 
-                        className="absolute inset-0 bg-gray-900/40 backdrop-blur-md transition-opacity duration-500"
-                        onClick={() => setShowReturnModal(false)}
-                    ></div>
-                    
-                    {/* Modal Card */}
-                    <div className="relative w-full max-w-xl bg-white rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.2)] overflow-hidden animate-in zoom-in-95 fade-in duration-300">
-                        {/* Decorative background element */}
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-orange-50 rounded-full blur-3xl -mr-10 -mt-10"></div>
-                        
-                        <div className="relative p-10 sm:p-14">
-                            <div className="flex justify-between items-start mb-10">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-16 h-16 rounded-[1.5rem] bg-orange-100 flex items-center justify-center shrink-0">
-                                        <ReceiptRefundIcon className="w-8 h-8 text-orange-600" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Lý do trả hàng</h3>
-                                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Đơn hàng #{order.orderCode}</p>
-                                    </div>
-                                </div>
-                                <button 
-                                    onClick={() => setShowReturnModal(false)}
-                                    className="p-3 hover:bg-gray-100 rounded-2xl text-gray-400 transition-colors"
-                                >
-                                    <XMarkIcon className="w-6 h-6" />
-                                </button>
-                            </div>
+                    <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-md" onClick={() => setShowReturnModal(false)}></div>
+                    <div className="relative w-full max-w-xl bg-white rounded-[3rem] shadow-2xl p-10 sm:p-14 overflow-hidden">
+                        <div className="flex justify-between items-start mb-10">
+                            <h3 className="text-2xl font-black text-gray-900 tracking-tight">Lý do trả hàng</h3>
+                            <button onClick={() => setShowReturnModal(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors"><XMarkIcon className="w-6 h-6 text-gray-400" /></button>
+                        </div>
 
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-2">Mô tả chi tiết lý do</label>
-                                    <textarea 
-                                        autoFocus
-                                        value={returnReason}
-                                        onChange={(e) => setReturnReason(e.target.value)}
-                                        placeholder="Ví dụ: Sản phẩm bị dập nát khi vận chuyển, Giao thiếu số lượng, Sản phẩm không đúng mô tả..."
-                                        className="w-full h-40 px-8 py-6 bg-gray-50 border border-gray-100 focus:border-orange-200 focus:ring-8 focus:ring-orange-500/5 rounded-[2rem] outline-none text-gray-700 font-medium text-sm leading-relaxed transition-all placeholder:text-gray-300 resize-none shadow-inner"
-                                    ></textarea>
-                                </div>
+                        <div className="space-y-6">
+                            <textarea 
+                                value={returnReason}
+                                onChange={(e) => setReturnReason(e.target.value)}
+                                placeholder="Mô tả kỹ lý do trả hàng (sản phẩm hư hỏng, thiếu hàng...)"
+                                className="w-full h-40 px-8 py-6 bg-gray-50 border border-gray-100 rounded-[2rem] outline-none text-gray-700 font-medium text-sm resize-none shadow-inner"
+                            />
 
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between ml-2">
-                                        <label className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em]">Hình ảnh/Video minh chứng</label>
-                                        <span className="text-[9px] text-gray-400 italic">Ảnh &lt; 5MB | Video &lt; 20MB</span>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <label className={`relative flex-1 flex flex-col items-center justify-center h-48 rounded-[2rem] border-2 border-dashed transition-all cursor-pointer group ${
-                                            previewUrl ? 'border-transparent' : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50/30'
-                                        }`}>
-                                            <input 
-                                                type="file" 
-                                                accept="image/*,video/*" 
-                                                className="hidden" 
-                                                onChange={handleMediaChange}
-                                            />
-                                            
-                                            {previewUrl ? (
-                                                <div className="relative w-full h-full rounded-[2rem] overflow-hidden group/img bg-black shadow-inner">
-                                                    {selectedImage?.type.startsWith('video/') ? (
-                                                        <video src={previewUrl} className="w-full h-full object-contain" autoPlay muted loop playsInline />
-                                                    ) : (
-                                                        <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
-                                                    )}
-                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                                        <PlusIcon className="w-8 h-8 text-white" />
-                                                        <p className="text-white text-[10px] font-black uppercase tracking-widest">Thay đổi tệp</p>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-white transition-colors">
-                                                        <PhotoIcon className="w-6 h-6 text-gray-400 group-hover:text-orange-500" />
-                                                    </div>
-                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest group-hover:text-orange-600">Nhấn để tải ảnh/video</p>
-                                                </div>
-                                            )}
-                                        </label>
-
-                                        {previewUrl && (
-                                            <button 
-                                                onClick={() => {setSelectedImage(null); setPreviewUrl(null);}}
-                                                className="w-14 h-14 rounded-2xl bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors shrink-0 self-end mb-1"
-                                                title="Xóa ảnh"
-                                            >
-                                                <TrashIcon className="w-6 h-6" />
-                                            </button>
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-2">Minh chứng (Ảnh/Video)</label>
+                                <div className="flex gap-4">
+                                    <label className={`relative flex-1 flex flex-col items-center justify-center h-48 rounded-[2rem] border-2 border-dashed transition-all cursor-pointer ${previewUrl ? 'border-transparent' : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50/30'}`}>
+                                        <input type="file" accept="image/*,video/*" className="hidden" onChange={handleMediaChange} />
+                                        {previewUrl ? (
+                                            <div className="relative w-full h-full rounded-[2rem] overflow-hidden group bg-black shadow-inner">
+                                                {selectedImage?.type.startsWith('video/') ? (
+                                                    <video src={previewUrl} className="w-full h-full object-contain" autoPlay muted loop />
+                                                ) : (
+                                                    <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                                                )}
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><PlusIcon className="w-8 h-8 text-white" /></div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-3">
+                                                <PhotoIcon className="w-8 h-8 text-gray-300" />
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Tải lên tệp</p>
+                                            </div>
                                         )}
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button 
-                                        onClick={() => setShowReturnModal(false)}
-                                        className="w-full py-5 rounded-2xl text-gray-500 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 transition-colors"
-                                    >
-                                        Hủy bỏ
-                                    </button>
-                                    <button 
-                                        onClick={handleRequestReturn}
-                                        className="w-full py-5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-orange-100 transition-all hover:scale-[1.02] active:scale-95"
-                                    >
-                                        Gửi yêu cầu
-                                    </button>
+                                    </label>
+                                    {previewUrl && (
+                                        <button onClick={() => {setSelectedImage(null); setPreviewUrl(null);}} className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center shrink-0 self-end mb-1"><TrashIcon className="w-6 h-6" /></button>
+                                    )}
                                 </div>
                             </div>
-                            
-                            <p className="mt-10 text-center text-[10px] text-gray-400 font-medium leading-relaxed italic">
-                                Chú ý: Đội ngũ FreshFood sẽ kiểm tra yêu cầu và phản hồi cho bạn trong vòng 24h làm việc. 
-                                Vui lòng giữ sản phẩm ở trạng thái nguyên vẹn.
-                            </p>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <button onClick={() => setShowReturnModal(false)} className="w-full py-5 rounded-2xl text-gray-500 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 transition-colors">Hủy</button>
+                                <button onClick={handleRequestReturn} className="w-full py-5 bg-orange-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl transition-transform active:scale-95">Gửi yêu cầu</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
-        </Layout>
+        </PageLayout>
     );
 }

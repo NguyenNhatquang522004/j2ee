@@ -59,19 +59,18 @@ export default function Footer() {
     };
 
     return (
-        <footer className="bg-[#f2f6f4] text-[#2d4a3e] mt-20 pt-20 pb-10 border-t border-[#dae5e0]">
+        <footer className="bg-[#e9f0ed] text-[#2d4a3e] mt-20 pt-20 pb-10 border-t border-[#dae5e0]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-16 mb-20">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-20">
                     {/* Brand Section */}
-                    <div className="space-y-8 lg:col-span-1">
-                        <Link to="/" className="flex items-center gap-3 group">
-                            <div className="w-12 h-12 rounded-2xl bg-[#1a3c31] flex items-center justify-center text-white shadow-xl group-hover:bg-[#10b981] transition-all duration-500">
-                                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                                </svg>
+                    <div className="space-y-8 lg:col-span-3">
+                        <Link to="/" className="flex items-center gap-4 group">
+                            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-2xl group-hover:scale-110 transition-all duration-500 border border-green-100 p-0">
+                                <img src="/logo.png" alt="FreshFood" className="w-full h-full object-cover" />
                             </div>
-                            <span className="text-2xl font-black tracking-tight text-[#1a3c31] uppercase italic">
-                                {settings.STORE_NAME}
+                            <span className="text-xl font-black tracking-tighter text-[#1a3c31] leading-none block uppercase">
+                                FRESHFOOD
+                                <span className="block text-[10px] text-[#10b981] mt-1 font-bold uppercase tracking-[0.2em] whitespace-nowrap">Cửa hàng thực phẩm sạch</span>
                             </span>
                         </Link>
                         <p className="text-sm leading-relaxed font-semibold italic text-[#4a6d5f]">
@@ -96,7 +95,7 @@ export default function Footer() {
                     </div>
 
                     {/* Quick Links Part 1 */}
-                    <div>
+                    <div className="lg:col-span-2">
                         <h4 className="text-[#1a3c31] font-black text-[10px] uppercase tracking-[0.3em] mb-10 flex items-center gap-3">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
                             Cửa hàng
@@ -110,7 +109,7 @@ export default function Footer() {
                     </div>
 
                     {/* Quick Links Part 2 */}
-                    <div>
+                    <div className="lg:col-span-2 text-left md:text-center lg:text-left">
                         <h4 className="text-[#1a3c31] font-black text-[10px] uppercase tracking-[0.3em] mb-10 flex items-center gap-3">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
                             Tài khoản
@@ -124,7 +123,7 @@ export default function Footer() {
                     </div>
 
                     {/* Quick Links Part 3 */}
-                    <div>
+                    <div className="lg:col-span-2">
                         <h4 className="text-[#1a3c31] font-black text-[10px] uppercase tracking-[0.3em] mb-10 flex items-center gap-3">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
                             Hỗ trợ
@@ -138,7 +137,7 @@ export default function Footer() {
                     </div>
 
                     {/* Newsletter */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-3">
                         <h4 className="text-[#1a3c31] font-black text-[10px] uppercase tracking-[0.3em] mb-10 flex items-center gap-3">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
                             Bản tin
@@ -155,7 +154,7 @@ export default function Footer() {
                             <button 
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-[#1a3c31] hover:bg-[#10b981] text-white font-black py-4 rounded-[1.25rem] shadow-xl shadow-[#1a3c31]/10 transition-all uppercase text-[10px] tracking-[0.2em] active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                className="w-full bg-[#10b981] hover:bg-green-600 text-white font-black py-4 rounded-[1.25rem] shadow-xl shadow-green-500/10 transition-all uppercase text-[10px] tracking-[0.2em] active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {loading ? (
                                     <>
@@ -173,51 +172,51 @@ export default function Footer() {
 
                 <div className="pt-10 border-t border-[#dae5e0] flex flex-col gap-10">
                     {/* Sage Contact Row */}
-                    <div className="flex flex-wrap justify-center md:justify-between items-center gap-12 py-10 px-14 bg-white/60 rounded-[3rem] border border-[#dae5e0] shadow-sm group backdrop-blur-sm relative overflow-hidden">
+                    <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-8 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-[#dae5e0] py-8 md:py-10 bg-white/60 rounded-3xl md:rounded-[3rem] border border-[#dae5e0] shadow-sm group backdrop-blur-sm relative overflow-hidden">
                         <div className="absolute -right-20 -top-20 w-64 h-64 bg-[#10b981]/5 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
                         
-                        <div className="flex items-center gap-5 relative z-10">
-                            <div className="w-14 h-14 rounded-3xl bg-[#1a3c31] flex items-center justify-center text-white shadow-lg group-hover:bg-[#10b981] transition-all">
-                                <DevicePhoneMobileIcon className="w-6 h-6" />
+                        <div className="flex items-center gap-5 relative z-10 justify-center px-10">
+                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl md:rounded-3xl bg-[#10b981] flex items-center justify-center text-white shadow-lg transition-all shrink-0">
+                                <DevicePhoneMobileIcon className="w-5 h-5 md:w-6 md:h-6" />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#5a7d6e] mb-1 italic">Hotline 24/7</p>
-                                <p className="font-black text-[#1a3c31] text-2xl tracking-tight">{settings.STORE_PHONE}</p>
+                                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-[#5a7d6e] mb-1 italic">Hotline 24/7</p>
+                                <p className="font-black text-[#1a3c31] text-xl md:text-2xl tracking-tight">{settings.STORE_PHONE}</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-5 relative z-10">
-                            <div className="w-14 h-14 rounded-3xl bg-[#1a3c31] flex items-center justify-center text-white shadow-lg group-hover:bg-[#10b981] transition-all">
-                                <AtSymbolIcon className="w-6 h-6" />
+                        <div className="flex items-center gap-5 relative z-10 justify-center px-10 pt-8 md:pt-0">
+                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl md:rounded-3xl bg-[#10b981] flex items-center justify-center text-white shadow-lg transition-all shrink-0">
+                                <AtSymbolIcon className="w-5 h-5 md:w-6 md:h-6" />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#5a7d6e] mb-1 italic">Email Hỗ trợ</p>
-                                <p className="font-black text-[#1a3c31] text-lg">{settings.STORE_EMAIL}</p>
+                                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-[#5a7d6e] mb-1 italic">Email Hỗ trợ</p>
+                                <p className="font-black text-[#1a3c31] text-base md:text-lg">{settings.STORE_EMAIL}</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-5 relative z-10">
-                            <div className="w-14 h-14 rounded-3xl bg-[#1a3c31] flex items-center justify-center text-white shadow-lg group-hover:bg-[#10b981] transition-all">
-                                <MapPinIcon className="w-6 h-6" />
+                        <div className="flex items-center gap-5 relative z-10 justify-center px-10 pt-8 md:pt-0">
+                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl md:rounded-3xl bg-[#10b981] flex items-center justify-center text-white shadow-lg transition-all shrink-0">
+                                <MapPinIcon className="w-5 h-5 md:w-6 md:h-6" />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#5a7d6e] mb-1 italic">Văn phòng</p>
-                                <p className="text-sm font-black text-[#4a6d5f]">{settings.STORE_ADDRESS}</p>
+                                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-[#5a7d6e] mb-1 italic">Văn phòng</p>
+                                <p className="font-black text-[#1a3c31] text-[13px] md:text-sm leading-tight max-w-[220px]">{settings.STORE_ADDRESS}</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Final Bottom Links */}
-                    <div className="flex flex-wrap justify-between items-center gap-6 text-[10px] font-black tracking-[0.2em] text-[#5a7d6e]/40 px-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-3 h-[1px] bg-[#1a3c31]/30"></div>
+                    <div className="flex flex-col md:flex-row justify-center md:justify-between items-center gap-8 md:gap-6 text-[9px] md:text-[10px] font-black tracking-[0.2em] text-[#2d4a3e]/70 px-6 text-center md:text-left">
+                        <div className="flex items-center gap-3 justify-center md:justify-start">
+                            <div className="hidden md:block w-3 h-[1px] bg-[#1a3c31]/30"></div>
                             <p className="uppercase">{settings.COPYRIGHT_TEXT}</p>
                         </div>
                         
-                        <div className="flex flex-wrap gap-10 uppercase italic">
-                            <Link to="/privacy" className="hover:text-[#10b981] transition-colors border-b border-transparent hover:border-[#10b981]/20 pb-0.5">Chính sách bảo mật</Link>
-                            <Link to="/terms" className="hover:text-[#10b981] transition-colors border-b border-transparent hover:border-[#10b981]/20 pb-0.5">Điều khoản dịch vụ</Link>
-                            <Link to="/cookies" className="hover:text-[#10b981] transition-colors border-b border-transparent hover:border-[#10b981]/20 pb-0.5">Chính sách Cookie</Link>
+                        <div className="flex flex-wrap justify-center gap-6 md:gap-10 uppercase italic">
+                            <Link to="/privacy" className="text-[#1a3c31] hover:text-[#10b981] transition-colors border-b border-transparent hover:border-[#10b981]/20 pb-0.5">Chính sách bảo mật</Link>
+                            <Link to="/terms" className="text-[#1a3c31] hover:text-[#10b981] transition-colors border-b border-transparent hover:border-[#10b981]/20 pb-0.5">Điều khoản dịch vụ</Link>
+                            <Link to="/cookies" className="text-[#1a3c31] hover:text-[#10b981] transition-colors border-b border-transparent hover:border-[#10b981]/20 pb-0.5">Chính sách Cookie</Link>
                         </div>
                     </div>
                 </div>

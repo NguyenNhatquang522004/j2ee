@@ -16,14 +16,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Triển khai nghiệp vụ quản lý Lô hàng (Batch Management).
- * Sử dụng chiến lược FEFO (First Expired First Out) để quản lý hàng tồn kho thực phẩm sạch,
+ * Sử dụng chiến lược FEFO (First Expired First Out) để quản lý hàng tồn kho
+ * thực phẩm sạch,
  * đảm bảo sản phẩm có hạn sử dụng gần nhất sẽ được xuất kho trước.
  */
 @Service
@@ -32,11 +35,15 @@ public class BatchServiceImpl implements BatchService {
 
     private final ProductBatchRepository batchRepository;
     private final ProductRepository productRepository;
+    private final nhom5.demo.service.SearchService searchService;
+    private final nhom5.demo.service.ProductService productService;
 
+    @SuppressWarnings("null")
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
     public BatchResponse addBatch(BatchRequest request) {
-        Product product = productRepository.findById(request.getProductId())
+        Product product = productRepository.findById(Objects.requireNonNull(request.getProductId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", request.getProductId()));
 
         if (batchRepository.existsByBatchCode(request.getBatchCode())) {
@@ -44,15 +51,32 @@ public class BatchServiceImpl implements BatchService {
         }
 
         // Kiểm tra logic ngày tháng cho lô hàng mới
-        if (request.getProductionDate() != null && request.getProductionDate().isAfter(LocalDate.now())) {
-            throw new BusinessException("Ngày sản xuất không thể ở tương lai");
+        if (request.getProductionDate() != null) {
+            if (request.getProductionDate().getYear() > 2099) {
+                throw new BusinessException("Năm sản xuất không hợp lệ (tối đa 2099)");
+            }
+            if (request.getProductionDate().isAfter(LocalDate.now())) {
+                throw new BusinessException("Ngày sản xuất không thể ở tương lai");
+            }
         }
+        
+        if (request.getImportDate().getYear() > 2099) {
+            throw new BusinessException("Năm nhập hàng không hợp lệ (tối đa 2099)");
+        }
+        
         if (request.getProductionDate() != null && request.getImportDate().isBefore(request.getProductionDate())) {
             throw new BusinessException("Ngày nhập hàng không thể trước ngày sản xuất");
         }
-        if (request.getExpiryDate().isBefore(request.getImportDate()) || request.getExpiryDate().isEqual(request.getImportDate())) {
+        
+        if (request.getExpiryDate().getYear() > 2099) {
+            throw new BusinessException("Năm hết hạn không hợp lệ (tối đa 2099)");
+        }
+        
+        if (request.getExpiryDate().isBefore(request.getImportDate())
+                || request.getExpiryDate().isEqual(request.getImportDate())) {
             throw new BusinessException("Ngày hết hạn phải sau ngày nhập hàng");
         }
+        
         if (request.getExpiryDate().isBefore(LocalDate.now())) {
             throw new BusinessException("Lô hàng này đã hết hạn, không thể nhập kho");
         }
@@ -69,16 +93,18 @@ public class BatchServiceImpl implements BatchService {
                 .product(product)
                 .build();
 
-        return toResponse(batchRepository.save(batch));
+        ProductBatch savedBatch = Objects.requireNonNull(batchRepository.save(batch));
+        return toResponse(savedBatch);
     }
 
     @Override
     public BatchResponse getBatchById(Long id) {
-        return toResponse(findById(id));
+        return toResponse(Objects.requireNonNull(findById(id)));
     }
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
     public BatchResponse updateBatch(Long id, BatchRequest request) {
         ProductBatch batch = findById(id);
 
@@ -88,13 +114,29 @@ public class BatchServiceImpl implements BatchService {
         }
 
         // Kiểm tra logic ngày tháng khi cập nhật lô hàng
-        if (request.getProductionDate() != null && request.getProductionDate().isAfter(LocalDate.now())) {
-            throw new BusinessException("Ngày sản xuất không thể ở tương lai");
+        if (request.getProductionDate() != null) {
+            if (request.getProductionDate().getYear() > 2099) {
+                throw new BusinessException("Năm sản xuất không hợp lệ (tối đa 2099)");
+            }
+            if (request.getProductionDate().isAfter(LocalDate.now())) {
+                throw new BusinessException("Ngày sản xuất không thể ở tương lai");
+            }
         }
+        
+        if (request.getImportDate().getYear() > 2099) {
+            throw new BusinessException("Năm nhập hàng không hợp lệ (tối đa 2099)");
+        }
+
         if (request.getProductionDate() != null && request.getImportDate().isBefore(request.getProductionDate())) {
             throw new BusinessException("Ngày nhập hàng không thể trước ngày sản xuất");
         }
-        if (request.getExpiryDate().isBefore(request.getImportDate()) || request.getExpiryDate().isEqual(request.getImportDate())) {
+        
+        if (request.getExpiryDate().getYear() > 2099) {
+            throw new BusinessException("Năm hết hạn không hợp lệ (tối đa 2099)");
+        }
+
+        if (request.getExpiryDate().isBefore(request.getImportDate())
+                || request.getExpiryDate().isEqual(request.getImportDate())) {
             throw new BusinessException("Ngày hết hạn phải sau ngày nhập hàng");
         }
 
@@ -107,14 +149,29 @@ public class BatchServiceImpl implements BatchService {
         batch.setRemainingQuantity(Math.max(0, batch.getRemainingQuantity() + quantityDelta));
         batch.setNote(request.getNote());
 
-        return toResponse(batchRepository.save(batch));
+        // Re-evaluate status if stock is added back or expiry is updated
+        if (batch.getRemainingQuantity() > 0) {
+            if (!batch.getExpiryDate().isBefore(LocalDate.now())) {
+                if (batch.getStatus() == BatchStatusEnum.DISCONTINUED || batch.getStatus() == BatchStatusEnum.EXPIRED) {
+                    batch.setStatus(BatchStatusEnum.ACTIVE);
+                }
+            } else {
+                batch.setStatus(BatchStatusEnum.EXPIRED);
+            }
+        } else {
+            batch.setStatus(BatchStatusEnum.DISCONTINUED);
+        }
+
+        ProductBatch updatedBatch = Objects.requireNonNull(batchRepository.save(batch));
+        return toResponse(updatedBatch);
     }
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
     public void deleteBatch(Long id) {
         ProductBatch batch = findById(id);
-        batchRepository.delete(batch);
+        batchRepository.delete(Objects.requireNonNull(batch));
     }
 
     @Override
@@ -126,7 +183,7 @@ public class BatchServiceImpl implements BatchService {
     @Override
     @Transactional(readOnly = true)
     public Page<BatchResponse> getBatchesByProduct(Long productId, Pageable pageable) {
-        return batchRepository.findByProductId(productId, pageable).map(this::toResponse);
+        return batchRepository.findByProductId(Objects.requireNonNull(productId), pageable).map(this::toResponse);
     }
 
     @Override
@@ -139,22 +196,25 @@ public class BatchServiceImpl implements BatchService {
 
     /**
      * Xuất kho theo chiến lược FEFO.
+     * 
      * @param productId ID sản phẩm cần trừ kho.
-     * @param quantity Số lượng cần trừ.
+     * @param quantity  Số lượng cần trừ.
      * @return Số lượng còn lại (thường là 0 nếu thành công).
-     * @throws InsufficientStockException Nếu tổng số lượng trong tất cả các lô không đủ.
+     * @throws InsufficientStockException Nếu tổng số lượng trong tất cả các lô
+     *                                    không đủ.
      */
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
     public int deductStock(Long productId, int quantity) {
-        List<ProductBatch> batches = batchRepository.findAvailableBatchesFEFO(productId, LocalDate.now());
+        List<ProductBatch> batches = batchRepository.findAvailableBatchesFEFO(Objects.requireNonNull(productId), LocalDate.now());
 
         long totalAvailable = batches.stream()
-                .mapToLong(b -> b.getRemainingQuantity())
+                .mapToLong(b -> b.getRemainingQuantity().longValue())
                 .sum();
 
         if (totalAvailable < quantity) {
-            Product product = productRepository.findById(productId)
+            Product product = productRepository.findById(Objects.requireNonNull(productId))
                     .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
             throw new InsufficientStockException(product.getName(), quantity, (int) totalAvailable);
         }
@@ -173,6 +233,14 @@ public class BatchServiceImpl implements BatchService {
             }
             batchRepository.save(batch);
         }
+        
+        // Sync to Meilisearch and Cache
+        Product product = productRepository.findById(Objects.requireNonNull(productId))
+                .orElse(null);
+        if (product != null) {
+            searchService.indexProduct(productService.toResponse(product));
+        }
+        
         return remaining;
     }
 
@@ -201,24 +269,27 @@ public class BatchServiceImpl implements BatchService {
 
     @Override
     public long getTotalStock(Long productId) {
-        Long total = batchRepository.sumRemainingQuantityByProductId(productId);
+        Long total = batchRepository.sumRemainingQuantityByProductId(Objects.requireNonNull(productId), LocalDate.now());
         return total != null ? total : 0L;
     }
 
     /**
      * Hoàn kho khi đơn hàng bị hủy hoặc trả hàng.
-     * Ưu tiên hoàn vào các lô hàng có hạn sử dụng xa nhất để tối ưu hóa thời gian bán.
+     * Ưu tiên hoàn vào các lô hàng có hạn sử dụng xa nhất để tối ưu hóa thời gian
+     * bán.
      */
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
     public void returnStock(Long productId, int quantity) {
         // Find the latest active/discount batch to return stock to
-        // We prefer returning to batches that are not about to expire soon (higher expiry date)
-        List<ProductBatch> batches = batchRepository.findAvailableBatchesFEFO(productId, LocalDate.now());
-        
+        // We prefer returning to batches that are not about to expire soon (higher
+        // expiry date)
+        List<ProductBatch> batches = batchRepository.findAvailableBatchesFEFO(Objects.requireNonNull(productId), LocalDate.now());
+
         if (batches.isEmpty()) {
             // If no active batches, just find the most recent one created
-            Page<ProductBatch> recent = batchRepository.findByProductId(productId, Pageable.ofSize(1));
+            Page<ProductBatch> recent = batchRepository.findByProductId(Objects.requireNonNull(productId), Pageable.ofSize(1));
             if (!recent.isEmpty()) {
                 ProductBatch batch = recent.getContent().get(0);
                 batch.setRemainingQuantity(batch.getRemainingQuantity() + quantity);
@@ -234,17 +305,25 @@ public class BatchServiceImpl implements BatchService {
         ProductBatch target = batches.get(batches.size() - 1);
         target.setRemainingQuantity(target.getRemainingQuantity() + quantity);
         batchRepository.save(target);
+        
+        // Sync to Meilisearch and Cache
+        Product product = productRepository.findById(Objects.requireNonNull(productId))
+                .orElse(null);
+        if (product != null) {
+            searchService.indexProduct(productService.toResponse(product));
+        }
     }
 
     private ProductBatch findById(Long id) {
-        return batchRepository.findById(id)
+        return batchRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new ResourceNotFoundException("ProductBatch", "id", id));
     }
 
-    private BatchResponse toResponse(ProductBatch batch) {
-        int daysUntilExpiry = batch.getExpiryDate() != null ? 
-            (int) ChronoUnit.DAYS.between(LocalDate.now(), batch.getExpiryDate()) : 0;
-        
+    private BatchResponse toResponse(@NonNull ProductBatch batch) {
+        int daysUntilExpiry = batch.getExpiryDate() != null
+                ? (int) ChronoUnit.DAYS.between(LocalDate.now(), batch.getExpiryDate())
+                : 0;
+
         return BatchResponse.builder()
                 .id(batch.getId())
                 .batchCode(batch.getBatchCode())
@@ -259,6 +338,7 @@ public class BatchServiceImpl implements BatchService {
                 .productId(batch.getProduct() != null ? batch.getProduct().getId() : null)
                 .productName(batch.getProduct() != null ? batch.getProduct().getName() : "Sản phẩm không xác định")
                 .daysUntilExpiry(daysUntilExpiry)
+                .createdAt(batch.getCreatedAt())
                 .build();
     }
 }

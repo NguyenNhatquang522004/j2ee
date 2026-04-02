@@ -70,6 +70,7 @@ export function NotificationProvider({ children }) {
     const handleNewNotification = (notification) => {
         // Show Toast
         toast(notification.message, {
+            id: `notif-${notification.id || Date.now()}`,
             icon: getIconForType(notification.type),
             duration: 5000,
             onClick: () => {

@@ -12,6 +12,11 @@ import nhom5.demo.repository.WishlistItemRepository;
 import nhom5.demo.service.WishlistService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
+import java.util.Objects;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,79 +35,86 @@ public class WishlistServiceImpl implements WishlistService {
     @Override
     @Transactional
     public void addToWishlist(String username, Long productId) {
-        User user = findUserByUsername(username);
-        Product product = findProductById(productId);
+        User user = findUserByUsername(Objects.requireNonNull(username));
+        Product product = findProductById(Objects.requireNonNull(productId));
 
-        if (!wishlistItemRepository.existsByUserIdAndProductId(user.getId(), productId)) {
+        Long userId = Objects.requireNonNull(user.getId());
+        if (!wishlistItemRepository.existsByUserIdAndProductId(userId, productId)) {
             WishlistItem item = WishlistItem.builder()
                     .user(user)
                     .product(product)
                     .build();
-            wishlistItemRepository.save(item);
+            wishlistItemRepository.save(Objects.requireNonNull(item));
         }
     }
 
     @Override
     @Transactional
     public void removeFromWishlist(String username, Long productId) {
-        User user = findUserByUsername(username);
-        wishlistItemRepository.findByUserIdAndProductId(user.getId(), productId)
+        User user = findUserByUsername(Objects.requireNonNull(username));
+        Long userId = Objects.requireNonNull(user.getId());
+        wishlistItemRepository.findByUserIdAndProductId(userId, productId)
                 .ifPresent(wishlistItemRepository::delete);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ProductResponse> getMyWishlist(String username) {
-        User user = findUserByUsername(username);
-        return wishlistItemRepository.findByUserId(user.getId()).stream()
-                .map(item -> toProductResponse(item.getProduct()))
+        User user = findUserByUsername(Objects.requireNonNull(username));
+        Long userId = Objects.requireNonNull(user.getId());
+        return wishlistItemRepository.findByUserId(userId).stream()
+                .map(item -> toProductResponse(Objects.requireNonNull(item.getProduct())))
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean isInWishlist(String username, Long productId) {
-        User user = findUserByUsername(username);
-        return wishlistItemRepository.existsByUserIdAndProductId(user.getId(), productId);
+        User user = findUserByUsername(Objects.requireNonNull(username));
+        Long userId = Objects.requireNonNull(user.getId());
+        return wishlistItemRepository.existsByUserIdAndProductId(userId, productId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public long getWishlistCount(String username) {
-        User user = findUserByUsername(username);
-        return wishlistItemRepository.countByUserId(user.getId());
+        User user = findUserByUsername(Objects.requireNonNull(username));
+        Long userId = Objects.requireNonNull(user.getId());
+        return wishlistItemRepository.countByUserId(userId);
     }
 
-    private User findUserByUsername(String username) {
+    private User findUserByUsername(@NonNull String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
     }
 
-    private Product findProductById(Long id) {
+    private Product findProductById(@NonNull Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
     }
 
-    private ProductResponse toProductResponse(Product product) {
-        Long totalStock = batchRepository.sumRemainingQuantityByProductId(product.getId());
-        Double avgRating = reviewRepository.findAverageRatingByProductId(product.getId());
+    private ProductResponse toProductResponse(@NonNull Product product) {
+        Long productId = Objects.requireNonNull(product.getId());
+        Long totalStock = batchRepository.sumRemainingQuantityByProductId(productId, LocalDate.now());
+        Double avgRating = reviewRepository.findAverageRatingByProductId(productId);
 
         // Check Flash Sale for price display
-        java.math.BigDecimal fsPrice = null;
-        java.time.LocalDateTime fsEndDate = null;
-        java.util.Optional<nhom5.demo.entity.FlashSaleItem> fsItemOpt = flashSaleItemRepository.findActiveByProductId(product.getId(), java.time.LocalDateTime.now());
+        BigDecimal fsPrice = null;
+        LocalDateTime fsEndDate = null;
+        java.util.Optional<nhom5.demo.entity.FlashSaleItem> fsItemOpt = flashSaleItemRepository.findActiveByProductId(productId, LocalDateTime.now());
         
         if (fsItemOpt.isPresent()) {
             nhom5.demo.entity.FlashSaleItem fsItem = fsItemOpt.get();
             if (fsItem.getSoldQuantity() < fsItem.getQuantityLimit()) {
                 fsPrice = fsItem.getFlashSalePrice();
-                fsEndDate = fsItem.getFlashSale().getEndTime();
+                fsEndDate = Objects.requireNonNull(fsItem.getFlashSale()).getEndTime();
             }
         }
 
         return ProductResponse.builder()
-                .id(product.getId())
+                .id(productId)
                 .name(product.getName())
+                .slug(product.getSlug())
                 .description(product.getDescription())
                 .price(product.getPrice())
                 .originalPrice(product.getOriginalPrice())

@@ -114,11 +114,12 @@ export default function Notifications() {
         }
     };
 
-    const LayoutComponent = user?.role?.name === 'ROLE_ADMIN' ? AdminLayout : Layout;
+    const isAdminPath = window.location.pathname.startsWith('/admin');
+    const LayoutComponent = isAdminPath ? AdminLayout : Layout;
 
     return (
         <LayoutComponent>
-            <div className={user?.role?.name === 'ROLE_ADMIN' ? 'py-4' : 'max-w-4xl mx-auto py-10 px-4'}>
+            <div className={isAdminPath ? 'py-4' : 'max-w-4xl mx-auto py-10 px-4'}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                     <div>
                         <div className="flex items-center gap-3 mb-2">

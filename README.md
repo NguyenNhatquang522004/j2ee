@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./docs/assets/logo.png" alt="FreshFood Logo" width="200" />
+</p>
+
 # 🥗 FreshFood - Nền tảng Thương mại điện tử Thực phẩm hữu cơ
 
 FreshFood là một nền tảng thương mại điện tử hiện đại, chuyên cung cấp các sản phẩm thực phẩm hữu cơ, sạch và tươi sống từ các trang trại uy tín. Dự án được xây dựng với mục tiêu mang lại trải nghiệm mua sắm an toàn, tiện lợi và minh bạch cho người tiêu dùng.
@@ -5,38 +9,59 @@ FreshFood là một nền tảng thương mại điện tử hiện đại, chuy
 ## 🚀 Tính năng chính
 
 ### 🛒 Dành cho Người dùng (Storefront)
-- **Duyệt sản phẩm**: Xem danh sách sản phẩm theo danh mục, trang trại hoặc tìm kiếm trực tiếp.
-- **Giỏ hàng & Thanh toán**: Hệ thống giỏ hàng linh hoạt, tích hợp thanh toán VnPay (Đang phát triển) và COD.
+- **Duyệt sản phẩm**: Xem danh sách sản phẩm theo danh mục, trang trại, tìm kiếm hoặc truy cập trực tiếp qua **SEO-friendly Slugs** (VD: `/products/thit-bo-tuoi`).
+- **Giỏ hàng & Thanh toán**: Hệ thống giỏ hàng linh hoạt, tích hợp thanh toán VnPay và COD với định danh **OrderCode** (ORD-...) bảo mật.
 - **Danh sách yêu thích (Wishlist)**: Đã nâng cấp đồng bộ thông tin (Trang trại, Tồn kho, Nhãn mới) và tối ưu hóa tốc độ xử lý.
 - **So sánh Sản phẩm**: Hệ thống so sánh thông số chi tiết giữa các sản phẩm giúp người dùng dễ dàng lựa chọn.
 - **Flash Sale & Khuyến mãi**: Hiển thị ưu đãi Flash Sale thời gian thực với nhãn giảm giá đỏ rực rỡ và logic ưu tiên giá tốt nhất.
 - **Hệ thống Xác nhận Toàn cầu (Global Confirm)**: Thay thế hoàn toàn các hộp thoại trình duyệt (window.confirm) bằng Promise-based Modal cao cấp, đồng bộ trải nghiệm người dùng toàn hệ thống.
-- **Hệ thống Hội viên (Loyalty)**: Tích điểm tự động khi mua hàng (1K VND = 1 Point), phân hạng Bronze/Silver/Gold/Platinum và tự động nâng cấp membership trọn đời.
-- **Tìm kiếm nâng cao**: Tích hợp **Meilisearch** qua REST API tùy chỉnh (không dùng SDK) cho tốc độ tìm kiếm cực nhanh và khả năng tùy biến cao.
-- **Phục hồi & Hiệu năng (v2.1)**: Đạt trạng thái Zero-Warning, nén dữ liệu GZIP tự động và hoàn thiện quy trình phục hồi Database an toàn qua Docker.
-- **Bảo mật Hạ tầng**: Hệ thống Whitelist tự động và cơ chế bảo vệ Actuator đặc quyền cho Admin, ngăn chặn rò rỉ thông tin máy chủ.
+- **Hệ thống Hội viên (Loyalty 2.0)**: Tích điểm tự động với tỉ lệ tùy chỉnh (`LOYALTY_RATIO`), hỗ trợ đổi điểm lấy giảm giá khi thanh toán, tự động nâng cấp phân hạng (Bronze/Silver/Gold/Platinum) dựa trên Lifetime Points với cơ chế Null-safe tuyệt đối.
+- **Định danh & Xác thực Việt Nam**: Hệ thống **Standardized Vietnamese Validation** với Regex chuẩn 10 số di động theo tiền tố nhà mạng VN, hỗ trợ Unicode full-name (không số/ký tự lạ) và tự động chuẩn hóa dữ liệu (`+84` -> `0`, lowercase email) trước khi lưu trữ.
+- **Tìm kiếm nâng cao (Asynchronous)**: Tích hợp **Meilisearch** xử lý bất đồng bộ (@Async), hỗ trợ tìm kiếm Tiếng Việt siêu tốc mà không ảnh hưởng đến hiệu năng giao dịch.
+- **Phục hồi & Hiệu năng (v3.4)**: Đạt trạng thái Zero-Warning, giải quyết triệt để N+1 Query, nén dữ liệu GZIP và tối ưu hóa Timeout cho các dịch vụ phụ trợ.
+- **Bảo mật Hạ tầng & Quản trị**: Hệ thống **Admin Settings** tập trung, Admin IP Whitelist, và **Maintenance Mode** linh hoạt cho phép đóng hệ thống an toàn để nâng cấp.
+- **Mắt thần Giám sát (Observability)**: Hệ thống **SLF4J Logging** tập trung giúp truy vết 100% vòng đời đơn hàng và các Callback tài chính (VnPay/SePay).
+- **Tính năng AI**: Tích hợp **AI Image Analysis** đánh giá độ tươi thực phẩm với luồng xử lý ảnh mượt mà.
 
 ### 🛡️ Dành cho Quản trị (Admin Dashboard)
 - **Dashboard Thông minh**: Trực quan hóa dữ liệu qua biểu đồ doanh thu 7 ngày, hệ thống phím tắt "Quick Actions" và danh sách nhiệm vụ ưu tiên.
-- **Bảo mật Đa tầng (Hardening)**: Đạt tiêu chuẩn Enterprise với Account Lockout (chống Brute-force), IP Blocklist, Admin IP Whitelisting, WebSocket Security (bỏ qua filter cho endpoint /ws/info đầu cuối), và Security Stamp (Vô hiệu hóa phiên tức thì).
-- **Payment Security**:
-    - **Checksum Validation**: Mọi callback từ VnPay/SePay đều được xác thực chữ ký (Signature) bằng thuật toán HMAC-SHA512/Token bí mật trước khi xử lý.
-    - **Ownership Enforcement**: Chỉ chủ sở hữu đơn hàng mới có quyền tạo link thanh toán (Logic trong `PaymentController`).
+- **Bảo mật Đa tầng (Hardening)**: Đạt tiêu chuẩn Enterprise với Account Lockout, IP Blocklist, **JWT Kill Switch** (vô hiệu hóa phiên tức thì), **CSP (Content Security Policy)**, WebSocket Security, và Security Stamp.
+- **Payment Security & Observability**:
+    - **Checksum Validation**: Xác thực chữ ký Callback từ VnPay/SePay bằng HMAC-SHA512.
+    - **Financial Traceability**: Logging chi tiết dữ liệu thô (Raw payload) từ cổng thanh toán để phục vụ đối soát và Audit tài chính.
+    - **Ownership Enforcement**: Kiểm soát quyền sở hữu đơn hàng nghiêm ngặt tại Controller layer.
 - **Data Integrity**: Chuyển sang Flyway đảm bảo cấu trúc database không bị thay đổi ngẫu nhiên ngoài ý muốn.
 - **Làm sạch Dữ liệu (XSS Protection)**: Tích hợp Jsoup filter ngăn chặn tấn công Script Injection trên toàn hệ thống.
 - **Quản lý Thư viện Media**: Tích hợp Storage Analytics, xem trước video mượt mà và quản lý tài nguyên tập trung qua Cloudinary.
+
+## 📜 Tài liệu Kỹ thuật Chi tiết
+Xem thêm các tài liệu chi tiết về hệ thống tại thư mục `/docs`:
+- [🏗️ Kiến trúc hệ thống (Architecture)](./docs/ARCHITECTURE.md)
+- [🛡️ Chính sách bảo mật (Security)](./docs/SECURITY.md)
+- [📡 Hướng dẫn API (API Docs)](./docs/API-DOCS.md)
+- [🗄️ Cơ sở dữ liệu (Database)](./docs/DATABASE.md)
+- [🚀 Triển khai hệ thống (Deployment)](./docs/DEPLOYMENT.md)
+- [📜 Nhật ký thay đổi (Changelog)](./docs/CHANGELOG.md)
 - **Giao diện Responsive 100%**: Trải nghiệm quản trị hoàn hảo trên mọi thiết bị với Sidebar trượt và bố cục bảng dữ liệu thông minh.
 - **SePay (VietQR)**: Tự động hóa quy trình thanh toán qua Webhook bảo mật, xác nhận đơn hàng tức thì.
-- **Quản lý Nhân sự & Phân quyền**: Hệ thống RBAC với ma trận quyền hạn chi tiết và quản lý Audit Logs chuyên nghiệp.
+- **Quản lý Nhân sự & Phân quyền**: Hệ thống RBAC với ma trận quyền hạn chi tiết, quản lý Audit Logs chuyên nghiệp và giao diện quản lý nhân sự ổn định.
+- **Tùy biến Hồ sơ & Bảo mật**:
+    - **Quản trị Avatar**: Hỗ trợ tải lên, thay thế và gỡ bỏ ảnh đại diện (Admin/User) với hệ thống fallback tên viết tắt chuyên nghiệp.
+    - **Nhãn địa chỉ tùy chỉnh**: Cho phép đặt tên gợi nhớ cho địa chỉ nhận hàng (Ví dụ: Nhà vườn, Cơ quan, Kho đông lạnh...) thay vì các nhãn cố định.
+    - **Role-aware Error Pages**: Trang 404 thông minh tự động chuyển đổi giao diện (Admin/User Layout) dựa trên quyền hạn của người dùng.
 - **Hệ thống Mã giảm giá**: Quản lý Voucher công khai/riêng tư và logic tặng quà cá nhân.
+- **Quản lý Lô hàng & Date**: Hệ thống quản lý **Inventory Batch v2.0** với ràng buộc ngày nhập/sản xuất/hết hạn nghiêm ngặt (chặn lỗi nhập liệu sau 2099), tự động chuyển trạng thái `EXPIRED` và `DISCONTINUED` thông qua bộ quét hàng ngày (Scheduler).
 - **Tự động hoá Bảo trì**: Hệ thống Scheduled Tasks dọn dẹp đơn hàng ảo quá hạn và tối ưu dung lượng Database.
 
 ### 🏗️ Cột mốc Hạ tầng & Bảo mật (Infrastructure Milestones)
-- **Database Migration**: Tích hợp **Flyway**, quản lý phiên bản database đồng bộ giữa các môi trường, đảm bảo tính toàn vẹn của dữ liệu trong quá trình mở rộng.
-- **Stock Integrity**: Hệ thống **Redis Stock Reservation** (Giữ chỗ tồn kho 15 phút) giúp chống "overselling" khi khách đặt hàng nhưng chưa hoàn tất thanh toán.
-- **Payment Gateway**: Tích hợp **VnPay 2.1.0** với luồng bảo mật HMAC-SHA512 và xác thực Signature nghiêm ngặt từ Backend.
-- **Zero-Warning Code**: Đã rà soát thủ công toàn bộ mã nguồn, bổ sung JavaDoc và xử lý triệt để các cảnh báo kỹ thuật (Raw types, unused imports).
-- **Logging & Auditing**: Hệ thống Audit Logs tập trung ghi nhận mọi tác động đến dữ liệu của quản trị viên để phục vụ bảo soát.
+- **Database Migration**: Tích hợp **Flyway**, quản lý phiên bản database đồng bộ giữa các môi trường. Bản nâng cấp **V3** bổ sung cơ chế Fulltext Search và Soft Delete.
+- **Stock Integrity**: Hệ thống **Redis Stock Reservation** kết hợp với chiến lược **FEFO** (First Expired, First Out). Tự động trừ kho tại bước `PACKAGING` cho đơn COD và `CONFIRMED` cho đơn trả trước để đảm bảo tuyệt đối không bán vượt mức (Zero Overselling).
+- **Database Hardening**: Áp dụng ràng buộc cứng `UNIQUE` & `NOT NULL` cho các định danh cá nhân (`Username`, `Email`, `Phone`) trực tiếp tại database dump giúp đảm bảo toàn vẹn dữ liệu gốc.
+- **Soft Delete (v3.0)**: Áp dụng trên toàn bộ hệ thống (Hibernate 6 `@SQLRestriction`), đảm bảo dữ liệu quan trọng không bị xóa vĩnh viễn, phục vụ đối soát và báo cáo.
+- **SEO & Search**: Tích hợp **SEO-friendly Slugs** cho URL sản phẩm và Meilisearch đồng bộ thời gian thực qua Webhook/Events.
+- **Payment Gateway**: Tích hợp **VnPay 2.1.0** và **SePay** với luồng bảo mật HMAC-SHA512, sử dụng mã hóa Base64 cho Secret Keys và xác thực Signature nghiêm ngặt.
+- **Zero-Warning Code**: Đã rà soát thủ công toàn bộ mã nguồn, bổ sung JavaDoc và xử lý triệt để các cảnh báo kỹ thuật (Raw types, unused imports, Null-safety).
+- **Security Auditing**: Hệ thống **Security Logs** tập trung ghi nhận mọi nỗ lực truy cập dẫm chân IP (IP Whitelisting) và thay đổi trạng thái đơn hàng nhạy cảm.
 
 ## 🛠️ Hướng dẫn cài đặt nhanh (Quick Start)
 
@@ -70,7 +95,7 @@ Lưu ý: Bạn cần cài đặt [Docker](https://www.docker.com/) và [Docker C
 ### Backend (Spring Boot 3.x)
 - **Spring Data JPA**: Quản lý thực thể và tương tác cơ sở dữ liệu.
 - **Spring Security + JWT**: Bảo mật hệ thống, phân quyền (RBAC) và xác thực 2 lớp (2FA).
-- **Redis**: Caching, Stock Reservation (giữ chỗ tồn kho) và xử lý Rate Limiting.
+- **Redis**: Caching, Stock Reservation (giữ chỗ tồn kho), xử lý Rate Limiting và Centralized Session Tracking.
 - **Flyway**: Quản lý phiên bản cơ sở dữ liệu (Database Migration).
 - **VNPAY & SePay**: Hệ thống thanh toán trực tuyến qua cổng thẻ và QR Code.
 - **Bucket4j**: Giới hạn tần suất yêu cầu (Rate Limiting) kết hợp Redis.

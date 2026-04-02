@@ -12,7 +12,7 @@ import confetti from 'canvas-confetti';
 
 export default function Success() {
     const [searchParams] = useSearchParams();
-    const orderId = searchParams.get('orderId');
+    const orderCode = searchParams.get('orderCode');
 
     useEffect(() => {
         // Hiệu ứng pháo hoa chúc mừng
@@ -41,8 +41,8 @@ export default function Success() {
                     <div className="absolute inset-0 bg-green-500 rounded-full blur-[120px] opacity-20 animate-pulse"></div>
                     <div className="relative z-10 p-10 bg-white border border-gray-100 rounded-[4rem] shadow-2xl shadow-green-100/50">
                         <CheckCircleIcon className="w-24 h-24 text-green-600 mb-6 mx-auto" />
-                        <h1 className="text-5xl font-black text-gray-900 leading-none italic uppercase tracking-tighter mb-4">Thanh toán <span className="text-green-600">thanh công!</span></h1>
-                        <p className="text-xl text-gray-400 font-bold uppercase tracking-widest italic leading-none">Cảm ơn bạn đã tin tưởng FreshFood</p>
+                        <h1 className="text-5xl font-black text-gray-900 leading-none italic uppercase tracking-tighter mb-4">Thanh toán <span className="text-green-600">thành công!</span></h1>
+                        <p className="text-xl text-gray-600 font-bold uppercase tracking-widest italic leading-none">Cảm ơn bạn đã tin tưởng FreshFood</p>
                     </div>
                 </div>
 
@@ -51,8 +51,8 @@ export default function Success() {
                     
                     <div className="relative z-10 space-y-6">
                         <div className="flex flex-col items-center gap-2">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Mã đơn hàng của bạn</p>
-                            <span className="px-6 py-2 bg-gray-50 border border-gray-100 rounded-2xl font-black text-gray-800 text-xl tracking-widest uppercase">#{orderId || 'FF00000'}</span>
+                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Mã đơn hàng của bạn</p>
+                            <span className="px-6 py-2 bg-gray-50 border border-gray-100 rounded-2xl font-black text-gray-800 text-xl tracking-widest uppercase">{orderCode || 'FRESHFOOD-00000'}</span>
                         </div>
                         
                         <p className="text-gray-500 font-medium leading-relaxed max-w-md mx-auto">
@@ -61,7 +61,7 @@ export default function Success() {
                         </p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6">
-                            <Link to="/orders" className="flex items-center justify-center gap-3 px-8 py-5 bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-gray-800 transition-all shadow-xl shadow-gray-200">
+                            <Link to="/orders" className="flex items-center justify-center gap-3 px-8 py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-green-700 transition-all shadow-xl shadow-green-100">
                                 <ShoppingBagIcon className="w-5 h-5" />
                                 Theo dõi đơn hàng
                             </Link>
@@ -83,7 +83,7 @@ export default function Success() {
                            <p className="text-xs text-gray-500 font-bold uppercase tracking-tighter">Bạn vừa nhận được voucher giảm 10% cho đơn sau</p>
                        </div>
                    </div>
-                   <button className="px-6 py-3 bg-green-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition-all shadow-lg shadow-green-200">Lưu mã ngay</button>
+                   <button className="px-6 py-3 bg-green-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-200">Lưu mã ngay</button>
                 </div>
             </div>
         </Layout>

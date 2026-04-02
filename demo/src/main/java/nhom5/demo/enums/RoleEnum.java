@@ -11,7 +11,6 @@ public enum RoleEnum {
             "view:categories",
             "view:farms",
             "manage:cart",
-            "manage:orders",
             "manage:profile"
     )),
     ROLE_ADMIN(Set.of(
@@ -31,6 +30,7 @@ public enum RoleEnum {
             "view:categories",
             "view:farms",
             "view:batches",
+            "manage:orders",
             "manage:newsletters",
             "manage:profile"
     ));

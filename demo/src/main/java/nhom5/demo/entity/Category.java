@@ -5,6 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,13 +17,16 @@ import java.util.List;
  */
 @Entity
 @Table(name = "categories", indexes = {
-        @Index(name = "idx_category_name", columnList = "name")
+        @Index(name = "idx_category_name", columnList = "name"),
+        @Index(name = "idx_category_deleted_at", columnList = "deleted_at")
 })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE categories SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class Category {
 
     @Id
@@ -34,6 +40,9 @@ public class Category {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "slug", unique = true, length = 100)
+    private String slug;
+
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
@@ -44,6 +53,17 @@ public class Category {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @PrePersist
+    @PreUpdate
+    private void generateSlug() {
+        if (this.name != null) {
+            this.slug = nhom5.demo.security.SecurityUtils.toSlug(this.name);
+        }
+    }
 
     // ====== Relationships ======
     @OneToMany(mappedBy = "category", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)

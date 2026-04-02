@@ -38,6 +38,7 @@ public final class AppConstants {
     public static final String USER_PATH = API_BASE + "/users";
     public static final String COUPON_PATH = API_BASE + "/coupons";
     public static final String NEWSLETTER_PATH = API_BASE + "/newsletters";
+    public static final String PAYMENT_PATH = API_BASE + "/payment";
 
     // ====== BATCH MANAGEMENT ======
     public static final int DEFAULT_EXPIRY_WARNING_DAYS = 3;

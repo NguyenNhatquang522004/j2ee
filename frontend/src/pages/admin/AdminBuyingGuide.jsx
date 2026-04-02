@@ -63,7 +63,7 @@ export default function AdminBuyingGuide() {
                 <Link 
                     to="/buying-guide" 
                     target="_blank"
-                    className="flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-xl font-black text-xs shadow-lg hover:bg-gray-800 transition-all active:scale-95"
+                    className="flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-xl font-black text-xs shadow-lg hover:bg-green-700 transition-all active:scale-95"
                 >
                     <span>Xem bản Công khai</span>
                     <ArrowTopRightOnSquareIcon className="w-4 h-4" />

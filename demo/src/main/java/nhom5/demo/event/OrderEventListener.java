@@ -12,6 +12,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.lang.NonNull;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -25,10 +27,10 @@ public class OrderEventListener {
 
     @Async
     @EventListener
-    public void handleOrderEvent(OrderEvent event) {
-        Order order = event.getOrder();
-        User user = order.getUser();
-        String type = event.getType();
+    public void handleOrderEvent(@NonNull OrderEvent event) {
+        Order order = Objects.requireNonNull(event.getOrder());
+        User user = Objects.requireNonNull(order.getUser());
+        String type = Objects.requireNonNull(event.getType());
         OrderStatusEnum status = event.getStatus();
 
         log.info("Processing OrderEvent for Order #{}: Type={}", order.getOrderCode(), type);
@@ -42,20 +44,27 @@ public class OrderEventListener {
                             "SUCCESS",
                             "/orders/" + order.getId());
                     
-                    publishAuditLog("SYSTEM", "ORDER_CREATE", "Order", order.getId().toString(), 
+                    publishAuditLog("SYSTEM", "ORDER_CREATE", "Order", String.valueOf(order.getId()), 
                             "Order created: " + order.getOrderCode());
                 }
                 case "STATUS_UPDATED" -> {
-                    notificationService.createNotification(user,
-                            "Đơn hàng #" + order.getOrderCode() + " đã chuyển sang trạng thái: " + status.getDisplayName(),
-                            status == OrderStatusEnum.CANCELLED ? "WARNING" : "INFO",
-                            "/orders/" + order.getId());
+                    if (status != null) {
+                        notificationService.createNotification(user,
+                                "Đơn hàng #" + order.getOrderCode() + " đã chuyển sang trạng thái: " + status.getDisplayName(),
+                                status == OrderStatusEnum.CANCELLED ? "WARNING" : "INFO",
+                                "/orders/" + order.getId());
 
-                    publishAuditLog("SYSTEM", "STATUS_UPDATE", "Order", order.getId().toString(), 
-                            "Updated order " + order.getOrderCode() + " status to " + status);
-                    
-                    if (status == OrderStatusEnum.DELIVERED) {
-                        loyaltyService.awardPoints(user, order.getFinalAmount().longValue(), order.getOrderCode());
+                        // Send Email for important status changes
+                        if (status != OrderStatusEnum.PENDING) {
+                            mailService.sendOrderStatusUpdate(order);
+                        }
+
+                        publishAuditLog("SYSTEM", "STATUS_UPDATE", "Order", String.valueOf(order.getId()), 
+                                "Updated order " + order.getOrderCode() + " status to " + status);
+                        
+                        if (status == OrderStatusEnum.DELIVERED) {
+                            loyaltyService.awardPoints(user, Objects.requireNonNull(order.getFinalAmount()).longValue(), Objects.requireNonNull(order.getOrderCode()));
+                        }
                     }
                 }
                 case "CANCELLED" -> {
@@ -64,7 +73,7 @@ public class OrderEventListener {
                             "WARNING",
                             "/orders/" + order.getId());
 
-                    publishAuditLog("SYSTEM", "CANCEL", "Order", order.getId().toString(), 
+                    publishAuditLog("SYSTEM", "CANCEL", "Order", String.valueOf(order.getId()), 
                             "Cancelled order " + order.getOrderCode());
                 }
             }
@@ -73,13 +82,14 @@ public class OrderEventListener {
         }
     }
 
-    private void publishAuditLog(String username, String action, String resourceType, String resourceId, String details) {
-        eventPublisher.publishEvent(AuditLogEvent.builder()
+    private void publishAuditLog(String username, @NonNull String action, String resourceType, String resourceId, String details) {
+        AuditLogEvent auditEvent = AuditLogEvent.builder()
                 .username(username != null ? username : "SYSTEM")
                 .action(action)
                 .resourceType(resourceType)
                 .resourceId(resourceId)
                 .details(details)
-                .build());
+                .build();
+        eventPublisher.publishEvent(Objects.requireNonNull(auditEvent));
     }
 }

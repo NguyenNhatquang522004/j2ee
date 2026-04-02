@@ -1,6 +1,8 @@
 package nhom5.demo.dto.response;
 
 import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.domain.Page;
@@ -11,6 +13,8 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PageResponse<T> implements Serializable {
     private static final long serialVersionUID = 1L;
 

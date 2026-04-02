@@ -14,17 +14,33 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import AdminLayout from '../../components/AdminLayout';
 
+/**
+ * ADMIN COMPONENT: AdminAudit
+ * ---------------------------------------------------------
+ * Security-focused monitoring tool that displays all administrative actions.
+ * 
+ * Audit Trail includes:
+ * - Admin details (Username)
+ * - Action category (CREATE, UPDATE, DELETE, etc.)
+ * - Target resource type and specific ID.
+ * - Timestamp and contextual details/metadata.
+ */
 export default function AdminAudit() {
+    // --- STATE ---
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Fetch logs on mount and page change
     useEffect(() => {
         fetchLogs();
     }, [page]);
 
+    /**
+     * fetchLogs: Retrieves paginated audit logs from the backend.
+     */
     const fetchLogs = async () => {
         try {
             setLoading(true);
@@ -39,6 +55,11 @@ export default function AdminAudit() {
         }
     };
 
+    /**
+     * getActionColor:
+     * Logic-based color mapping for immediate visual identification of actions.
+     * Dangerous actions (DELETE) are highlighted in red.
+     */
     const getActionColor = (action) => {
         if (action.includes('CREATE')) return 'text-green-600 bg-green-50 ring-green-100';
         if (action.includes('UPDATE')) return 'text-amber-600 bg-amber-50 ring-amber-100';
@@ -47,12 +68,18 @@ export default function AdminAudit() {
         return 'text-gray-600 bg-gray-50 ring-gray-100';
     };
 
+    /**
+     * filteredLogs:
+     * Frontend-side searching across multiple fields (username, action, resource, details).
+     */
     const filteredLogs = logs.filter(log => 
         log.adminUsername?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.resourceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.details?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    // --- RENDER ---
 
     return (
         <AdminLayout>

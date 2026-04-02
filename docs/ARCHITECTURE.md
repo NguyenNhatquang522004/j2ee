@@ -35,15 +35,30 @@ Dự án được phân chia theo kiến trúc 3 lớp chuẩn:
 
 ## ⚡ Kiến trúc Tìm kiếm & Cấu hình (Search & Settings)
 
-### 🏎️ Search Architecture (REST-driven)
-Để đạt được sự ổn định cao nhất trong môi trường Docker, FreshFood sử dụng kiến trúc tìm kiếm dựa trên REST thay vì SDK truyền thống:
-- **RestTemplate Integration**: Backend giao tiếp trực tiếp với Meilisearch qua HTTP Client, giúp loại bỏ các lỗi tương thích phiên bản của thư viện SDK.
+### 🏎️ Search Architecture (Asynchronous & REST-driven)
+FreshFood sử dụng kiến trúc tìm kiếm "Resilient & Non-blocking" để đạt được sự ổn định cao nhất:
+- **Asynchronous Indexing (@Async)**: Mọi thao tác cập nhật (Index) hoặc xóa (Delete) sản phẩm trên Meilisearch đều được đẩy xuống luồng chạy nền, giúp luồng giao dịch đặt hàng không bị phụ thuộc vào độ trễ của hệ thống tìm kiếm.
+- **Resiliency Timeouts**: Thiết lập cơ chế Timeout gắt gao (Connect: 2s, Read: 3s) thông qua `RestTemplate` tùy chỉnh, đảm bảo hệ thống không bị treo hoặc "sụp đổ dây chuyền" khi Meilisearch gặp sự cố hoặc quá tải.
 - **Master Key Security**: Xác thực được thực hiện ở tầng Server, đảm bảo Key tìm kiếm không bao giờ bị lộ ra Frontend.
 
-### 🛡️ Public Settings Whitelist
-Hệ thống quản lý cấu hình được thiết kế theo nguyên tắc "Tối thiểu quyền hạn":
-- **Config Privacy Layer**: API cấu hình công khai `/api/v1/settings/public` chỉ trả về danh sách các Key đã được định nghĩa trong mã nguồn (Hard-coded Whitelist).
-- **Data Security**: Mọi thiết lập nhạy cảm sẽ bị lọc bỏ tự động trước khi gửi tới Client, ngăn chặn rò rỉ thông tin hạ tầng.
+### 🧿 Observability Layer (Deep Traceability)
+Để đảm bảo khả năng giám sát 24/7 và khắc phục sự cố tức thì:
+- **Comprehensive Logging (SLF4J)**: Hệ thống triển khai Logging tập trung tại các "nút thắt" quan trọng: Vòng đời đơn hàng (Order Lifecycle), Thanh toán (Payment Callback), và Bộ lọc bảo mật (Security Filters).
+- **Log Levels Strategy**: Sử dụng `INFO` cho các sự kiện nghiệp vụ quan trọng, `WARN` cho các bất ổn tiềm tàng (vd: Meilisearch chậm), và `ERROR` cho các ngoại lệ nghiêm trọng cùng với dấu vết (Stack trace) đầy đủ.
+- **Centralized Exception Handling**: Mọi lỗi hệ thống được thu gom về `GlobalExceptionHandler`, ghi lại Log chi tiết và trả về phản hồi chuẩn hóa cho Frontend.
+
+### 🛡️ Security & Integrity (Hardening Layer)
+Hệ thống được thiết kế theo nguyên tắc "Phòng thủ chiều sâu" (Defense in Depth):
+- **Admin IP Whitelisting**: Một bộ lọc chuyên biệt (`AdminIpWhitelistFilter`) kiểm soát mọi truy cập tới `/api/v1/dashboard/**` và các tài nguyên nhạy cảm, chỉ cho phép các IP trong danh sách trắng (Whitelist) từ cơ sở dữ liệu.
+- **Security Auditing**: Mọi hành vi đáng ngờ (Login failed, Unauthorized access) và thay đổi trạng thái đơn hàng đều được ghi lại trong bảng `security_logs` để phục vụ điều tra và bảo mật.
+- **CSRF Cookie Hardening**: Sử dụng `CookieCsrfTokenRepository` với HttpOnly=false để xác thực giao tiếp an toàn giữa SPA và API.
+
+### 📦 Lifecycle & Data Consistency
+- **Order State Machine**: Quy trình trạng thái đơn hàng được tập trung hóa trong `OrderStateMachine`, ngăn chặn các bước chuyển đổi phi logic (VD: Hủy đơn hàng đã giao thành công).
+- **Soft Delete Policy**: Áp dụng cơ chế Xóa mềm (`deleted_at`) cho toàn bộ thực thể kinh doanh cốt lõi (Sản phẩm, Đơn hàng, Người dùng...). Dữ liệu không bao giờ bị xóa thực tế khỏi Disk, giúp bảo toàn tính toàn vẹn của báo cáo tài chính hằng năm.
+- **Database Consistency (Flyway)**: Mọi thay đổi cấu trúc Database đều được thực hiện qua Scripts Migration (V1, V2, V3...), đảm bảo mọi môi trường (Dev/Staging/Prod) luôn đồng nhất 100%.
+- **Inventory Locking**: Kết hợp **Redis Stock Reservation** (Optimistic) và **ProductBatch Pessimistic Locking** (Database level) để đảm bảo không bao giờ xảy ra tình trạng "bán lố" hàng tồn kho.
+- **Data Flow Synchronicity**: Cấu trúc địa chỉ 4 tầng (addressDetail, ward, district, province) được duy trì đồng nhất từ lược đồ SQL, qua ánh xạ Entity/DTO tại Java, lên tới giao diện React, đảm bảo tính toàn vẹn dữ liệu xuyên suốt 3 tầng kiến trúc.
 
 ---
 © 2026 FreshFood Project. Bảo lưu mọi quyền.

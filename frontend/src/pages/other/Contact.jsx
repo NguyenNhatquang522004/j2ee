@@ -89,7 +89,7 @@ export default function Contact() {
                             </div>
                         </div>
 
-                        <div className="p-8 bg-black rounded-[2.5rem] text-white relative overflow-hidden group">
+                        <div className="p-8 bg-green-900 rounded-[2.5rem] text-white relative overflow-hidden group">
                            <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/20 rounded-full blur-3xl group-hover:bg-green-500/30 transition-colors"></div>
                            <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Trở thành đối tác?</h3>
                            <p className="text-gray-400 text-sm font-medium mb-6 leading-relaxed">Nếu bạn là chủ trang trại hữu cơ và muốn đưa sản phẩm của mình lên FreshFood, đừng ngần ngại gửi thư cho chúng tôi.</p>
@@ -153,7 +153,7 @@ export default function Contact() {
                                 </div>
                                 <button 
                                     disabled={loading}
-                                    className="w-full py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-2xl shadow-green-100 hover:bg-black transition-all flex items-center justify-center gap-3 disabled:bg-gray-300 disabled:shadow-none"
+                                    className="w-full py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-2xl shadow-green-100 hover:bg-green-700 transition-all flex items-center justify-center gap-3 disabled:bg-gray-300 disabled:shadow-none"
                                 >
                                     {loading ? 'Đang gửi...' : (
                                         <>

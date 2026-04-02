@@ -1,0 +1,23 @@
+<div th:fragment="content">
+    <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 25px; margin-bottom: 25px;">
+        <h2 style="color: #991b1b; font-size: 22px; margin-top: 0;">Thông báo Bảo mật Hệ thống</h2>
+        <p style="color: #4b5563;">Xin chào <strong th:text="${fullName}">Anh/Chị</strong>,</p>
+        <p style="color: #b91c1c; font-weight: bold; font-size: 16px;">Phát hiện thay đổi quan trọng trong tài khoản của bạn!</p>
+    </div>
+    
+    <div style="background-color: #f9fafb; border-radius: 12px; padding: 20px; font-size: 15px; border: 1px solid #e5e7eb;">
+        <p><strong>Loại thay đổi:</strong> <span th:text="${action}" style="color: #dc2626; font-weight: 800;">THAY ĐỔI MẬT KHẨU</span></p>
+        <p><strong>Thời điểm ghi nhận:</strong> <span th:text="${time}">12:34:56 20-03-2024</span></p>
+    </div>
+    
+    <div class="divider"></div>
+    <p style="font-weight: bold; color: #111827;">Hành động này được thực hiện bởi chính bạn?</p>
+    <p>Nếu <strong style="color: #047857;">đúng là bạn</strong> đã thay đổi, vui lòng bỏ qua email này.</p>
+    <p>Nếu bạn <strong style="color: #991b1b;">KHÔNG</strong> thực hiện hành động này, hãy ngay lập tức khôi phục mật khẩu và liên hệ bộ phận hỗ trợ kỹ thuật FreshFood qua hotline hoặc email hotro@freshfood.com.</p>
+    
+    <a th:href="${frontendUrl} + '/forgot-password'" class="btn" style="background-color: #991b1b;">Tôi không thực hiện thay đổi</a>
+    
+    <div style="margin-top: 30px; font-size: 12px; color: #9ca3af; font-style: italic;">
+        Email này được tự động gửi từ hệ thống bảo mật FreshFood. Bảo mật thông tin của khách hàng là ưu tiên số 1 của chúng tôi.
+    </div>
+</div>

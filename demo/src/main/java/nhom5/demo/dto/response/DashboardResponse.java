@@ -1,6 +1,8 @@
 package nhom5.demo.dto.response;
 
 import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,6 +13,8 @@ import java.util.Map;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class DashboardResponse {
 
     // Tổng quan
@@ -21,6 +25,7 @@ public class DashboardResponse {
     private long totalSubscribers;
     private BigDecimal revenueToday;
     private BigDecimal revenueThisMonth;
+    private BigDecimal totalRevenue;
 
     // Thống kê đơn hàng theo trạng thái
     private Map<String, Long> ordersByStatus;

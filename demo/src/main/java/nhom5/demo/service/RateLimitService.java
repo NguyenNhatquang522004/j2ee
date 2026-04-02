@@ -3,6 +3,8 @@ package nhom5.demo.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.lang.NonNull;
+import java.util.Objects;
 
 import java.time.Duration;
 
@@ -12,7 +14,7 @@ public class RateLimitService {
 
     private final StringRedisTemplate redisTemplate;
 
-    public boolean isAllowed(String key, int limit, int windowSeconds) {
+    public boolean isAllowed(@NonNull String key, int limit, int windowSeconds) {
         String redisKey = "rate_limit:" + key;
         long now = System.currentTimeMillis();
         long windowStart = now - (windowSeconds * 1000L);
@@ -29,10 +31,10 @@ public class RateLimitService {
         }
 
         // 3. Add new request with current timestamp
-        redisTemplate.opsForZSet().add(redisKey, String.valueOf(now), now);
+        redisTemplate.opsForZSet().add(Objects.requireNonNull(redisKey), Objects.requireNonNull(String.valueOf(now)), now);
         
         // 4. Set expiry for the whole key to clean up dormant keys
-        redisTemplate.expire(redisKey, Duration.ofSeconds(windowSeconds + 1));
+        redisTemplate.expire(redisKey, Objects.requireNonNull(Duration.ofSeconds(windowSeconds + 1)));
         
         return true;
     }
