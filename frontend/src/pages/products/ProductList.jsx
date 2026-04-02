@@ -288,7 +288,7 @@ export default function ProductList() {
                                         className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-[11px] font-bold outline-none focus:border-blue-500"
                                     />
                                 </div>
-                                <button type="submit" className="w-full py-2 bg-gray-900 text-white text-[10px] font-black uppercase rounded-xl hover:bg-blue-600 transition-colors">
+                                <button type="submit" className="w-full py-2 bg-green-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-green-700 transition-colors">
                                     Áp dụng
                                 </button>
                             </form>
@@ -308,7 +308,7 @@ export default function ProductList() {
                                         if (next) p.isNew = 'true'; else delete p.isNew;
                                         setSearchParams(p);
                                     }}
-                                    className={`flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold border transition-all ${isNew ? 'bg-black text-white border-black shadow-lg' : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-300'}`}
+                                    className={`flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold border transition-all ${isNew ? 'bg-green-600 text-white border-green-600 shadow-lg' : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-300'}`}
                                 >
                                     Sản phẩm mới
                                     <div className={`w-2 h-2 rounded-full ${isNew ? 'bg-green-400 animate-ping' : 'bg-gray-200'}`}></div>
@@ -414,7 +414,7 @@ function ProductCard({ product }) {
 
     return (
         <div className="group bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col h-full border-b-[3px] sm:border-b-[4px] hover:border-b-green-500">
-            <Link to={`/products/${product.id}`} className="relative block h-32 sm:h-48 overflow-hidden">
+            <Link to={`/products/${product.slug}`} className="relative block h-32 sm:h-48 overflow-hidden">
                 <div className="h-full bg-gray-50 flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
                         <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
@@ -425,7 +425,7 @@ function ProductCard({ product }) {
                 
                 <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1 sm:gap-2 z-10 transition-transform group-hover:translate-x-1 duration-500">
                     {product.isNew && (
-                        <span className="bg-black/80 backdrop-blur-md text-white text-[7px] sm:text-[9px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/10">Mới</span>
+                        <span className="bg-green-600/80 backdrop-blur-md text-white text-[7px] sm:text-[9px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/10">Mới</span>
                     )}
                     {product.flashSalePrice ? (
                         <span className="bg-red-600 text-white text-[7px] sm:text-[9px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20 animate-pulse flex items-center gap-0.5 sm:gap-1">
@@ -453,7 +453,7 @@ function ProductCard({ product }) {
                     {product.farmName || 'Hữu cơ'}
                 </div>
                 
-                <Link to={`/products/${product.id}`} className="font-extrabold text-gray-800 hover:text-green-700 block truncate text-[10px] sm:text-sm transition-colors uppercase tracking-tight">
+                <Link to={`/products/${product.slug}`} className="font-extrabold text-gray-800 hover:text-green-700 block truncate text-[10px] sm:text-sm transition-colors uppercase tracking-tight">
                     {product.name}
                 </Link>
 
@@ -498,7 +498,7 @@ function ProductCard({ product }) {
                     <button 
                         onClick={handleAdd} 
                         disabled={adding}
-                        className="w-7 h-7 sm:w-11 sm:h-11 bg-green-600 text-white rounded-lg sm:rounded-2xl flex items-center justify-center hover:bg-black transition-all shadow-xl shadow-green-100 hover:shadow-black/20 group/btn disabled:opacity-50"
+                        className="w-7 h-7 sm:w-11 sm:h-11 bg-green-600 text-white rounded-lg sm:rounded-2xl flex items-center justify-center hover:bg-green-700 transition-all shadow-xl shadow-green-100 hover:shadow-black/20 group/btn disabled:opacity-50"
                     >
                         {adding ? (
                             <div className="w-3 h-3 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

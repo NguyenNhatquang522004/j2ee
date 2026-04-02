@@ -110,7 +110,7 @@ function FlashSaleCard({ item }) {
     const p = item.product;
 
     return (
-        <Link to={`/products/${p.id}`} className="flex flex-col bg-white rounded-xl sm:rounded-2xl border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative group/card">
+        <Link to={`/products/${p.slug}`} className="flex flex-col bg-white rounded-xl sm:rounded-2xl border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative group/card">
             <div className="h-32 sm:h-44 bg-gray-50 relative overflow-hidden flex items-center justify-center">
                 {p.imageUrl ? (
                     <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-700" />

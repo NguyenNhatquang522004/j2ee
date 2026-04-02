@@ -1,6 +1,7 @@
 package nhom5.demo.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import nhom5.demo.dto.request.OrderRequest;
 import nhom5.demo.dto.response.OrderResponse;
 import nhom5.demo.entity.*;
@@ -31,11 +32,14 @@ import nhom5.demo.security.SecurityUtils;
 import nhom5.demo.service.AuditService;
 import nhom5.demo.event.OrderEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.lang.NonNull;
+import java.util.Objects;
 
 /**
  * Triển khai các dịch vụ quản lý Đơn hàng.
  * Bao gồm: Tạo đơn hàng, Quản lý trạng thái, Hoàn tiền, Trả hàng và Tích hợp xử lý kho (Redis + DB).
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -54,6 +58,8 @@ public class OrderServiceImpl implements OrderService {
     private final nhom5.demo.service.RedisStockReservationService redisStockReservationService;
     private final SystemSettingRepository systemSettingRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final nhom5.demo.security.OrderStateMachine orderStateMachine;
+    private final nhom5.demo.service.MailService mailService;
 
     /**
      * Tạo đơn hàng mới.
@@ -61,7 +67,9 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     @Transactional
-    public OrderResponse createOrder(String username, OrderRequest request) {
+    public OrderResponse createOrder(@NonNull String username, @NonNull OrderRequest request) {
+        log.info("Starting order creation for user: {} with {} items", username, request.getItems().size());
+        
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
 
@@ -70,16 +78,34 @@ public class OrderServiceImpl implements OrderService {
         Optional<Order> recentOrder = orderRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId());
         if (recentOrder.isPresent() && 
             recentOrder.get().getCreatedAt().isAfter(LocalDateTime.now().minusSeconds(5))) {
+            log.warn("Blocking potential duplicate order from user: {} (Order created < 5s ago)", username);
             throw new BusinessException("Hệ thống đang xử lý đơn hàng của bạn, vui lòng đợi giây lát");
         }
 
         // Build order items and validate stock
         List<OrderItem> orderItems = request.getItems().stream().map(itemReq -> {
-            Product product = productRepository.findById(itemReq.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product", "id", itemReq.getProductId()));
+            Long productId = Objects.requireNonNull(itemReq.getProductId());
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
 
-            if (!product.getIsActive()) {
+            boolean active = product.getIsActive() == null || product.getIsActive();
+            if (!active) {
+                log.warn("Order failed: Product {} is inactive", product.getName());
                 throw new BusinessException("Sản phẩm '" + product.getName() + "' hiện không còn bán");
+            }
+
+            // Kiểm tra tồn kho thực tế (Tổng batch còn hàn - Lượng đang giữ chỗ Redis)
+            long totalStock = batchService.getTotalStock(Objects.requireNonNull(product.getId()));
+            int reserved = redisStockReservationService.getTotalReserved(Objects.requireNonNull(product.getId()));
+            int available = (int) totalStock - reserved;
+            
+            log.debug("Stock check for {}: DB Total={}, Redis Reserved={}, Available={}", 
+                product.getName(), totalStock, reserved, available);
+
+            if (itemReq.getQuantity() > available) {
+                log.warn("Insufficient stock for {}: Request={}, Available={}", product.getName(), itemReq.getQuantity(), available);
+                throw new nhom5.demo.exception.InsufficientStockException(
+                        "Sản phẩm '" + product.getName() + "' chỉ còn " + Math.max(0, available) + " đơn vị khả dụng");
             }
 
             // Check Flash Sale with Lock for thread safety
@@ -93,15 +119,12 @@ public class OrderServiceImpl implements OrderService {
 
                 if (flashSaleItem.getSoldQuantity() + itemReq.getQuantity() <= flashSaleItem.getQuantityLimit()) {
                     // Entire quantity fits in flash sale
+                    log.info("Applying Flash Sale price for product: {}", product.getName());
                     unitPrice = flashSaleItem.getFlashSalePrice();
                     flashSaleItem.setSoldQuantity(flashSaleItem.getSoldQuantity() + itemReq.getQuantity());
                     flashSaleItemRepository.save(flashSaleItem);
                 } else if (flashSaleItem.getSoldQuantity() < flashSaleItem.getQuantityLimit()) {
-                    // PARTIAL Flash Sale? 
-                    // For simplicity in UI, if the requested quantity exceeds the remaining flash sale stock, 
-                    // we apply the system price (as requested: "hết số lượng thì dùng giá hệ thống").
-                    // Or we could check if they are okay with system price. 
-                    // Most systems would revert to regular price if the "deal" quantity is exhausted.
+                    // PARTIAL Flash Sale
                     unitPrice = product.getPrice(); 
                 }
             }
@@ -113,7 +136,7 @@ public class OrderServiceImpl implements OrderService {
                     .subtotal(unitPrice.multiply(BigDecimal.valueOf(itemReq.getQuantity())))
                     .productName(product.getName()) // snapshot current name
                     .productImageUrl(product.getImageUrl()) // snapshot current image
-                    .flashSaleItem(flashSaleItemOpt.map(f -> f).orElse(null))
+                    .flashSaleItem(flashSaleItemOpt.orElse(null))
                     .build();
         }).toList();
 
@@ -126,8 +149,12 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal discountAmount = BigDecimal.ZERO;
         Coupon coupon = null;
         if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
+            log.info("Applying coupon code: {} for user: {}", request.getCouponCode(), username);
             coupon = couponRepository.findByCodeAndIsActiveTrueWithLock(request.getCouponCode())
-                    .orElseThrow(() -> new BusinessException("Mã giảm giá không hợp lệ hoặc đã hết hạn"));
+                    .orElseThrow(() -> {
+                        log.warn("Invalid coupon code attempt: {}", request.getCouponCode());
+                        return new BusinessException("Mã giảm giá không hợp lệ hoặc đã hết hạn");
+                    });
 
             if (coupon.getExpiryDate().isBefore(LocalDate.now())) {
                 throw new BusinessException("Mã giảm giá đã hết hạn");
@@ -160,6 +187,7 @@ public class OrderServiceImpl implements OrderService {
 
             coupon.setUsedCount(coupon.getUsedCount() + 1);
             couponRepository.save(coupon);
+            log.info("Coupon applied successfully. Discount: {}", discountAmount);
         }
 
         // Calculate shipping fee based on system settings
@@ -176,7 +204,7 @@ public class OrderServiceImpl implements OrderService {
                 shippingFee = fee;
             }
         } catch (Exception e) {
-            // Log error or fall back to zero fee
+            log.warn("Error calculating shipping fee, defaulting to 0: {}", e.getMessage());
         }
 
         BigDecimal finalAmount = totalAmount.subtract(discountAmount).add(shippingFee);
@@ -192,12 +220,17 @@ public class OrderServiceImpl implements OrderService {
                 .format(LocalDateTime.now()) + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
         
         // Register in Redis for 15-min payment window (TRUE Reservation: No physical DB subtract yet)
-        itemsToReserve.forEach((pid, qty) -> redisStockReservationService.reserve(orderCode, pid, qty));
+        itemsToReserve.forEach((pid, qty) -> redisStockReservationService.reserve(Objects.requireNonNull(orderCode), Objects.requireNonNull(pid), qty));
 
         Order order = Order.builder()
                 .orderCode(orderCode)
                 .user(user)
                 .shippingAddress(request.getShippingAddress())
+                .addressDetail(request.getAddressDetail())
+                .ward(request.getWard())
+                .district(request.getDistrict())
+                .province(request.getProvince())
+                .receiverName(request.getReceiverName())
                 .phone(request.getPhone())
                 .note(request.getNote())
                 .paymentMethod(request.getPaymentMethod())
@@ -210,7 +243,7 @@ public class OrderServiceImpl implements OrderService {
                 .coupon(coupon)
                 .build();
 
-        Order savedOrder = orderRepository.save(order);
+        Order savedOrder = orderRepository.save(Objects.requireNonNull(order));
 
         // Save order items linked to order
         List<OrderItem> savedItems = orderItems.stream().map(item -> {
@@ -225,18 +258,20 @@ public class OrderServiceImpl implements OrderService {
             cartItemRepository.deleteByCartId(cart.getId());
         });
 
+        log.info("Order created successfully: {} (Final Amount: {})", orderCode, finalAmount);
+
         // Publish event for asynchronous decoupled processing (Emails, Notifications, Auditing)
-        eventPublisher.publishEvent(OrderEvent.builder()
+        eventPublisher.publishEvent(Objects.requireNonNull(OrderEvent.builder()
                 .order(savedOrder)
                 .type("CREATED")
-                .build());
+                .build()));
 
         return toResponse(savedOrder);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public OrderResponse getOrderById(Long id, String username) {
+    public OrderResponse getOrderById(@NonNull Long id, @NonNull String username) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
 
@@ -244,7 +279,10 @@ public class OrderServiceImpl implements OrderService {
         if (!order.getUser().getUsername().equals(username)) {
             User requester = userRepository.findByUsername(username)
                     .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
-            if (!requester.getRole().name().equals("ROLE_ADMIN")) {
+            boolean canManage = requester.getRole().name().equals("ROLE_ADMIN") || 
+                               requester.getRole().getPermissions().contains("manage:orders") ||
+                               requester.getCustomPermissions().contains("manage:orders");
+            if (!canManage) {
                 throw new BusinessException("Bạn không có quyền xem đơn hàng này");
             }
         }
@@ -253,7 +291,27 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<OrderResponse> getOrdersByUser(String username, Pageable pageable) {
+    public OrderResponse getOrderByCode(@NonNull String orderCode, @NonNull String username) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "code", orderCode));
+
+        // Admin can see any order; user can only see their own
+        if (!order.getUser().getUsername().equals(username)) {
+            User requester = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
+            boolean canManage = requester.getRole().name().equals("ROLE_ADMIN") || 
+                               requester.getRole().getPermissions().contains("manage:orders") ||
+                               requester.getCustomPermissions().contains("manage:orders");
+            if (!canManage) {
+                throw new BusinessException("Bạn không có quyền xem đơn hàng này");
+            }
+        }
+        return toResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> getOrdersByUser(@NonNull String username, @NonNull Pageable pageable) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
         return orderRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable)
@@ -262,7 +320,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<OrderResponse> getAllOrders(String query, OrderStatusEnum status, Pageable pageable) {
+    public Page<OrderResponse> getAllOrders(String query, OrderStatusEnum status, @NonNull Pageable pageable) {
         return orderRepository.searchOrders(query, status, pageable).map(this::toResponse);
     }
 
@@ -273,119 +331,72 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     @Transactional
-    public OrderResponse updateOrderStatus(Long id, OrderStatusEnum status) {
+    public OrderResponse updateOrderStatus(@NonNull Long id, @NonNull OrderStatusEnum status) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
 
-        // Strict State Transition Validation (Point 10)
-        OrderStatusEnum currentStatus = order.getStatus();
-        
-        boolean isValidTransition = switch (currentStatus) {
-            case PENDING -> 
-                status == OrderStatusEnum.CONFIRMED || status == OrderStatusEnum.CANCELLED;
-            case CONFIRMED -> 
-                status == OrderStatusEnum.PACKAGING || status == OrderStatusEnum.SHIPPING || status == OrderStatusEnum.CANCELLED;
-            case PACKAGING -> 
-                status == OrderStatusEnum.SHIPPING || status == OrderStatusEnum.CANCELLED;
-            case SHIPPING -> 
-                status == OrderStatusEnum.DELIVERED || status == OrderStatusEnum.CANCELLED;
-            case DELIVERED -> 
-                status == OrderStatusEnum.RETURN_REQUESTED;
-            case RETURN_REQUESTED ->
-                status == OrderStatusEnum.RETURNED || status == OrderStatusEnum.RETURN_REJECTED;
-            case CANCELLED, RETURNED, RETURN_REJECTED -> 
-                false; // Final states
-            default -> false;
-        };
+        log.info("Transitioning order {} from {} to {}", order.getOrderCode(), order.getStatus(), status);
 
-        if (!isValidTransition) {
-            throw new BusinessException("Trạng thái đơn hàng không hợp lệ khi chuyển từ " + 
-                    currentStatus.getDisplayName() + " sang " + status.getDisplayName());
-        }
+        // Strict State Transition Validation
+        orderStateMachine.validateTransition(order.getStatus(), status);
 
         order.setStatus(status);
         LocalDateTime now = LocalDateTime.now();
         
         switch (status) {
-            case PENDING -> { /* Chờ xác nhận */ }
             case CONFIRMED -> { 
-                if (order.getConfirmedAt() == null) order.setConfirmedAt(now); 
-                // Only mark as paid if it's NOT COD (pre-paid methods like Bank/Momo)
-                if (order.getPaymentMethod() != PaymentMethodEnum.COD && !order.getIsPaid()) {
-                    // Physical deduction from DB batches now that payment is real
+                if (order.getPaymentMethod() != PaymentMethodEnum.COD && !order.getIsPaid() && order.getConfirmedAt() == null) {
+                    log.info("Pre-paid order confirmed. Deducting physical stock for order: {}", order.getOrderCode());
                     for (OrderItem item : order.getOrderItems()) {
                         batchService.deductStock(item.getProduct().getId(), item.getQuantity());
                     }
                     order.setIsPaid(true);
                     order.setPaidAt(now);
                 }
-                redisStockReservationService.commit(order.getOrderCode(), getOrderItemMap(order));
+                if (order.getConfirmedAt() == null) order.setConfirmedAt(now); 
+                redisStockReservationService.commit(Objects.requireNonNull(order.getOrderCode()), Objects.requireNonNull(getOrderItemMap(order)));
             }
             case PACKAGING -> {
-                if (order.getPackagingAt() == null) order.setPackagingAt(now);
-            }
-            case SHIPPING -> {
-                if (order.getShippedAt() == null) order.setShippedAt(now);
-            }
-            case DELIVERED -> { 
-                if (order.getDeliveredAt() == null) order.setDeliveredAt(now);
-                // Mark COD as paid upon delivery
-                if (!order.getIsPaid()) {
+                if (order.getPaymentMethod() == PaymentMethodEnum.COD && !order.getIsPaid() && order.getPackagingAt() == null) {
+                    log.info("COD order packaging. Deducting physical stock for order: {}", order.getOrderCode());
                     for (OrderItem item : order.getOrderItems()) {
                         batchService.deductStock(item.getProduct().getId(), item.getQuantity());
                     }
+                }
+                if (order.getPackagingAt() == null) order.setPackagingAt(now);
+            }
+            case DELIVERED -> { 
+                log.info("Order delivered: {}", order.getOrderCode());
+                if (order.getDeliveredAt() == null) order.setDeliveredAt(now);
+                if (order.getPaymentMethod() == PaymentMethodEnum.COD && !order.getIsPaid()) {
                     order.setIsPaid(true);
                     order.setPaidAt(now);
                 }
-                redisStockReservationService.commit(order.getOrderCode(), getOrderItemMap(order));
+                redisStockReservationService.commit(Objects.requireNonNull(order.getOrderCode()), Objects.requireNonNull(getOrderItemMap(order)));
             }
             case CANCELLED -> { 
+                log.warn("Order cancelled: {}. Reverting promo and stock if previously deducted.", order.getOrderCode());
                 if (order.getCancelledAt() == null) order.setCancelledAt(now); 
                 revertCouponUsage(order);
-                revertFlashSaleUsage(order); // Flash sale is allocated immediately upon creation
+                revertFlashSaleUsage(order); 
                 
-                // If it was already CONFIRMED/PAID, we revert physical stock. 
-                // If it was just PENDING, it was never subtracted from DB, only Redis.
-                if (order.getIsPaid()) {
+                boolean wasStockDeducted = order.getIsPaid() || order.getPackagingAt() != null || order.getShippedAt() != null;
+                if (wasStockDeducted) {
+                    log.info("Reverting physical stock for cancelled order: {}", order.getOrderCode());
                     revertStock(order);
                 }
-                redisStockReservationService.release(order.getOrderCode(), getOrderItemMap(order));
+                redisStockReservationService.release(Objects.requireNonNull(order.getOrderCode()), Objects.requireNonNull(getOrderItemMap(order)));
             }
             case RETURNED -> {
+                log.warn("Order returned: {}. Reverting physical stock.", order.getOrderCode());
                 if (order.getReturnedAt() == null) order.setReturnedAt(now);
                 revertStock(order);
-                order.setUpdatedAt(now);
             }
-            case RETURN_REQUESTED -> {
-                if (order.getReturnRequestedAt() == null) order.setReturnRequestedAt(now);
-                order.setUpdatedAt(now);
-            }
-            case RETURN_REJECTED -> {
-                order.setUpdatedAt(now);
-                // If by any chance it wasn't paid (e.g. error in flow), 
-                // reject means they KEEP it, so it's definitively paid now.
-                if (!order.getIsPaid()) {
-                    order.setIsPaid(true);
-                    order.setPaidAt(now);
-                }
-            }
-            default -> {
-                // For any status that implies progress/payment success, commit the reservation
-                if (status == OrderStatusEnum.CONFIRMED || status == OrderStatusEnum.DELIVERED) {
-                    redisStockReservationService.commit(order.getOrderCode(), getOrderItemMap(order));
-                }
-            }
+            default -> { /* Other statuses as logic-only */ }
         }
         
         Order savedOrder = orderRepository.save(order);
-        
-        // Use event for decoupled side effects
-        eventPublisher.publishEvent(OrderEvent.builder()
-                .order(savedOrder)
-                .status(status)
-                .type("STATUS_UPDATED")
-                .build());
-
+        eventPublisher.publishEvent(Objects.requireNonNull(OrderEvent.builder().order(savedOrder).status(status).type("STATUS_UPDATED").build()));
         return toResponse(savedOrder);
     }
 
@@ -426,22 +437,22 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public void cancelOrder(Long id, String username) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
+    public void cancelOrder(@NonNull String orderCode, @NonNull String username) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "code", orderCode));
 
         if (!order.getUser().getUsername().equals(username)) {
             throw new BusinessException("Bạn không có quyền hủy đơn hàng này");
         }
         
-        updateOrderStatus(id, OrderStatusEnum.CANCELLED);
+        updateOrderStatus(Objects.requireNonNull(order.getId()), OrderStatusEnum.CANCELLED);
         
         notificationService.createNotification(order.getUser(),
                 "Bạn đã hủy thành công đơn hàng #" + order.getOrderCode(),
                 "WARNING",
-                "/orders/" + order.getId());
+                "/orders/code/" + order.getOrderCode());
 
-        auditService.log(username, "CANCEL", "Order", id.toString(), "Cancelled order " + order.getOrderCode());
+        auditService.log(username, "CANCEL", "Order", order.getId().toString(), "Cancelled order " + order.getOrderCode());
     }
 
     /**
@@ -450,7 +461,7 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     @Transactional
-    public OrderResponse markAsRefunded(Long id) {
+    public OrderResponse markAsRefunded(@NonNull Long id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
                 
@@ -476,6 +487,11 @@ public class OrderServiceImpl implements OrderService {
                 "SUCCESS",
                 "/orders/" + order.getId());
 
+        // Send Email for refund
+        mailService.sendGenericEmail(order.getUser().getEmail(), 
+            "Thông báo hoàn tiền đơn hàng #" + order.getOrderCode(), 
+            "Chúc mừng, đơn hàng #" + order.getOrderCode() + " của bạn đã được hoàn lại số tiền " + order.getFinalAmount() + "đ thành công.");
+
         auditService.log(SecurityUtils.getCurrentUsername(), "MARK_REFUNDED", "Order", id.toString(), 
                 "Marked order " + order.getOrderCode() + " as refunded");
                 
@@ -484,9 +500,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderResponse requestReturn(Long id, String reason, String returnMedia, String username) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
+    public OrderResponse requestReturn(@NonNull String orderCode, String reason, String returnMedia, @NonNull String username) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "code", orderCode));
 
         if (!order.getUser().getUsername().equals(username)) {
             throw new BusinessException("Bạn không có quyền yêu cầu trả hàng cho đơn hàng này");
@@ -504,18 +520,18 @@ public class OrderServiceImpl implements OrderService {
 
         order.setReturnReason(reason);
         order.setReturnMedia(returnMedia);
-        return updateOrderStatus(id, OrderStatusEnum.RETURN_REQUESTED);
+        return updateOrderStatus(Objects.requireNonNull(order.getId()), OrderStatusEnum.RETURN_REQUESTED);
     }
 
     @Override
     @Transactional
-    public OrderResponse confirmReturn(Long id) {
+    public OrderResponse confirmReturn(@NonNull Long id) {
         return updateOrderStatus(id, OrderStatusEnum.RETURNED);
     }
 
     @Override
     @Transactional
-    public OrderResponse rejectReturn(Long id, String reason) {
+    public OrderResponse rejectReturn(@NonNull Long id, String reason) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
         order.setRejectReason(reason);
@@ -524,7 +540,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<OrderResponse> getRefundRequests(String query, Pageable pageable) {
+    public Page<OrderResponse> getRefundRequests(String query, @NonNull Pageable pageable) {
         return orderRepository.searchRefundRequests(query, pageable).map(this::toResponse);
     }
 

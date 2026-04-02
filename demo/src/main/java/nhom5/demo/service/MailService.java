@@ -12,4 +12,7 @@ public interface MailService {
     void sendGenericEmail(String toEmail, String subject, String content);
     void send2faEmail(String toEmail, String code);
     void sendTierUpgradeNotification(String toEmail, String fullName, String newTier);
+    void sendWelcomeEmail(String toEmail, String fullName);
+    void sendOrderStatusUpdate(Order order);
+    void sendSecurityAlert(String toEmail, String fullName, String action);
 }

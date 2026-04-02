@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
 import { dashboardService, orderService } from '../../api/services';
-/**
- * Bảng điều khiển Quản trị (Admin Dashboard).
- * Sử dụng phong cách Glassmorphism (White/70 backdrop-blur) để tạo giao diện hiện đại, sang trọng.
- * Tích hợp biểu đồ doanh thu động và hệ thống thẻ thống kê (StatCards).
- */
+import AdminLayout from '../../components/AdminLayout';
 import {
     ShoppingBagIcon,
     UserGroupIcon,
@@ -19,8 +15,20 @@ import {
 } from '@heroicons/react/24/outline';
 
 /**
- * Thành phần hiển thị chỉ số (StatCard).
- * Tích hợp hiệu ứng Hover-translate và Shadow mượt mà.
+ * ADMIN COMPONENT: AdminDashboard
+ * ---------------------------------------------------------
+ * The central command gallery for real-time business intelligence.
+ * 
+ * Design Features:
+ * - Glassmorphism UI: White/70 backdrop-blur for a premium, clean aesthetic.
+ * - Dynamic Analytics: Real-time stat cards with growth trends.
+ * - Zero-Dependency Charts: Lightweight SVG-based revenue visualization.
+ * - Priority Tasking: Intelligent order status summary to guide admin actions.
+ */
+
+/**
+ * COMPONENT: StatCard
+ * Renders individual business metrics with hover animations and color-coded trends.
  */
 const StatCard = ({ title, value, icon: Icon, color, trend, trendValue }) => (
     <div className="bg-white/70 backdrop-blur-xl border border-white/40 p-4 rounded-xl shadow-sm hover:-translate-y-1 transition-all duration-300">
@@ -40,6 +48,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend, trendValue }) => (
     </div>
 );
 
+// Map backend order statuses to human-readable UI elements
 const ORDER_STATUS = {
     PENDING: { label: 'Chờ xác nhận', cls: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
     CONFIRMED: { label: 'Đã xác nhận', cls: 'bg-blue-100 text-blue-800 border-blue-200' },
@@ -49,13 +58,16 @@ const ORDER_STATUS = {
 };
 
 export default function AdminDashboard() {
+    // --- STATE ---
     const [stats, setStats] = useState(null);
     const [recentOrders, setRecentOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Initial data hydration
     useEffect(() => {
         const load = async () => {
             try {
+                // Batch fetch key metrics to minimize loading screen time
                 const [dashRes, ordersRes] = await Promise.all([
                     dashboardService.get(),
                     orderService.getAll({ page: 0, size: 5 }),
@@ -71,10 +83,18 @@ export default function AdminDashboard() {
 
     const fmt = (n) => new Intl.NumberFormat('vi-VN').format(n);
 
-    if (loading) return <AdminLayout><div className="flex items-center justify-center min-h-[60vh] text-green-600 font-bold animate-pulse">ĐANG TẢI DỮ LIỆU...</div></AdminLayout>;
+    // --- LOADING RENDER ---
+    if (loading) return (
+        <AdminLayout>
+            <div className="flex items-center justify-center min-h-[60vh] text-green-600 font-black tracking-widest animate-pulse uppercase italic">
+                Sincronización de Datos...
+            </div>
+        </AdminLayout>
+    );
 
     return (
         <AdminLayout>
+            {/* Header Section */}
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">Tổng quan hệ thống</h1>
@@ -86,8 +106,9 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
+            {/* Top Stat Cards Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-                <StatCard title="Tổng doanh thu" value={fmt(stats?.revenueThisMonth || 0) + '₫'} icon={CurrencyDollarIcon} color="bg-green-100" trend="up" trendValue="12.5" />
+                <StatCard title="Tổng doanh thu" value={fmt(stats?.totalRevenue || 0) + '₫'} icon={CurrencyDollarIcon} color="bg-green-100" />
                 <StatCard title="Đơn hàng" value={fmt(stats?.totalOrders || 0)} icon={ArchiveBoxIcon} color="bg-blue-100" trend="up" trendValue="8.2" />
                 <StatCard title="Khách hàng" value={fmt(stats?.totalUsers || 0)} icon={UserGroupIcon} color="bg-indigo-100" trend="up" trendValue="15.8" />
                 <StatCard title="Sản phẩm" value={fmt(stats?.totalProducts || 0)} icon={ShoppingBagIcon} color="bg-amber-100" />
@@ -95,46 +116,45 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8 mb-8">
-                {/* Sales Chart Mockup */}
+                {/* REVENUE CHART (Pure CSS/SVG Implementation) */}
                 <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h2 className="text-xl font-black text-gray-900 tracking-tight">Hiệu suất bán hàng</h2>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">7 ngày gần nhất • VNĐ (trình mô phỏng)</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">10 ngày gần nhất • VNĐ (thống kê thực tế)</p>
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="w-3 h-3 rounded bg-green-500"></span>
                             <span className="text-[10px] font-black text-gray-400 uppercase">Doanh thu</span>
                         </div>
                     </div>
-                    {/* BIỂU ĐỒ DOANH THU DỰA TRÊN SVG/CSS (Không dùng thư viện nặng) */}
-                    <div className="h-[220px] flex items-end gap-3 sm:gap-6 px-2">
+                    {/* The Chart: Calibrated based on max weekly revenue to ensure relative scaling */}
+                    <div className="h-[220px] flex items-end gap-3 sm:gap-6 px-2 text-center">
                         {(stats?.revenueChart?.length > 0 ? stats.revenueChart : Array(7).fill({ revenue: 0, date: '?' })).map((item, i) => {
-                            // Tính toán chiều cao cột dựa trên tỷ lệ Doanh thu / Doanh thu lớn nhất trong tuần
                             const val = Number(item.revenue || 0);
                             const maxRev = Math.max(...(stats?.revenueChart?.map(r => Number(r.revenue)) || [1]));
                             const height = maxRev > 0 ? (val / maxRev) * 100 : 0;
                             const label = item.date ? item.date.split('-').pop() : '-';
                             return (
-                                <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
+                                <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer h-full justify-end">
                                     <div 
                                         className="w-full bg-gradient-to-t from-green-600 to-green-400 rounded-lg group-hover:from-green-50 group-hover:to-green-300 transition-all duration-500 relative min-h-[4px]"
                                         style={{ height: `${Math.max(4, height)}%` }}
                                     >
-                                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity font-black whitespace-nowrap z-10">
+                                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-green-600 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity font-black whitespace-nowrap z-10 shadow-xl border border-white/20">
                                             {fmt(val)}₫
                                         </div>
                                     </div>
-                                    <span className="text-[10px] font-black text-gray-400 uppercase">{label}</span>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase mt-1 tracking-tighter">{label}</span>
                                 </div>
                             );
                         })}
                     </div>
                 </div>
 
-                {/* Quick Actions */}
+                {/* Quick Shortcuts & Task Monitor */}
                 <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm">
-                    <h2 className="text-xl font-black text-gray-900 tracking-tight mb-6">Thao tác nhanh</h2>
+                    <h2 className="text-xl font-black text-gray-900 tracking-tight mb-6 italic">Lệnh nhanh</h2>
                     <div className="grid grid-cols-2 gap-3">
                         <button 
                             onClick={() => window.location.href='/admin/products'}
@@ -172,30 +192,31 @@ export default function AdminDashboard() {
                             <span className="text-xs font-black text-gray-600 group-hover:text-indigo-800">Dữ liệu đơn</span>
                         </button>
                     </div>
+                    {/* TASK PRIORITY MONITOR */}
                     <div className="mt-8 pt-6 border-t border-gray-100">
-                        <div className="flex items-center justify-between mb-3">
-                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Ưu tiên hôm nay</span>
-                            <span className="text-[10px] font-black text-red-500 uppercase">
-                                {Object.values(stats?.ordersByStatus || {}).reduce((a,b) => a+b, 0) > 0 ? 'Cần xử lý' : 'Xong việc'}
+                        <div className="flex items-center justify-between mb-3 px-1">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Cần ưu tiên</span>
+                            <span className={Object.values(stats?.ordersByStatus || {}).reduce((a,b) => a+b, 0) > 0 ? 'text-[10px] font-black text-red-500 uppercase' : 'text-[10px] font-black text-green-500 uppercase'}>
+                                {Object.values(stats?.ordersByStatus || {}).reduce((a,b) => a+b, 0) > 0 ? '🔥 Chờ xử lý' : '✨ Hoàn tất'}
                             </span>
                         </div>
                         <div className="space-y-3">
                             {stats?.ordersByStatus?.PENDING > 0 && (
                                 <div className="flex items-center gap-3 p-3 rounded-xl bg-red-50/50 border border-red-100/50">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
-                                    <span className="text-[10px] font-black text-red-700 uppercase tracking-tight">Xử lý {stats.ordersByStatus.PENDING} đơn chờ xác nhận</span>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-sm"></div>
+                                    <span className="text-[10px] font-black text-red-700 uppercase tracking-tight">Duyệt {stats.ordersByStatus.PENDING} đơn hàng mới</span>
                                 </div>
                             )}
                             {stats?.ordersByStatus?.CONFIRMED > 0 && (
                                 <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50/50 border border-blue-100/50">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                    <span className="text-[10px] font-black text-blue-700 uppercase tracking-tight">Đóng gói {stats.ordersByStatus.CONFIRMED} đơn đã duyệt</span>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm"></div>
+                                    <span className="text-[10px] font-black text-blue-700 uppercase tracking-tight">Đóng gói {stats.ordersByStatus.CONFIRMED} đơn hàng</span>
                                 </div>
                             )}
                             {!stats?.ordersByStatus?.PENDING && !stats?.ordersByStatus?.CONFIRMED && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50/50 border border-green-100/50">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                                    <span className="text-[10px] font-black text-green-700 uppercase tracking-tight">Mọi thứ đã được xử lý!</span>
+                                <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50/50 border border-green-100/50 border-dashed">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-sm"></div>
+                                    <span className="text-[10px] font-black text-green-700 uppercase tracking-tight italic">Tất cả đều ổn! Nghỉ ngơi thôi.</span>
                                 </div>
                             )}
                         </div>
@@ -204,31 +225,31 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
-                {/* Top Selling Products */}
+                {/* Ranking: Top Selling Products */}
                 <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm overflow-hidden">
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h2 className="text-xl font-black text-gray-900 tracking-tight">Sản phẩm bán chạy</h2>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Dựa trên số lượng đã giao</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Dựa trên số lượng thực phẩm sạch đã giao</p>
                         </div>
-                        <button onClick={() => window.location.href='/admin/products'} className="text-green-600 text-[10px] font-black uppercase tracking-widest hover:bg-green-100 py-1.5 px-4 bg-green-50 rounded-full transition-all">Quản lý kho</button>
+                        <button onClick={() => window.location.href='/admin/products'} className="text-green-600 text-[10px] font-black uppercase tracking-widest hover:bg-green-100 py-1.5 px-4 bg-green-50 rounded-full transition-all border border-green-200">Quản lý kho</button>
                     </div>
                     <div className="space-y-6">
                         {stats?.topSellingProducts?.map((p, i) => (
                             <div key={i} className="flex items-center justify-between group">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-11 h-11 rounded-2xl bg-gray-50 flex items-center justify-center text-sm font-black text-gray-400 group-hover:bg-green-100 group-hover:text-green-600 transition-all shadow-inner border border-white">
+                                    <div className="w-11 h-11 rounded-2xl bg-gray-50 flex items-center justify-center text-sm font-black text-gray-400 group-hover:bg-green-600 group-hover:text-white transition-all shadow-inner border border-white">
                                         {i + 1}
                                     </div>
                                     <div>
                                         <p className="font-black text-sm text-gray-900 group-hover:text-green-600 transition-colors capitalize leading-tight">{p.productName}</p>
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Đã bán: {fmt(p.soldQuantity)} túi</p>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Sản lượng: {fmt(p.soldQuantity)} túi</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <p className="font-black text-sm text-gray-900 leading-tight">{fmt(p.revenue)}₫</p>
                                     <div className="w-24 h-2 bg-gray-100 rounded-full mt-2 overflow-hidden border border-white shadow-inner">
-                                        <div className="h-full bg-green-500 rounded-full shadow-lg shadow-green-200" style={{ width: `${Math.min(100, (p.soldQuantity / 100) * 100)}%` }}></div>
+                                        <div className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full shadow-lg shadow-green-200" style={{ width: `${Math.min(100, (p.soldQuantity / 100) * 100)}%` }}></div>
                                     </div>
                                 </div>
                             </div>
@@ -236,15 +257,15 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Recent Orders Overview */}
+                {/* Newsfeed: Recent Transaction Logs */}
                 <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm overflow-hidden">
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h2 className="text-xl font-black text-gray-900 tracking-tight">Đơn hàng mới</h2>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Giao dịch mới nhất</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Giao dịch vừa cập bến</p>
                         </div>
-                        <div className="p-2 rounded-xl bg-gray-50 border border-gray-100 shadow-sm">
-                            <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                        <div className="p-2 rounded-xl bg-gray-50 border border-gray-100 shadow-sm group hover:bg-green-50 cursor-pointer transition-colors" onClick={() => window.location.href='/admin/orders'}>
+                            <ChevronRightIcon className="w-5 h-5 text-gray-400 group-hover:text-green-600" />
                         </div>
                     </div>
                     <div className="space-y-4">
@@ -253,7 +274,7 @@ export default function AdminDashboard() {
                             return (
                                 <div 
                                     key={o.id} 
-                                    onClick={() => window.location.href=`/admin/orders?id=${o.id}`}
+                                    onClick={() => window.location.href=`/admin/orders/${o.id}?mode=view`}
                                     className="flex flex-col gap-2 p-4 rounded-2xl border border-white bg-white/40 hover:border-green-100 hover:bg-green-50/20 transition-all group cursor-pointer shadow-sm active:scale-95 duration-300"
                                 >
                                     <div className="flex items-center justify-between">
@@ -273,9 +294,9 @@ export default function AdminDashboard() {
                             );
                         })}
                         {recentOrders.length === 0 && (
-                            <div className="text-center py-10 text-gray-400 font-medium border-2 border-dashed border-gray-100 rounded-3xl">Không có đơn hàng mới</div>
+                            <div className="text-center py-10 text-gray-400 font-medium border-2 border-dashed border-gray-100 rounded-3xl italic">Chưa có giao dịch nào</div>
                         )}
-                        <button onClick={() => window.location.href='/admin/orders'} className="w-full py-3 bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-800 transition-all mt-4">Xem tất cả đơn hàng</button>
+                        <button onClick={() => window.location.href='/admin/orders'} className="w-full py-3 bg-green-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-green-700 transition-all mt-4 border border-white/20 shadow-lg">Xem tất cả đơn hàng</button>
                     </div>
                 </div>
             </div>

@@ -23,6 +23,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmail(String email);
 
+    boolean existsByPhone(String phone);
+
     @Query("SELECT u FROM User u WHERE " +
            "(:query IS NULL OR u.username LIKE %:query% OR u.fullName LIKE %:query% OR u.email LIKE %:query%) AND " +
            "(:role IS NULL OR u.role = :role) AND " +

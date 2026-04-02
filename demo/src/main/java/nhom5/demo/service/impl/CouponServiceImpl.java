@@ -14,11 +14,14 @@ import nhom5.demo.service.MailService;
 import nhom5.demo.service.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
+import java.util.Objects;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+@lombok.extern.slf4j.Slf4j
 @Service
 @RequiredArgsConstructor
 public class CouponServiceImpl implements CouponService {
@@ -46,39 +49,51 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     @Transactional(readOnly = true)
-    public Coupon getCouponById(Long id) {
+    public Coupon getCouponById(@NonNull Long id) {
         return couponRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Coupon", "id", id));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Coupon getCouponByCode(String code) {
+    public Coupon getCouponByCode(@NonNull String code) {
         return couponRepository.findByCode(code)
                 .orElseThrow(() -> new ResourceNotFoundException("Coupon", "code", code));
     }
 
     @Override
     @Transactional
-    public Coupon createCoupon(Coupon coupon) {
-        if (couponRepository.findByCode(coupon.getCode()).isPresent()) {
-            throw new BusinessException("Mã giảm giá '" + coupon.getCode() + "' đã tồn tại");
+    public Coupon createCoupon(@NonNull Coupon coupon) {
+        String code = Objects.requireNonNull(coupon.getCode());
+        if (couponRepository.findByCode(code).isPresent()) {
+            throw new BusinessException("Mã giảm giá '" + code + "' đã tồn tại");
         }
-        if (coupon.getExpiryDate() != null && coupon.getExpiryDate().isBefore(LocalDate.now())) {
-            throw new BusinessException("Ngày hết hạn không được ở trong quá khứ");
+        if (coupon.getExpiryDate() != null) {
+            if (coupon.getExpiryDate().getYear() > 2099) {
+                throw new BusinessException("Năm hết hạn không hợp lệ (tối đa 2099)");
+            }
+            if (coupon.getExpiryDate().isBefore(LocalDate.now())) {
+                throw new BusinessException("Ngày hết hạn không được ở trong quá khứ");
+            }
         }
         Coupon saved = couponRepository.save(coupon);
-        auditService.log(SecurityUtils.getCurrentUsername(), "CREATE", "COUPON", saved.getId().toString(), "Created: " + saved.getCode());
+        Long savedId = Objects.requireNonNull(saved.getId());
+        auditService.log(SecurityUtils.getCurrentUsername(), "CREATE", "COUPON", savedId.toString(), "Created: " + saved.getCode());
         return saved;
     }
 
     @Override
     @Transactional
-    public Coupon updateCoupon(Long id, Coupon couponDetails) {
+    public Coupon updateCoupon(@NonNull Long id, @NonNull Coupon couponDetails) {
         Coupon coupon = getCouponById(id);
         
-        if (couponDetails.getExpiryDate() != null && couponDetails.getExpiryDate().isBefore(LocalDate.now())) {
-            throw new BusinessException("Ngày hết hạn không được ở trong quá khứ");
+        if (couponDetails.getExpiryDate() != null) {
+            if (couponDetails.getExpiryDate().getYear() > 2099) {
+                throw new BusinessException("Năm hết hạn không hợp lệ (tối đa 2099)");
+            }
+            if (couponDetails.getExpiryDate().isBefore(LocalDate.now())) {
+                throw new BusinessException("Ngày hết hạn không được ở trong quá khứ");
+            }
         }
 
         coupon.setDescription(couponDetails.getDescription());
@@ -91,13 +106,14 @@ public class CouponServiceImpl implements CouponService {
         coupon.setIsPrivate(couponDetails.getIsPrivate() != null ? couponDetails.getIsPrivate() : false);
         
         Coupon updated = couponRepository.save(coupon);
-        auditService.log(SecurityUtils.getCurrentUsername(), "UPDATE", "COUPON", updated.getId().toString(), "Modified: " + updated.getCode());
+        Long updatedId = Objects.requireNonNull(updated.getId());
+        auditService.log(SecurityUtils.getCurrentUsername(), "UPDATE", "COUPON", updatedId.toString(), "Modified: " + updated.getCode());
         return updated;
     }
 
     @Override
     @Transactional
-    public void deleteCoupon(Long id) {
+    public void deleteCoupon(@NonNull Long id) {
         if (!couponRepository.existsById(id)) {
             throw new ResourceNotFoundException("Coupon", "id", id);
         }
@@ -107,7 +123,7 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     @Transactional(readOnly = true)
-    public Coupon validateCoupon(String code, Double orderAmount) {
+    public Coupon validateCoupon(@NonNull String code, @NonNull java.math.BigDecimal orderAmount) {
         Coupon coupon = couponRepository.findByCodeAndIsActiveTrue(code)
                 .orElseThrow(() -> new BusinessException("Mã giảm giá không hợp lệ hoặc đã hết hạn"));
 
@@ -126,15 +142,16 @@ public class CouponServiceImpl implements CouponService {
             }
         }
 
-        if (coupon.getExpiryDate().isBefore(LocalDate.now())) {
+        LocalDate expiryDate = coupon.getExpiryDate();
+        if (expiryDate != null && expiryDate.isBefore(LocalDate.now())) {
             throw new BusinessException("Mã giảm giá đã hết hạn");
         }
 
-        if (coupon.getUsageLimit() != null && coupon.getUsedCount() >= coupon.getUsageLimit()) {
+        if (coupon.getUsageLimit() != null && (coupon.getUsedCount() != null && coupon.getUsedCount() >= coupon.getUsageLimit())) {
             throw new BusinessException("Mã giảm giá đã hết lượt sử dụng");
         }
 
-        if (coupon.getMinOrderAmount() != null && BigDecimal.valueOf(orderAmount).compareTo(coupon.getMinOrderAmount()) < 0) {
+        if (coupon.getMinOrderAmount() != null && orderAmount.compareTo(coupon.getMinOrderAmount()) < 0) {
             throw new BusinessException("Đơn hàng tối thiểu " + coupon.getMinOrderAmount() + "đ để dùng mã này");
         }
 
@@ -143,16 +160,14 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     @Transactional
-    public void giftCoupon(String email, Coupon couponDetails) {
-        if (couponDetails == null || couponDetails.getCode() == null) {
-            throw new BusinessException("Thông tin voucher không hợp lệ");
-        }
+    public void giftCoupon(@NonNull String email, @NonNull Coupon couponDetails) {
+        String code = Objects.requireNonNull(couponDetails.getCode());
         
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy người dùng với email: " + email));
 
         // Kiểm tra xem đã có voucher này chưa
-        java.util.Optional<Coupon> existingOpt = couponRepository.findByCode(couponDetails.getCode());
+        java.util.Optional<Coupon> existingOpt = couponRepository.findByCode(code);
         
         Coupon targetCoupon;
         if (existingOpt.isPresent()) {
@@ -162,8 +177,6 @@ public class CouponServiceImpl implements CouponService {
                 targetCoupon.getAssignedUsers().add(user);
                 couponRepository.save(targetCoupon);
             }
-            // Nếu là voucher công khai, không tạo bản sao nữa để tránh trùng lặp nội dung,
-            // chỉ tiếp tục để gửi Email & Thông báo cho người dùng là xong.
         } else {
             // Nếu voucher chưa tồn tại, tạo mới hoàn toàn là voucher riêng tư đã gán user
             targetCoupon = createPersonalCopy(user, couponDetails);
@@ -171,10 +184,11 @@ public class CouponServiceImpl implements CouponService {
             couponRepository.save(targetCoupon);
         }
 
-        auditService.log(SecurityUtils.getCurrentUsername(), "GIFT", "COUPON", targetCoupon.getId().toString(), "Gifted: " + targetCoupon.getCode() + " to " + email);
+        Long targetId = Objects.requireNonNull(targetCoupon.getId());
+        auditService.log(SecurityUtils.getCurrentUsername(), "GIFT", "COUPON", targetId.toString(), "Gifted: " + targetCoupon.getCode() + " to " + email);
 
         // Notify user
-        mailService.sendCouponNotification(user.getEmail(), targetCoupon.getCode(), targetCoupon.getDescription());
+        mailService.sendCouponNotification(Objects.requireNonNull(user.getEmail()), targetCoupon.getCode(), targetCoupon.getDescription());
         notificationService.createNotification(
                 user,
                 "Bạn vừa nhận được một mã giảm giá cá nhân: " + targetCoupon.getCode(),
@@ -184,7 +198,7 @@ public class CouponServiceImpl implements CouponService {
     }
 
     private Coupon createPersonalCopy(User user, Coupon template) {
-        String personalCode = template.getCode();
+        String personalCode = Objects.requireNonNull(template.getCode());
         // Nếu code đã tồn tại và không phải cái ta đang muốn gán, thêm hậu tố ngẫu nhiên
         if (couponRepository.findByCode(personalCode).isPresent()) {
             personalCode += "-" + java.util.UUID.randomUUID().toString().substring(0, 4).toUpperCase();
@@ -216,5 +230,14 @@ public class CouponServiceImpl implements CouponService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BusinessException("User không tồn tại"));
         return couponRepository.findByAssignedUsersContaining(user);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void deactivateExpiredCoupons() {
+        int count = couponRepository.deactivateExpiredCoupons(java.time.LocalDate.now());
+        if (count > 0) {
+            log.info("Đã tự động vô hiệu hóa {} mã giảm giá hết hạn", count);
+        }
     }
 }

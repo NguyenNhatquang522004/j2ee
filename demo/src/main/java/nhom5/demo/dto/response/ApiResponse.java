@@ -2,6 +2,8 @@ package nhom5.demo.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,13 +20,14 @@ import java.time.format.DateTimeFormatter;
 @Setter
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@NoArgsConstructor
+@AllArgsConstructor
 public class ApiResponse<T> implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private int status;
     private String message;
     private T data;
-    // Trigger restart 
     private String timestamp;
 
     public static <T> ApiResponse<T> success(T data) {

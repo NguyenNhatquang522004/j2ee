@@ -20,7 +20,17 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.lang.NonNull;
+import java.util.Objects;
 
+/**
+ * REST CONTROLLER: OrderController
+ * ---------------------------------------------------------
+ * Orchestrates the full lifecycle of customer transactions within the FreshFood ecosystem.
+ * Manages order creation, payment status tracking, fulfillment updates, and complex return/refund workflows.
+ * 
+ * Security: Protects individual data with ownership checks and restricts bulk/status operations to authorized staff.
+ */
 @Tag(name = "Orders", description = "Quản lý đơn hàng")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -30,26 +40,37 @@ public class OrderController {
 
     private final OrderService orderService;
 
+    /**
+     * createOrder: Converts a shopping cart into a finalized purchase record.
+     * Triggers inventory reservation and payment processing flows.
+     */
     @Operation(summary = "Đặt hàng mới")
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody OrderRequest request) {
-        OrderResponse data = orderService.createOrder(userDetails.getUsername(), request);
+            @AuthenticationPrincipal @NonNull UserDetails userDetails,
+            @Valid @RequestBody @NonNull OrderRequest request) {
+        OrderResponse data = orderService.createOrder(Objects.requireNonNull(userDetails.getUsername()), Objects.requireNonNull(request));
         return ResponseEntity.status(201).body(ApiResponse.created(data));
     }
 
+    /**
+     * getMyOrders: Retrieves a paginated history of purchases made by the currently authenticated user.
+     */
     @Operation(summary = "Lịch sử đơn hàng của tôi")
     @GetMapping("/my-orders")
     public ResponseEntity<ApiResponse<Page<OrderResponse>>> getMyOrders(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal @NonNull UserDetails userDetails,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<OrderResponse> data = orderService.getOrdersByUser(userDetails.getUsername(), pageable);
+        Page<OrderResponse> data = orderService.getOrdersByUser(Objects.requireNonNull(userDetails.getUsername()), pageable);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
+    /**
+     * getRefundRequests: Administrative queue for pending returns and refund assessments.
+     * Visibility: Restricted to Staff/Admin with 'manage:refunds' authority.
+     */
     @Operation(summary = "Danh sách yêu cầu hoàn trả/hoàn tiền (Admin)")
     @PreAuthorize("hasAnyAuthority('manage:orders', 'manage:refunds')")
     @GetMapping("/refund-requests")
@@ -65,18 +86,34 @@ public class OrderController {
         Page<OrderResponse> data = orderService.getRefundRequests(query, pageable);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
-
-
-
-    @Operation(summary = "Chi tiết đơn hàng")
+    
+    /**
+     * getOrderById: Detailed lookup for a single transaction. Enforces ownership or admin role.
+     */
+    @Operation(summary = "Chi tiết đơn hàng (theo ID)")
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<OrderResponse>> getOrder(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        OrderResponse data = orderService.getOrderById(id, userDetails.getUsername());
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrderById(
+            @PathVariable @NonNull Long id,
+            @AuthenticationPrincipal @NonNull UserDetails userDetails) {
+        OrderResponse data = orderService.getOrderById(Objects.requireNonNull(id), Objects.requireNonNull(userDetails.getUsername()));
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
+    /**
+     * getOrder: Alternate lookup using the human-readable Order Code (e.g., ORD-12345).
+     */
+    @Operation(summary = "Chi tiết đơn hàng (theo mã đơn)")
+    @GetMapping("/code/{orderCode}")
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrder(
+            @PathVariable @NonNull String orderCode,
+            @AuthenticationPrincipal @NonNull UserDetails userDetails) {
+        OrderResponse data = orderService.getOrderByCode(Objects.requireNonNull(orderCode), Objects.requireNonNull(userDetails.getUsername()));
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    /**
+     * getAllOrders: Master list of all transactions for administrative oversight and bulk management.
+     */
     @Operation(summary = "Tất cả đơn hàng (Admin)")
     @PreAuthorize("hasAuthority('manage:orders')")
     @GetMapping
@@ -94,63 +131,107 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
+    /**
+     * updateStatus: Administrative action to transition an order through its lifecycle statuses.
+     */
     @Operation(summary = "Cập nhật trạng thái đơn hàng (Admin)")
     @PreAuthorize("hasAuthority('manage:orders')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<OrderResponse>> updateStatus(
-            @PathVariable Long id,
-            @RequestParam OrderStatusEnum status) {
-        OrderResponse data = orderService.updateOrderStatus(id, status);
+            @PathVariable @NonNull Long id,
+            @RequestParam @NonNull OrderStatusEnum status) {
+        OrderResponse data = orderService.updateOrderStatus(Objects.requireNonNull(id), Objects.requireNonNull(status));
         return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái thành công", data));
     }
 
-    @Operation(summary = "Huỷ đơn hàng")
-    @DeleteMapping("/{id}/cancel")
-    public ResponseEntity<ApiResponse<Void>> cancelOrder(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        orderService.cancelOrder(id, userDetails.getUsername());
+    /**
+     * cancelOrderByCode: Allows a user to void an order before it enters the processing phase.
+     */
+    @Operation(summary = "Huỷ đơn hàng (theo mã đơn)")
+    @DeleteMapping("/code/{orderCode}/cancel")
+    public ResponseEntity<ApiResponse<Void>> cancelOrderByCode(
+            @PathVariable @NonNull String orderCode,
+            @AuthenticationPrincipal @NonNull UserDetails userDetails) {
+        orderService.cancelOrder(Objects.requireNonNull(orderCode), Objects.requireNonNull(userDetails.getUsername()));
         return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được huỷ", null));
     }
 
+    /**
+     * cancelOrderById: Convenience wrapper for cancellation via internal Database ID.
+     */
+    @Operation(summary = "Huỷ đơn hàng (theo ID)")
+    @DeleteMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<Void>> cancelOrderById(
+            @PathVariable @NonNull Long id,
+            @AuthenticationPrincipal @NonNull UserDetails userDetails) {
+        OrderResponse order = orderService.getOrderById(Objects.requireNonNull(id), Objects.requireNonNull(userDetails.getUsername()));
+        orderService.cancelOrder(Objects.requireNonNull(order.getOrderCode()), Objects.requireNonNull(userDetails.getUsername()));
+        return ResponseEntity.ok(ApiResponse.success("Đơn hàng đã được huỷ", null));
+    }
+
+    /**
+     * refundOrder: Triggers the financial reversal for a paid purchase.
+     */
     @Operation(summary = "Hoàn tiền đơn hàng (Admin)")
     @PreAuthorize("hasAnyAuthority('manage:orders', 'manage:refunds')")
     @PostMapping("/{id}/refund")
     public ResponseEntity<ApiResponse<OrderResponse>> refundOrder(
-            @PathVariable Long id) {
-        OrderResponse data = orderService.markAsRefunded(id);
+            @PathVariable @NonNull Long id) {
+        OrderResponse data = orderService.markAsRefunded(Objects.requireNonNull(id));
         return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu hoàn tiền cho đơn hàng", data));
     }
 
-    @Operation(summary = "Yêu cầu trả hàng")
-    @PostMapping("/{id}/return")
-    public ResponseEntity<ApiResponse<OrderResponse>> requestReturn(
-            @PathVariable Long id,
+    /**
+     * requestReturnByCode: Customer-initiated workflow to return physically delivered goods.
+     */
+    @Operation(summary = "Yêu cầu trả hàng (theo mã đơn)")
+    @PostMapping("/code/{orderCode}/return")
+    public ResponseEntity<ApiResponse<OrderResponse>> requestReturnByCode(
+            @PathVariable @NonNull String orderCode,
             @RequestParam(required = false) String reason,
             @RequestParam(required = false) String returnMedia,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        OrderResponse data = orderService.requestReturn(id, reason, returnMedia, userDetails.getUsername());
+            @AuthenticationPrincipal @NonNull UserDetails userDetails) {
+        OrderResponse data = orderService.requestReturn(Objects.requireNonNull(orderCode), reason, returnMedia, Objects.requireNonNull(userDetails.getUsername()));
         return ResponseEntity.ok(ApiResponse.success("Gửi yêu cầu trả hàng thành công", data));
     }
 
+    /**
+     * requestReturnById: Convenience wrapper for returns via internal Database ID.
+     */
+    @Operation(summary = "Yêu cầu trả hàng (theo ID)")
+    @PostMapping("/{id}/return")
+    public ResponseEntity<ApiResponse<OrderResponse>> requestReturnById(
+            @PathVariable @NonNull Long id,
+            @RequestParam(required = false) String reason,
+            @RequestParam(required = false) String returnMedia,
+            @AuthenticationPrincipal @NonNull UserDetails userDetails) {
+        OrderResponse order = orderService.getOrderById(Objects.requireNonNull(id), Objects.requireNonNull(userDetails.getUsername()));
+        OrderResponse data = orderService.requestReturn(Objects.requireNonNull(order.getOrderCode()), reason, returnMedia, Objects.requireNonNull(userDetails.getUsername()));
+        return ResponseEntity.ok(ApiResponse.success("Gửi yêu cầu trả hàng thành công", data));
+    }
 
-
+    /**
+     * confirmReturn: Administrative approval of a return request after verifying item status.
+     */
     @Operation(summary = "Xác nhận trả hàng (Admin)")
     @PreAuthorize("hasAnyAuthority('manage:orders', 'manage:refunds')")
     @PostMapping("/{id}/confirm-return")
     public ResponseEntity<ApiResponse<OrderResponse>> confirmReturn(
-            @PathVariable Long id) {
-        OrderResponse data = orderService.confirmReturn(id);
+            @PathVariable @NonNull Long id) {
+        OrderResponse data = orderService.confirmReturn(Objects.requireNonNull(id));
         return ResponseEntity.ok(ApiResponse.success("Đã xác nhận trả hàng", data));
     }
 
+    /**
+     * rejectReturn: Administrative denial of a return request, requiring a formal reason.
+     */
     @Operation(summary = "Từ chối trả hàng (Admin)")
     @PreAuthorize("hasAnyAuthority('manage:orders', 'manage:refunds')")
     @PostMapping("/{id}/reject-return")
     public ResponseEntity<ApiResponse<OrderResponse>> rejectReturn(
-            @PathVariable Long id,
-            @RequestParam String reason) {
-        OrderResponse data = orderService.rejectReturn(id, reason);
+            @PathVariable @NonNull Long id,
+            @RequestParam @NonNull String reason) {
+        OrderResponse data = orderService.rejectReturn(Objects.requireNonNull(id), Objects.requireNonNull(reason));
         return ResponseEntity.ok(ApiResponse.success("Đã từ chối yêu cầu trả hàng", data));
     }
 }

@@ -2,6 +2,7 @@ package nhom5.demo.config;
 
 import lombok.RequiredArgsConstructor;
 import nhom5.demo.security.JwtAuthenticationFilter;
+import nhom5.demo.security.AdminIpWhitelistFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -37,19 +38,15 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final MaintenanceFilter maintenanceFilter;
     private final RateLimitFilter rateLimitFilter;
+    private final AdminIpWhitelistFilter adminIpWhitelistFilter;
     private final UserDetailsService userDetailsService;
 
     @org.springframework.beans.factory.annotation.Value("${app.security.cors.allowed-origins}")
     private String[] allowedOrigins;
 
-    /**
-     * Cấu hình bỏ qua bộ lọc cho một số API công khai đặc thù (Payment Callback từ VnPay/SePay).
-     */
-    @Bean
-    public org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring()
-                .requestMatchers("/api/v1/payment/**", "/ws/**");
-    }
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -69,9 +66,6 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    /**
-     * Quản lý nguồn gốc truy cập (CORS) - Lấy từ cấu hình môi trường (.env).
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -88,54 +82,56 @@ public class SecurityConfig {
         return source;
     }
 
-    /**
-     * Thiết lập chuỗi các Filter bảo mật và quy tắc phân quyền (Authorization).
-     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable()) // Stateless API không cần CSRF token
+                .csrf(csrf -> csrf.disable()) 
+                /* 
+                .csrf(csrf -> csrf
+                    .csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .ignoringRequestMatchers("/api/v1/auth/**", "/api/v1/payment/**", "/ws/**")) 
+                */
                 .headers(headers -> headers
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
-                                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com; connect-src 'self' http://localhost:8080; object-src 'none'; frame-ancestors 'none';"))
-                        .frameOptions(
-                                org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig::deny)
-                        .xssProtection(xss -> xss.disable())
-                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
-                        .referrerPolicy(referrer -> referrer.policy(
-                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
+                                "default-src 'self'; " +
+                                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com; " +
+                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                                "font-src 'self' https://fonts.gstatic.com; " +
+                                "img-src 'self' data: https: blob:; " +
+                                "connect-src 'self' " + frontendUrl + " https://api.cloudinary.com https://maps.googleapis.com; " +
+                                "object-src 'none'; " +
+                                "base-uri 'self'; " +
+                                "form-action 'self'; " +
+                                "frame-ancestors 'none'; " +
+                                "upgrade-insecure-requests;"))
+                        .frameOptions(org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig::deny)
+                        .xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000).preload(true))
+                        .referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .permissionsPolicyHeader(perms -> perms.policy("camera=(), microphone=(), geolocation=(self)")))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. API Công khai (Không cần đăng nhập)
-                        .requestMatchers("/api/v1/payment/**", "/error", "/ws/**", "/api/v1/auth/**", "/api/v1/ai/**").permitAll()
+                        .requestMatchers("/api/v1/payment/vnpay-callback", "/api/v1/payment/sepay-webhook", "/error", "/ws/**", "/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/payment/**").authenticated()
+                        .requestMatchers("/api/v1/ai/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/farms/**", "/api/v1/reviews/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/newsletters/subscribe", "/api/v1/contacts").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        
-                        // 2. Monitoring - Chỉ Admin
                         .requestMatchers("/actuator/**").hasAuthority("ROLE_ADMIN")
-                        
-                        // 3. Admin Dashboard & Reports
                         .requestMatchers("/api/v1/dashboard/**").hasAuthority("view:reports")
-                        
-                        // 4. Quản lý Sản phẩm, Danh mục, Trang trại (Admin/Staff)
                         .requestMatchers(HttpMethod.POST, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/farms/**", "/api/v1/coupons/**").hasAnyAuthority("ROLE_ADMIN", "manage:products", "manage:categories", "manage:farms")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/farms/**", "/api/v1/coupons/**").hasAnyAuthority("ROLE_ADMIN", "manage:products", "manage:categories", "manage:farms")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/farms/**", "/api/v1/coupons/**").hasAnyAuthority("ROLE_ADMIN", "manage:products", "manage:categories", "manage:farms")
-                        
-                        // 5. Quản lý Lô hàng & Người dùng
                         .requestMatchers("/api/v1/batches/**").hasAnyAuthority("ROLE_ADMIN", "manage:batches", "view:batches")
                         .requestMatchers("/api/v1/users/me").authenticated()
                         .requestMatchers("/api/v1/users/**").hasAuthority("manage:users")
-                        
-                        // 6. Tất cả các yêu cầu còn lại
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
-                // Thứ tự Filter bảo vệ: Rate Limit -> JWT Auth -> Maintenance Mode
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(jwtAuthenticationFilter, RateLimitFilter.class)
-                .addFilterAfter(maintenanceFilter, JwtAuthenticationFilter.class);
+                .addFilterAfter(adminIpWhitelistFilter, JwtAuthenticationFilter.class)
+                .addFilterAfter(maintenanceFilter, AdminIpWhitelistFilter.class);
 
         return http.build();
     }

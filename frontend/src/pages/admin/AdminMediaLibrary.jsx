@@ -13,15 +13,33 @@ import {
     CheckCircleIcon,
     EyeIcon
 } from '@heroicons/react/24/outline';
+import { useConfirm } from '../../context/ModalContext';
 
+/**
+ * ADMIN COMPONENT: Media Library
+ * ---------------------------------------------------------
+ * Centralized hub for managing all images and videos used in the application.
+ * 
+ * Props:
+ * @param {Function} onSelect - Optional callback when a file is picked (for usage in other forms).
+ * @param {Boolean} isModal - If true, renders without AdminLayout for use inside a popup.
+ * @param {Function} onClose - Callback to close the modal.
+ */
 export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }) {
+    // --- STATE MANAGEMENT ---
+    const { confirm } = useConfirm();
     const [media, setMedia] = useState([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [search, setSearch] = useState('');
-    const [filter, setFilter] = useState('all'); // all, image, video
-    const [previewing, setPreviewing] = useState(null);
+    const [filter, setFilter] = useState('all'); // Filter types: all, image, video
+    const [previewing, setPreviewing] = useState(null); // Currently selected file for lightbox
 
+    // --- DATA ACTIONS ---
+
+    /**
+     * fetchMedia: Retrieves all files from Cloudinary via the backend.
+     */
     const fetchMedia = useCallback(async () => {
         setLoading(true);
         try {
@@ -34,10 +52,17 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
         }
     }, []);
 
+    // Load initial data
     useEffect(() => {
         fetchMedia();
     }, [fetchMedia]);
 
+    // --- FILE OPERATIONS ---
+
+    /**
+     * handleUpload:
+     * Validates file types (Images/Videos) and performs high-speed upload.
+     */
     const handleUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -58,15 +83,20 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
         try {
             await mediaService.upload(formData);
             toast.success('Tải lên thành công', { id: 'upload' });
-            fetchMedia();
+            fetchMedia(); // Refresh list after upload
         } catch {
             toast.error('Tải lên thất bại', { id: 'upload' });
         } finally {
             setUploading(false);
-            e.target.value = ''; // Reset input
+            e.target.value = ''; // Reset input to allow re-upload of same file
         }
     };
 
+    /**
+     * handleDelete:
+     * Removes a file permanently from Cloudinary and the database.
+     * Shows a danger-level confirmation before proceeding.
+     */
     const handleDelete = async (id) => {
         const ok = await confirm({
             title: 'Xóa tệp tin',
@@ -83,11 +113,19 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
         }
     };
 
+    /**
+     * copyToClipboard:
+     * Fast-copy the public URL of the selected media for external use.
+     */
     const copyToClipboard = (url) => {
         navigator.clipboard.writeText(url);
         toast.success('Đã sao chép liên kết');
     };
 
+    /**
+     * formatBytes:
+     * Utility to convert raw file sizes into human-readable strings (MB/GB).
+     */
     const formatBytes = (bytes, decimals = 2) => {
         if (!bytes) return '0 Bytes';
         const k = 1024;
@@ -97,17 +135,20 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     };
 
+    // --- CALCULATIONS ---
     const totalSize = media.reduce((acc, m) => acc + (m.fileSize || 0), 0);
 
+    // Apply real-time search and type filtering
     const filteredMedia = media.filter(m => {
         const matchesSearch = m.fileName?.toLowerCase().includes(search.toLowerCase());
         const matchesType = filter === 'all' || (filter === 'image' && m.fileType?.startsWith('image')) || (filter === 'video' && m.fileType?.startsWith('video'));
         return matchesSearch && matchesType;
     });
 
+    // --- SHARED UI FRAGMENTS ---
     const Content = (
         <div className={`flex flex-col h-full bg-white ${isModal ? 'rounded-xl overflow-hidden' : ''}`}>
-            {/* Header */}
+            {/* Header: Title and Storage Stats */}
             <div className={`p-4.5 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/50`}>
                 <div>
                     <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
@@ -121,6 +162,7 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    {/* Floating Upload Button */}
                     <label className={`cursor-pointer flex items-center gap-2 px-4.5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-black rounded-lg shadow-lg shadow-green-100 transition-all active:scale-95 text-[11px] uppercase tracking-wider ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
                         <CloudArrowUpIcon className="w-5 h-5 stroke-[3]" />
                         <span>{uploading ? 'Đang tải...' : 'Tải lên'}</span>
@@ -134,7 +176,7 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                 </div>
             </div>
 
-            {/* Toolbar */}
+            {/* Toolbar: Search and Category Filtering */}
             <div className="p-4 border-b flex flex-col md:flex-row gap-4 items-center">
                 <div className="relative flex-1 group w-full">
                     <MagnifyingGlassIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600" />
@@ -158,7 +200,7 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                 </div>
             </div>
 
-            {/* Grid */}
+            {/* Grid Area: Media items with Hover actions */}
             <div className="flex-1 overflow-y-auto p-4">
                 {loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -177,6 +219,7 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                             const isVideo = m.fileType?.startsWith('video');
                             return (
                                 <div key={m.id} className="group relative aspect-square rounded-xl overflow-hidden border border-gray-100 bg-gray-50 shadow-sm hover:shadow-lg transition-all duration-300">
+                                    {/* Media Content: Video Autoplay on hover or Static Image */}
                                     {isVideo ? (
                                         <div className="w-full h-full flex items-center justify-center bg-gray-900 select-none">
                                             <VideoCameraIcon className="w-10 h-10 text-white/20 absolute z-0" />
@@ -194,7 +237,7 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                                         <img src={m.url} alt={m.fileName} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                     )}
                                     
-                                    {/* Overlay */}
+                                    {/* Overlay Actions */}
                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 z-20">
                                         <button 
                                             onClick={() => setPreviewing(m)}
@@ -231,7 +274,7 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                                         )}
                                     </div>
 
-                                    {/* Info Flag */}
+                                    {/* Info Flag: Name and Size */}
                                     <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end pointer-events-none z-10">
                                         <div className="flex flex-col bg-black/70 backdrop-blur-md px-2 py-1 rounded-lg max-w-[70%] shadow-lg border border-white/10">
                                             <span className="text-[9px] text-white font-black truncate leading-tight">
@@ -254,7 +297,7 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                 )}
             </div>
 
-            {/* Preview Lightbox */}
+            {/* Preview Lightbox (Fullscreen Preview) */}
             {previewing && (
                 <div className="fixed inset-0 z-[70] bg-black/95 backdrop-blur-md overflow-y-auto">
                     <button 
@@ -309,6 +352,7 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
         </div>
     );
 
+    // Dynamic layout rendering based on Modal status
     if (isModal) return Content;
 
     return (

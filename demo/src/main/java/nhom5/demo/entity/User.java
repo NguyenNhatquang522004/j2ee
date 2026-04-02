@@ -9,6 +9,9 @@ import nhom5.demo.enums.RoleEnum;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +23,8 @@ import java.util.List;
 @Entity
 @Table(name = "users", indexes = {
         @Index(name = "idx_user_email", columnList = "email"),
-        @Index(name = "idx_user_username", columnList = "username")
+        @Index(name = "idx_user_username", columnList = "username"),
+        @Index(name = "idx_user_deleted_at", columnList = "deleted_at")
 })
 @Getter
 @Setter
@@ -28,6 +32,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class User {
 
     @Id
@@ -47,14 +53,14 @@ public class User {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name = "full_name", length = 100)
+    @NotBlank
+    @Column(name = "full_name", nullable = false, length = 50)
     private String fullName;
 
-    @Column(name = "phone", length = 20)
+    @NotBlank
+    @Column(name = "phone", unique = true, nullable = false, length = 15)
     private String phone;
 
-    @Column(name = "address", length = 255)
-    private String address;
 
     @Column(name = "date_of_birth")
     private java.time.LocalDate dateOfBirth;
@@ -117,6 +123,9 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Column(name = "two_factor_secret", length = 32)
     private String twoFactorSecret;

@@ -8,6 +8,7 @@ import nhom5.demo.repository.OrderRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,7 +46,8 @@ public class OrderCleanupTask {
             
             // Delegate complex rollback to OrderService
             try {
-                orderService.updateOrderStatus(order.getId(), OrderStatusEnum.CANCELLED);
+                Long orderId = Objects.requireNonNull(order.getId());
+                orderService.updateOrderStatus(orderId, OrderStatusEnum.CANCELLED);
             } catch (Exception e) {
                 log.error("Failed to cancel order {} during cleanup", order.getOrderCode(), e);
             }

@@ -37,6 +37,7 @@ export default function Checkout() {
         district: '',
         province: '',
         phone: '',
+        receiverName: '',
         paymentMethod: 'COD',
         couponCode: '',
         note: '',
@@ -83,13 +84,15 @@ export default function Checkout() {
             const def = (data || []).find(a => a.isDefault);
             if (def) {
                 setSelectedAddressId(def.id);
+                const parts = def.details ? def.details.split(', ') : [];
                 setForm(prev => ({ 
                     ...prev, 
-                    street: def.street || '',
-                    ward: def.ward || '',
-                    district: def.district || '',
-                    province: def.province || '',
-                    phone: def.phone || ''
+                    street: def.street || parts[0] || '',
+                    ward: def.ward || parts[1] || '',
+                    district: def.district || parts[2] || '',
+                    province: def.province || parts[3] || '',
+                    phone: def.phone || '',
+                    receiverName: def.fullName || ''
                 }));
             }
         } catch (err) {
@@ -103,13 +106,15 @@ export default function Checkout() {
             setForm({ ...form, street: '', ward: '', district: '', province: '', phone: '' });
         } else {
             setSelectedAddressId(addr.id);
+            const parts = addr.details ? addr.details.split(', ') : [];
             setForm({ 
                 ...form, 
-                street: addr.street || '', 
-                ward: addr.ward || '', 
-                district: addr.district || '', 
-                province: addr.province || '', 
-                phone: addr.phone || '' 
+                street: addr.street || parts[0] || '', 
+                ward: addr.ward || parts[1] || '', 
+                district: addr.district || parts[2] || '', 
+                province: addr.province || parts[3] || '', 
+                phone: addr.phone || '',
+                receiverName: addr.fullName || '' 
             });
         }
     };
@@ -168,6 +173,11 @@ export default function Checkout() {
             const res = await orderService.create({
                 items: orderItems,
                 shippingAddress: fullAddress,
+                addressDetail: form.street,
+                ward: form.ward,
+                district: form.district,
+                province: form.province,
+                receiverName: form.receiverName,
                 phone: form.phone,
                 paymentMethod: form.paymentMethod,
                 couponCode: appliedCoupon ? appliedCoupon.code : undefined,
@@ -177,12 +187,12 @@ export default function Checkout() {
             await fetchCart();
             
             if (form.paymentMethod === 'VNPAY') {
-                const { data } = await paymentService.createVnPayUrl(res.data.id);
-                if (data.url) {
-                    window.location.href = data.url;
+                const { data } = await paymentService.createVnPayUrl(res.data.orderCode);
+                if (data.paymentUrl) {
+                    window.location.href = data.paymentUrl;
                 } else {
                     toast.error('Không khởi tạo được cổng thanh toán VnPay');
-                    navigate(`/success?orderId=${res.data.id}`);
+                    navigate(`/success?orderCode=${res.data.orderCode}`);
                 }
             } else if (form.paymentMethod === 'BANK_TRANSFER') {
                 setCreatedOrder(res.data);
@@ -190,7 +200,7 @@ export default function Checkout() {
                 toast.success('Đơn hàng đã được tạo. Vui lòng thanh toán!');
             } else {
                 toast.success('Đặt hàng thành công!');
-                navigate(`/success?orderId=${res.data.id}`);
+                navigate(`/success?orderCode=${res.data.orderCode}`);
             }
         } catch (err) {
             toast.error(err.response?.data?.message || 'Đặt hàng thất bại');
@@ -249,7 +259,35 @@ export default function Checkout() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Tỉnh/Thành phố *</label>
+                                    <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">Họ tên người nhận *</label>
+                                    <input
+                                        name="receiverName"
+                                        value={form.receiverName}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-medium text-sm text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none focus:bg-white"
+                                        placeholder="Nhập họ tên người nhận"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
+                                        <DevicePhoneMobileIcon className="w-4 h-4" /> Số điện thoại *
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={form.phone}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-medium text-sm text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none focus:bg-white"
+                                        placeholder="Nhập số điện thoại"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">Tỉnh/Thành phố *</label>
                                     <input
                                         name="province"
                                         value={form.province}
@@ -260,7 +298,7 @@ export default function Checkout() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Quận/Huyện *</label>
+                                    <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">Quận/Huyện *</label>
                                     <input
                                         name="district"
                                         value={form.district}
@@ -274,7 +312,7 @@ export default function Checkout() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Phường/Xã *</label>
+                                    <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">Phường/Xã *</label>
                                     <input
                                         name="ward"
                                         value={form.ward}
@@ -285,7 +323,7 @@ export default function Checkout() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Số nhà, tên đường *</label>
+                                    <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">Số nhà, tên đường *</label>
                                     <input
                                         name="street"
                                         value={form.street}
@@ -299,22 +337,8 @@ export default function Checkout() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
-                                        <DevicePhoneMobileIcon className="w-4 h-4" /> Số điện thoại *
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        name="phone"
-                                        value={form.phone}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none focus:bg-white"
-                                        placeholder="Nhập số điện thoại"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
-                                        <CreditCardIcon className="w-4 h-4" /> Thanh toán
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
+                                        <CreditCardIcon className="w-4 h-4" /> Phương thức thanh toán
                                     </label>
                                     <select 
                                         name="paymentMethod" 
@@ -330,7 +354,7 @@ export default function Checkout() {
                             </div>
 
                             <div className="space-y-2 border-t pt-6">
-                                <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                                <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
                                     <TicketIcon className="w-4 h-4" /> Mã giảm giá (Voucher)
                                 </label>
                                 <div className="relative group">
@@ -371,7 +395,7 @@ export default function Checkout() {
                             </div>
 
                             <div className="space-y-2 border-t pt-6">
-                                <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                                <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
                                     <ChatBubbleBottomCenterTextIcon className="w-4 h-4" /> Ghi chú cho người giao hàng
                                 </label>
                                 <textarea 
@@ -524,7 +548,7 @@ export default function Checkout() {
                                     <div className="bg-gray-50 rounded-3xl p-6 mb-8 border border-dashed border-gray-200 relative group">
                                         {createdOrder && (
                                             <img 
-                                                src={`https://qr.sepay.vn/img?acc=96924888888&bank=TPBank&amount=${createdOrder.finalAmount}&des=FF${createdOrder.id}&template=compact`} 
+                                                src={`https://qr.sepay.vn/img?acc=96924888888&bank=TPBank&amount=${createdOrder.finalAmount}&des=${createdOrder.orderCode}&template=compact`} 
                                                 alt="SePay QR Code" 
                                                 className="w-full aspect-square object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
                                             />
@@ -539,12 +563,12 @@ export default function Checkout() {
                                         </div>
                                         <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest">
                                             <span>Nội dung</span>
-                                            <span className="text-gray-900 font-black text-sm uppercase">FF{createdOrder?.id}</span>
+                                            <span className="text-gray-900 font-black text-sm uppercase">{createdOrder?.orderCode}</span>
                                         </div>
                                     </div>
 
                                     <button
-                                        onClick={() => navigate(`/success?orderId=${createdOrder?.id}`)}
+                                        onClick={() => navigate(`/success?orderCode=${createdOrder?.orderCode}`)}
                                         className="w-full py-4 bg-black text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
                                     >
                                         Tôi đã chuyển khoản

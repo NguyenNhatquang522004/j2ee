@@ -19,6 +19,7 @@ public interface IpBlocklistRepository extends JpaRepository<IpBlocklist, Long> 
     
     boolean existsByIpAddressAndBlockedUntilAfter(String ipAddress, LocalDateTime now);
     
+    @org.springframework.cache.annotation.Cacheable(value = "blocked_ips", key = "#ipAddress")
     default boolean isBlocked(String ipAddress) {
         return existsByIpAddressAndIsPermanentTrue(ipAddress) || 
                existsByIpAddressAndBlockedUntilAfter(ipAddress, LocalDateTime.now());

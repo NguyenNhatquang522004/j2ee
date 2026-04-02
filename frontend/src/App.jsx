@@ -23,6 +23,7 @@ import Compare from './pages/products/Compare';
 import FarmList from './pages/farms/FarmList';
 import AiScan from './pages/ai/AiScan';
 import Profile from './pages/profile/Profile';
+import Membership from './pages/profile/Membership';
 import Wishlist from './pages/wishlist/Wishlist';
 import FlashSalePage from './pages/home/FlashSalePage';
 
@@ -104,6 +105,7 @@ export default function App() {
                   <Route path="/orders/:id" element={<PrivateRoute><OrderDetail /></PrivateRoute>} />
                   <Route path="/ai-scan" element={<PrivateRoute><AiScan /></PrivateRoute>} />
                   <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+                  <Route path="/membership" element={<PrivateRoute><Membership /></PrivateRoute>} />
                   <Route path="/wishlist" element={<PrivateRoute><Wishlist /></PrivateRoute>} />
                   <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
 
@@ -114,6 +116,7 @@ export default function App() {
                   <Route path="/admin/batches" element={<AdminRoute permission="manage:batches"><AdminBatches /></AdminRoute>} />
                   <Route path="/admin/farms" element={<AdminRoute permission="manage:farms"><AdminFarms /></AdminRoute>} />
                   <Route path="/admin/orders" element={<AdminRoute permission="manage:orders"><AdminOrders /></AdminRoute>} />
+                  <Route path="/admin/orders/:id" element={<AdminRoute permission="manage:orders"><OrderDetail /></AdminRoute>} />
                   <Route path="/admin/refunds" element={<AdminRoute permission="manage:orders"><AdminRefunds /></AdminRoute>} />
                   <Route path="/admin/users" element={<AdminRoute permission="manage:users"><AdminUsers /></AdminRoute>} />
                   <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
@@ -122,10 +125,11 @@ export default function App() {
                   <Route path="/admin/media" element={<AdminRoute permission="manage:products"><AdminMediaLibrary /></AdminRoute>} />
                   <Route path="/admin/reviews" element={<AdminRoute permission="manage:reviews"><AdminReviews /></AdminRoute>} />
                   <Route path="/admin/staff" element={<AdminRoute permission="manage:users"><AdminStaff /></AdminRoute>} />
-                  <Route path="/admin/audit" element={<AdminRoute permission="view:reports"><AdminAudit /></AdminRoute>} />
+                  <Route path="/admin/audit-logs" element={<AdminRoute permission="view:reports"><AdminAudit /></AdminRoute>} />
                   <Route path="/admin/contacts" element={<AdminRoute><AdminContact /></AdminRoute>} />
                   <Route path="/admin/flash-sales" element={<AdminRoute permission="manage:promotions"><AdminFlashSales /></AdminRoute>} />
                   <Route path="/admin/guide" element={<AdminRoute><AdminBuyingGuide /></AdminRoute>} />
+                  <Route path="/admin/notifications" element={<AdminRoute><Notifications /></AdminRoute>} />
                   <Route path="/admin/2fa" element={<AdminRoute><Navigate to="/admin/settings?tab=security" replace /></AdminRoute>} />
                   <Route path="/admin/profile" element={<AdminRoute><Navigate to="/admin/settings?tab=profile" replace /></AdminRoute>} />
 

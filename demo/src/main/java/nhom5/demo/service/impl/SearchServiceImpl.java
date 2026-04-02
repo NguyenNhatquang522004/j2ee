@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import nhom5.demo.dto.response.ProductResponse;
 import nhom5.demo.service.SearchService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -27,7 +28,9 @@ public class SearchServiceImpl implements SearchService {
     private String productIndexName;
 
     @Override
+    @Async
     public void indexProduct(ProductResponse product) {
+        log.debug("Asynchronously indexing product {} to Meilisearch", product.getId());
         try {
             String url = "/indexes/" + productIndexName + "/documents";
             Map<String, Object> doc = new HashMap<>();
@@ -38,20 +41,19 @@ public class SearchServiceImpl implements SearchService {
             doc.put("farmName", product.getFarmName());
             
             meiliRestTemplate.postForObject(url, List.of(doc), String.class);
-            log.info("Indexed product {} to Meilisearch via REST", product.getId());
         } catch (Exception e) {
-            log.error("Failed to index product to Meilisearch: {}", e.getMessage());
+            log.error("Failed to index product to Meilisearch in background: {}", e.getMessage());
         }
     }
 
     @Override
+    @Async
     public void deleteProduct(Long id) {
         try {
             String url = "/indexes/" + productIndexName + "/documents/" + id;
             meiliRestTemplate.delete(url);
-            log.info("Deleted product {} from Meilisearch via REST", id);
         } catch (Exception e) {
-            log.error("Failed to delete product from Meilisearch: {}", e.getMessage());
+            log.error("Failed to delete product from Meilisearch in background: {}", e.getMessage());
         }
     }
 

@@ -8,6 +8,7 @@ import nhom5.demo.repository.OrderRepository;
 import nhom5.demo.service.OrderService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import java.util.Objects;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,7 +42,8 @@ public class InventoryScheduler {
         for (Order order : expiredOrders) {
             try {
                 // Hủy đơn hàng sẽ tự động giải phóng kho (trong logic của OrderService.updateOrderStatus)
-                orderService.updateOrderStatus(order.getId(), OrderStatusEnum.CANCELLED);
+                Long orderId = Objects.requireNonNull(order.getId());
+                orderService.updateOrderStatus(orderId, OrderStatusEnum.CANCELLED);
                 log.info("Auto-cancelled expired order #{}", order.getOrderCode());
             } catch (Exception e) {
                 log.error("Failed to auto-cancel order #{}: {}", order.getOrderCode(), e.getMessage());

@@ -30,6 +30,60 @@ export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [categories, setCategories] = useState([]);
     const [farms, setFarms] = useState([]);
+    const [placeholder, setPlaceholder] = useState('');
+
+    useEffect(() => {
+        const phrases = [
+            "Bạn tìm nông sản gì hôm nay?",
+            "Tìm rau củ tươi sạch...",
+            "Săn deal Flash Sale...",
+            "Thực phẩm organic tại gia...",
+            "Trái cây nhập khẩu tươi ngon..."
+        ];
+        let i = 0;
+        let j = 0;
+        let currentPhrase = [];
+        let isDeleting = false;
+        let isEnd = false;
+        let timeout;
+
+        function loop() {
+            setPlaceholder(currentPhrase.join(''));
+
+            if (i < phrases.length) {
+                if (!isDeleting && j <= phrases[i].length) {
+                    currentPhrase.push(phrases[i][j]);
+                    j++;
+                }
+
+                if (isDeleting && j <= phrases[i].length) {
+                    currentPhrase.pop();
+                    j--;
+                }
+
+                if (j === phrases[i].length) {
+                    isEnd = true;
+                    isDeleting = true;
+                }
+
+                if (isDeleting && j === 0) {
+                    currentPhrase = [];
+                    isDeleting = false;
+                    i++;
+                    if (i === phrases.length) i = 0;
+                }
+            }
+
+            const spedUp = 50;
+            const normalSpeed = 100;
+            const time = isEnd ? 2000 : isDeleting ? spedUp : normalSpeed;
+            if (isEnd) isEnd = false;
+            timeout = setTimeout(loop, time);
+        }
+
+        loop();
+        return () => clearTimeout(timeout);
+    }, []);
 
     useEffect(() => {
         categoryService.getAll().then(res => setCategories(res.data)).catch(() => {});
@@ -68,14 +122,12 @@ export default function Navbar() {
                 <div className="flex justify-between items-center h-16">
                     {/* Logo Area */}
                     <div className="flex items-center gap-8">
-                        <Link to="/" className="flex items-center gap-2 group">
-                            <span className="text-green-600 group-hover:scale-110 transition-transform duration-300">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                                </svg>
-                            </span>
-                            <span className="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-green-700 to-green-500">
-                                FreshFood <span className="text-[10px] text-green-400"></span>
+                        <Link to="/" className="flex items-center gap-3 group">
+                            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110 border border-gray-100 p-0">
+                                <img src="/logo.png" alt="FreshFood" className="w-full h-full object-cover" />
+                            </div>
+                            <span className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-green-800 to-green-600 uppercase">
+                                FreshFood <span className="text-[10px] text-green-500"></span>
                             </span>
                         </Link>
 
@@ -183,8 +235,8 @@ export default function Navbar() {
                         <div className="relative group">
                             <input 
                                 type="text"
-                                placeholder="Bạn tìm nông sản gì hôm nay?"
-                                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-600 outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all placeholder:text-gray-300"
+                                placeholder={placeholder}
+                                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700 outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all placeholder:text-gray-400"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         const q = e.target.value.trim();
@@ -201,9 +253,9 @@ export default function Navbar() {
                     </div>
 
                     {/* Right Side Icons/Buttons */}
-                    <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="flex items-center gap-1 xs:gap-2 sm:gap-4">
                         {user ? (
-                            <div className="flex items-center gap-2 sm:gap-4">
+                            <div className="flex items-center gap-1 xs:gap-2 sm:gap-4">
                                 <NotificationDropdown />
                                 {!isManagement && (
                                     <>
@@ -219,6 +271,12 @@ export default function Navbar() {
                                                 </span>
                                             )}
                                         </Link>
+                                        
+                                        <div className="sm:hidden">
+                                            <Link to="/wishlist" className="relative p-2 text-gray-600 hover:text-red-500 transition-colors">
+                                                {wishlistCount > 0 ? <HeartIconSolid className="w-6 h-6 text-red-500" /> : <HeartIcon className="w-6 h-6" />}
+                                            </Link>
+                                        </div>
 
                                         <Link to="/cart" className="relative p-2 text-gray-600 hover:text-green-600 transition-colors group">
                                             <ShoppingBagIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
@@ -233,7 +291,7 @@ export default function Navbar() {
 
                                 <div className="h-8 w-px bg-gray-200 hidden xs:block"></div>
 
-                                <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="flex items-center gap-1 sm:gap-3">
                                     {!isManagement && (
                                         <Link to="/orders" className="hidden sm:block relative p-2 text-gray-600 hover:text-green-600 transition-colors group" title="Đơn hàng của tôi">
                                             <ArchiveBoxIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
@@ -252,18 +310,18 @@ export default function Navbar() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex items-center gap-3">
-                                <Link to="/login" className="text-sm font-bold text-gray-600 hover:text-green-600 transition-colors">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <Link to="/login" className="text-xs sm:text-sm font-bold text-gray-600 hover:text-green-600 transition-colors">
                                     Đăng nhập
                                 </Link>
-                                <Link to="/register" className="bg-green-600 text-white text-sm font-bold px-5 py-2 rounded-full hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md">
-                                    Bắt đầu ngay
+                                <Link to="/register" className="bg-green-600 text-white text-[10px] sm:text-sm font-bold px-3 sm:px-5 py-2 rounded-full hover:bg-green-700 hover:shadow-lg transition-all shadow-md">
+                                    Tham gia
                                 </Link>
                             </div>
                         )}
 
                         {/* Mobile Menu Toggle */}
-                        <button className="lg:hidden p-2 text-gray-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                        <button className="lg:hidden p-2 text-gray-600 ml-1" onClick={() => setIsMenuOpen(!isMenuOpen)}>
                             {isMenuOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
                         </button>
                     </div>
@@ -272,7 +330,30 @@ export default function Navbar() {
 
             {/* Mobile Nav */}
             {isMenuOpen && (
-                <div className="lg:hidden bg-white border-b border-gray-100 px-4 py-4 space-y-3 shadow-xl">
+                <div className="lg:hidden bg-white border-b border-gray-100 px-4 pt-2 pb-6 space-y-4 shadow-2xl overflow-y-auto max-h-[85vh] animate-in fade-in slide-in-from-top duration-300">
+                    {/* Search in Mobile Menu */}
+                    <div className="relative group mt-2">
+                        <input 
+                            type="text"
+                            placeholder="Tìm nông sản..."
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-600 outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all placeholder:text-gray-300"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    const q = e.target.value.trim();
+                                    if (q) {
+                                        navigate(`/products?keyword=${encodeURIComponent(q)}`);
+                                        setIsMenuOpen(false);
+                                    }
+                                }
+                            }}
+                        />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                    </div>
+
                     {!isManagement ? (
                         <>
                             <Link to="/products" className="block font-bold text-gray-800 hover:text-green-600">Sản phẩm</Link>

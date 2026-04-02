@@ -9,6 +9,9 @@ import nhom5.demo.service.NewsletterService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
+import java.util.Objects;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -20,7 +23,7 @@ public class NewsletterServiceImpl implements NewsletterService {
 
     @Override
     @Transactional
-    public void subscribe(String email) {
+    public void subscribe(@NonNull String email) {
         if (newsletterRepository.existsByEmail(email)) {
             throw new BusinessException("Email này đã đăng ký bản tin trước đó.");
         }
@@ -30,7 +33,7 @@ public class NewsletterServiceImpl implements NewsletterService {
                 .isActive(true)
                 .build();
         
-        newsletterRepository.save(subscriber);
+        newsletterRepository.save(Objects.requireNonNull(subscriber));
         
         // Send welcome email
         mailService.sendNewsletterWelcome(email);
@@ -38,7 +41,7 @@ public class NewsletterServiceImpl implements NewsletterService {
 
     @Override
     @Transactional
-    public void unsubscribe(String email) {
+    public void unsubscribe(@NonNull String email) {
         NewsletterSubscriber subscriber = newsletterRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException("Email chưa đăng ký bản tin."));
         
@@ -47,21 +50,22 @@ public class NewsletterServiceImpl implements NewsletterService {
     }
 
     @Override
-    public java.util.List<NewsletterSubscriber> getAllSubscribers() {
+    public List<NewsletterSubscriber> getAllSubscribers() {
         return newsletterRepository.findAll();
     }
 
     @Override
     @Transactional
-    public void sendNewsletterToAll(String subject, String content) {
-        java.util.List<NewsletterSubscriber> activeSubscribers = newsletterRepository.findAll().stream()
+    public void sendNewsletterToAll(@NonNull String subject, @NonNull String content) {
+        List<NewsletterSubscriber> activeSubscribers = newsletterRepository.findAll().stream()
                 .filter(s -> Boolean.TRUE.equals(s.getIsActive()))
                 .toList();
 
         log.info("Starting to process newsletter sending to {} active subscribers.", activeSubscribers.size());
 
         for (NewsletterSubscriber subscriber : activeSubscribers) {
-            mailService.sendGenericEmail(subscriber.getEmail(), subject, content);
+            String email = Objects.requireNonNull(subscriber.getEmail());
+            mailService.sendGenericEmail(email, subject, content);
         }
         
         log.info("Finished queueing {} newsletter emails.", activeSubscribers.size());
@@ -69,7 +73,10 @@ public class NewsletterServiceImpl implements NewsletterService {
 
     @Override
     @Transactional
-    public void deleteSubscriber(Long id) {
+    public void deleteSubscriber(@NonNull Long id) {
+        if (!newsletterRepository.existsById(id)) {
+            throw new BusinessException("Subscriber not found with ID: " + id);
+        }
         newsletterRepository.deleteById(id);
     }
 }

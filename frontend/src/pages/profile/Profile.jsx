@@ -27,8 +27,10 @@ import {
     ArrowLeftOnRectangleIcon,
     EyeIcon,
     EyeSlashIcon,
-    ShoppingBagIcon
+    ShoppingBagIcon,
+    CheckBadgeIcon as CheckBadgeIconOutline
 } from '@heroicons/react/24/outline';
+import { CheckBadgeIcon as CheckBadgeIconSolid } from '@heroicons/react/24/solid';
 import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../components/ConfirmModal';
 
@@ -262,7 +264,23 @@ export default function Profile() {
             toast.success('Cập nhật hồ sơ thành công');
             setProfileForm(prev => ({ ...prev, password: '' }));
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Cập nhật thất bại');
+            toast.error(err.response?.data?.message || 'Không thể cập nhật ảnh đại diện');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleRemoveAvatar = async () => {
+        if (!window.confirm('Bạn có chắc chắn muốn gỡ ảnh đại diện?')) return;
+        
+        setSaving(true);
+        try {
+            const { data } = await userService.removeAvatar();
+            setUserData(data);
+            setUser(data);
+            toast.success('Đã gỡ ảnh đại diện');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Không thể gỡ ảnh đại diện');
         } finally {
             setSaving(false);
         }
@@ -363,6 +381,10 @@ export default function Profile() {
                 label: addrForm.label,
                 fullName: addrForm.fullName,
                 phone: addrForm.phone,
+                addressDetail: addrForm.street,
+                ward: addrForm.ward,
+                district: addrForm.district,
+                province: addrForm.province,
                 details: fullAddress,
                 isDefault: addrForm.isDefault
             };
@@ -465,14 +487,49 @@ export default function Profile() {
                                 ) : (
                                     user.fullName?.charAt(0).toUpperCase() || 'U'
                                 )}
-                                <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                    <PencilIcon className="w-6 h-6 text-white" />
-                                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={saving} />
-                                </label>
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-4">
+                                    <label className="cursor-pointer hover:scale-110 transition-transform" title="Thay đổi ảnh">
+                                        <PencilIcon className="w-6 h-6 text-white" />
+                                        <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={saving} />
+                                    </label>
+                                    {user.avatarUrl && (
+                                        <button 
+                                            type="button"
+                                            onClick={handleRemoveAvatar} 
+                                            className="hover:scale-110 transition-transform text-white/90 hover:text-red-400" 
+                                            title="Gỡ ảnh đại diện"
+                                            disabled={saving}
+                                        >
+                                            <TrashIcon className="w-6 h-6" />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                             <div className="text-left md:text-center">
-                                <h2 className="font-black text-gray-900 leading-tight text-sm md:text-base">{user.fullName}</h2>
-                                <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 italic block">Thành viên thân thiết</span>
+                                <div className="flex items-center justify-start md:justify-center gap-1.5">
+                                    <h2 className="font-black text-gray-900 leading-tight text-sm md:text-base">{user.fullName}</h2>
+                                    <CheckBadgeIconSolid 
+                                        className={`w-4 h-4 md:w-5 md:h-5 ${
+                                            user.membershipTier === 'SILVER' ? 'text-gray-400' :
+                                            user.membershipTier === 'GOLD' ? 'text-yellow-500' :
+                                            user.membershipTier === 'PLATINUM' ? 'text-blue-400' :
+                                            'text-orange-700'
+                                        }`} 
+                                    />
+                                </div>
+                                <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest mt-1 italic block ${
+                                    user.membershipTier === 'SILVER' ? 'text-gray-400' :
+                                    user.membershipTier === 'GOLD' ? 'text-yellow-600' :
+                                    user.membershipTier === 'PLATINUM' ? 'text-blue-500' :
+                                    'text-orange-700'
+                                }`}>
+                                    Thành viên {
+                                        user.membershipTier === 'SILVER' ? 'Bạc' :
+                                        user.membershipTier === 'GOLD' ? 'Vàng' :
+                                        user.membershipTier === 'PLATINUM' ? 'Kim cương' :
+                                        'Đồng'
+                                    }
+                                </span>
                             </div>
                         </div>
 
@@ -488,7 +545,7 @@ export default function Profile() {
                                 <button 
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)} 
-                                    className={`flex items-center gap-3 px-5 py-3 md:px-6 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[9px] md:text-[10px] tracking-widest transition-all whitespace-nowrap shrink-0 ${activeTab === tab.id ? 'bg-black text-white shadow-xl scale-105' : 'text-gray-400 hover:bg-gray-100'}`}
+                                    className={`flex items-center gap-3 px-5 py-3 md:px-6 md:py-4 rounded-xl md:rounded-2xl font-black uppercase text-[9px] md:text-[10px] tracking-widest transition-all whitespace-nowrap shrink-0 ${activeTab === tab.id ? 'bg-green-600 text-white shadow-xl scale-105' : 'text-gray-400 hover:bg-gray-100'}`}
                                 >
                                     <tab.icon className="w-4 h-4 md:w-5 md:h-5" />
                                     {tab.label}
@@ -497,7 +554,7 @@ export default function Profile() {
                         </nav>
 
                         {/* Membership Card - Premium Layout */}
-                        <div className="mt-10 bg-gradient-to-br from-emerald-900 via-green-900 to-black p-6 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
+                        <Link to="/membership" className="mt-10 bg-gradient-to-br from-emerald-900 via-green-900 to-black p-6 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group block hover:scale-[1.02] transition-transform">
                             <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all"></div>
                             <div className="relative z-10">
                                 <div className="flex justify-between items-start mb-6">
@@ -507,20 +564,37 @@ export default function Profile() {
                                 <div className="space-y-4">
                                     <div>
                                         <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Hạng thành viên</p>
-                                        <h4 className="text-xl font-black uppercase italic tracking-tighter">{user?.membershipTier || 'BRONZE'} LAYER</h4>
+                                        <h4 className="text-xl font-black uppercase italic tracking-tighter">
+                                            {user?.membershipTier === 'SILVER' ? 'THÀNH VIÊN BẠC' :
+                                             user?.membershipTier === 'GOLD' ? 'THÀNH VIÊN VÀNG' :
+                                             user?.membershipTier === 'PLATINUM' ? 'THÀNH VIÊN KIM CƯƠNG' :
+                                             'THÀNH VIÊN ĐỒNG'}
+                                        </h4>
                                     </div>
                                     <div>
                                         <div className="flex justify-between text-[9px] font-black uppercase tracking-widest mb-1.5">
                                             <span>Tiến trình hạng</span>
-                                            <span>{user?.points || 0} / 1000 Pts</span>
+                                            <span>{user?.points || 0} / {
+                                                user?.membershipTier === 'SILVER' ? '5.000' :
+                                                user?.membershipTier === 'GOLD' ? '15.000' :
+                                                user?.membershipTier === 'PLATINUM' ? 'MAX' :
+                                                '1.000'
+                                            } Pts</span>
                                         </div>
                                         <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                                            <div className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full" style={{ width: `${Math.min(100, (user?.points || 0) / 10)}%` }}></div>
+                                            <div className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full" style={{ 
+                                                width: `${Math.min(100, (user?.points || 0) / (
+                                                    user?.membershipTier === 'SILVER' ? 50 : 
+                                                    user?.membershipTier === 'GOLD' ? 150 : 
+                                                    user?.membershipTier === 'PLATINUM' ? 1 : 
+                                                    10
+                                                ))}%` 
+                                            }}></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
 
                         {(user.role !== 'ROLE_ADMIN' && authUser?.role !== 'ROLE_ADMIN') && (
                             <div className="mt-10 pt-10 border-t border-gray-100 flex flex-col gap-4">
@@ -580,16 +654,18 @@ export default function Profile() {
                                 <form onSubmit={handleProfileSubmit} className="space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Họ và tên đầy đủ</label>
+                                            <label className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] ml-2">Họ và tên đầy đủ</label>
                                             <input
                                                 className="w-full bg-gray-50 border-2 border-transparent rounded-[1.5rem] px-6 py-4 font-bold text-gray-900 focus:border-green-600 focus:bg-white transition-all shadow-sm outline-none"
                                                 value={profileForm.fullName}
+                                                maxLength={50}
+                                                required
                                                 onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
                                                 placeholder="Nhập họ tên của bạn"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Email định danh</label>
+                                            <label className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] ml-2">Email định danh</label>
                                             <div className="relative">
                                                 <input
                                                     className="w-full bg-gray-100 border-2 border-transparent rounded-[1.5rem] px-6 py-4 font-bold text-gray-400 cursor-not-allowed italic shadow-inner outline-none"
@@ -600,16 +676,19 @@ export default function Profile() {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Số điện thoại liên lạc</label>
+                                            <label className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] ml-2">Số điện thoại liên lạc</label>
                                             <input
                                                 className="w-full bg-gray-50 border-2 border-transparent rounded-[1.5rem] px-6 py-4 font-bold text-gray-900 focus:border-green-600 focus:bg-white transition-all shadow-sm outline-none"
                                                 value={profileForm.phone}
+                                                required
+                                                pattern="^(0)(32|33|34|35|36|37|38|39|52|56|58|59|70|76|77|78|79|81|82|83|84|85|86|87|88|89|90|91|92|93|94|96|97|98|99)[0-9]{7}$"
+                                                title="Số điện thoại di động Việt Nam không hợp lệ"
                                                 onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                                                 placeholder="SĐT không để trống"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Mật khẩu cũ (Để xác nhận)</label>
+                                            <label className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] ml-2">Mật khẩu cũ (Để xác nhận)</label>
                                             <div className="relative">
                                                 <input
                                                     type={showOldPassword ? "text" : "password"}
@@ -628,7 +707,7 @@ export default function Profile() {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Mật khẩu mới</label>
+                                            <label className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] ml-2">Mật khẩu mới</label>
                                             <div className="relative">
                                                 <input
                                                     type={showPassword ? "text" : "password"}
@@ -647,11 +726,11 @@ export default function Profile() {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-3">Ngày sinh</label>
+                                            <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-3">Ngày sinh</label>
                                             <input type="date" className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-6 py-4 font-bold focus:border-green-600 transition-all shadow-sm outline-none uppercase" value={profileForm.dateOfBirth} onChange={(e) => setProfileForm({...profileForm, dateOfBirth: e.target.value})} />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-3">Giới tính</label>
+                                            <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-3">Giới tính</label>
                                             <select className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-6 py-4 font-bold focus:border-green-600 transition-all shadow-sm outline-none appearance-none" value={profileForm.gender} onChange={(e) => setProfileForm({...profileForm, gender: e.target.value})}>
                                                 <option value="male">Nam</option>
                                                 <option value="female">Nữ</option>
@@ -663,7 +742,7 @@ export default function Profile() {
                                         <button
                                             type="submit"
                                             disabled={saving}
-                                            className="w-full bg-black text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm hover:bg-gray-800 transition-all shadow-2xl active:scale-95 disabled:opacity-50"
+                                            className="w-full bg-green-600 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm hover:bg-green-700 transition-all shadow-2xl active:scale-95 disabled:opacity-50"
                                         >
                                             {saving ? 'ĐANG CẬP NHẬT...' : 'XÁC NHẬN LƯU THAY ĐỔI'}
                                         </button>
@@ -689,7 +768,7 @@ export default function Profile() {
                                     ].map((n) => (
                                         <div key={n.key} className="flex items-center justify-between p-8 border-b last:border-none border-gray-50 bg-gray-50/20 group hover:bg-white transition-all">
                                             <div className="flex items-center gap-6">
-                                                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-black group-hover:text-white transition-all shadow-sm">
+                                                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-green-600 group-hover:text-white transition-all shadow-sm">
                                                     <BellIcon className="w-6 h-6" />
                                                 </div>
                                                 <div>
@@ -699,14 +778,14 @@ export default function Profile() {
                                             </div>
                                             <button 
                                                 onClick={() => setProfileForm(prev => ({...prev, [n.key]: !prev[n.key]}))}
-                                                className={`relative inline-flex h-9 w-16 items-center rounded-full transition-all duration-300 ${profileForm[n.key] ? 'bg-black' : 'bg-gray-200'}`}
+                                                className={`relative inline-flex h-9 w-16 items-center rounded-full transition-all duration-300 ${profileForm[n.key] ? 'bg-green-600' : 'bg-gray-200'}`}
                                             >
                                                 <span className={`inline-block h-7 w-7 transform rounded-full bg-white transition-all duration-300 shadow-lg ${profileForm[n.key] ? 'translate-x-8' : 'translate-x-1'}`} />
                                             </button>
                                         </div>
                                     ))}
                                     <div className="p-8">
-                                        <button onClick={handleProfileSubmit} className="w-full py-4 bg-black text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-xl shadow-xl active:scale-95 transition-all">CẬP NHẬT TÙY CHỌN</button>
+                                        <button onClick={handleProfileSubmit} className="w-full py-4 bg-green-600 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-xl shadow-xl active:scale-95 transition-all">CẬP NHẬT TÙY CHỌN</button>
                                     </div>
                                 </div>
                             </div>
@@ -724,7 +803,7 @@ export default function Profile() {
                                 <div className="group overflow-hidden bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow">
                                     <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2.5 bg-gray-50 rounded-xl text-gray-700 group-hover:bg-black group-hover:text-white transition-colors">
+                                            <div className="p-2.5 bg-gray-50 rounded-xl text-gray-700 group-hover:bg-green-600 group-hover:text-white transition-colors">
                                                 <ShieldCheckIcon className="w-5 h-5" />
                                             </div>
                                             <h4 className="text-lg font-bold text-gray-900">Xác thực 2 bước (Google Authenticator)</h4>
@@ -806,17 +885,17 @@ export default function Profile() {
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         <button 
                                                             onClick={() => setSetupMethod('TOTP')}
-                                                            className={`p-6 rounded-2xl border-2 text-left transition-all ${setupMethod === 'TOTP' ? 'border-black bg-gray-50' : 'border-gray-100 hover:border-gray-300'}`}
+                                                            className={`p-6 rounded-2xl border-2 text-left transition-all ${setupMethod === 'TOTP' ? 'border-green-600 bg-green-50' : 'border-gray-100 hover:border-gray-300'}`}
                                                         >
-                                                            <ShieldCheckIcon className="w-8 h-8 mb-3 text-gray-900" />
+                                                            <ShieldCheckIcon className="w-8 h-8 mb-3 text-green-600" />
                                                             <p className="font-black text-xs uppercase tracking-widest">Ứng dụng Authenticator</p>
                                                             <p className="text-xs text-gray-500 mt-2">Sử dụng Google Authenticator, Authy, v.v.</p>
                                                         </button>
                                                         <button 
                                                             onClick={() => setSetupMethod('EMAIL')}
-                                                            className={`p-6 rounded-2xl border-2 text-left transition-all ${setupMethod === 'EMAIL' ? 'border-black bg-gray-50' : 'border-gray-100 hover:border-gray-300'}`}
+                                                            className={`p-6 rounded-2xl border-2 text-left transition-all ${setupMethod === 'EMAIL' ? 'border-green-600 bg-green-50' : 'border-gray-100 hover:border-gray-300'}`}
                                                         >
-                                                            <AtSymbolIcon className="w-8 h-8 mb-3 text-gray-900" />
+                                                            <AtSymbolIcon className="w-8 h-8 mb-3 text-green-600" />
                                                             <p className="font-black text-xs uppercase tracking-widest">Xác thực qua Email</p>
                                                             <p className="text-xs text-gray-500 mt-2">Mã xác thực sẽ được gửi trực tiếp vào hòm thư.</p>
                                                         </button>
@@ -825,7 +904,7 @@ export default function Profile() {
                                                         <button
                                                             onClick={startTwoFactorSetup}
                                                             disabled={setupLoading}
-                                                            className="px-12 py-4 bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-gray-800 transition-all shadow-xl active:scale-95"
+                                                            className="px-12 py-4 bg-green-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-green-700 transition-all shadow-xl active:scale-95"
                                                         >
                                                             TIẾP TỤC BƯỚC {setupMethod === 'EMAIL' ? 'DUY NHẤT' : 'TIẾP THEO'}
                                                         </button>
@@ -853,11 +932,11 @@ export default function Profile() {
                                                                 <h6 className="font-black text-xs uppercase tracking-[0.2em] text-gray-900">Thiết lập ứng dụng</h6>
                                                                 <div className="space-y-4">
                                                                     <div className="flex items-start gap-3">
-                                                                        <span className="w-6 h-6 rounded-lg bg-black text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
+                                                                        <span className="w-6 h-6 rounded-lg bg-green-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
                                                                         <p className="text-sm font-medium text-gray-600">Mở ứng dụng <b>Authenticator</b> và quét mã QR.</p>
                                                                     </div>
                                                                     <div className="flex items-start gap-3">
-                                                                        <span className="w-6 h-6 rounded-lg bg-black text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
+                                                                        <span className="w-6 h-6 rounded-lg bg-green-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
                                                                         <p className="text-sm font-medium text-gray-600">Nhập mã 6 số từ ứng dụng dưới đây.</p>
                                                                     </div>
                                                                 </div>
@@ -879,7 +958,7 @@ export default function Profile() {
                                                             maxLength="6"
                                                             value={twoFactorCode}
                                                             onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
-                                                            className="w-full text-center text-4xl font-black tracking-[1.2rem] py-6 border-4 border-gray-100 rounded-[2rem] focus:border-black shadow-inner outline-none transition-all placeholder:tracking-normal placeholder:text-gray-200"
+                                                            className="w-full text-center text-4xl font-black tracking-[1.2rem] py-6 border-4 border-gray-100 rounded-[2rem] focus:border-green-600 shadow-inner outline-none transition-all placeholder:tracking-normal placeholder:text-gray-200"
                                                             placeholder="..."
                                                             autoFocus
                                                         />
@@ -887,7 +966,7 @@ export default function Profile() {
                                                             <button
                                                                 onClick={confirmTwoFactorEnable}
                                                                 disabled={twoFactorCode.length !== 6 || saving}
-                                                                className="flex-1 bg-black text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-gray-800 disabled:opacity-40 transition-all shadow-xl active:scale-95"
+                                                                className="flex-1 bg-green-600 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-green-700 disabled:opacity-40 transition-all shadow-xl active:scale-95"
                                                             >
                                                                 {saving ? 'XÁC MINH...' : 'KÍCH HOẠT NGAY'}
                                                             </button>
@@ -929,7 +1008,7 @@ export default function Profile() {
                                 {/* Password Change Card */}
                                 <div className="group overflow-hidden bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-2.5 bg-gray-50 rounded-xl text-gray-700 group-hover:bg-black group-hover:text-white transition-colors">
+                                        <div className="p-2.5 bg-gray-50 rounded-xl text-gray-700 group-hover:bg-green-600 group-hover:text-white transition-colors">
                                             <LockClosedIcon className="w-5 h-5" />
                                         </div>
                                         <h4 className="text-lg font-bold text-gray-900">Mật khẩu</h4>
@@ -937,7 +1016,7 @@ export default function Profile() {
                                     <p className="text-sm text-gray-500 mb-5">Cập nhật mật khẩu thường xuyên để tăng cường bảo mật cho tài khoản.</p>
                                     <button
                                         onClick={() => setActiveTab('personal')}
-                                        className="px-8 py-3 border-2 border-black rounded-full font-bold text-sm hover:bg-black hover:text-white transition-all active:scale-95"
+                                        className="px-8 py-3 border-2 border-green-600 text-green-600 rounded-full font-bold text-sm hover:bg-green-600 hover:text-white transition-all active:scale-95"
                                     >
                                         Đổi mật khẩu
                                     </button>
@@ -958,7 +1037,7 @@ export default function Profile() {
                                     </div>
                                     <button
                                         onClick={() => setShowAddrForm(!showAddrForm)}
-                                        className="bg-black text-white px-8 py-4 rounded-2xl font-black hover:bg-gray-800 shadow-2xl transition-all flex items-center gap-3 shrink-0 active:scale-95"
+                                        className="bg-green-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-green-700 shadow-2xl transition-all flex items-center gap-3 shrink-0 active:scale-95"
                                     >
                                         <PlusIcon className="w-5 h-5" />
                                         {showAddrForm ? 'HỦY BỎ' : 'THÊM ĐỊA CHỈ'}
@@ -1044,21 +1123,33 @@ export default function Profile() {
                                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black text-gray-400 ml-3 uppercase tracking-widest">Phân loại</label>
-                                                    <div className="flex gap-4">
-                                                        {['Nhà', 'Công ty', 'Khác'].map(label => (
-                                                            <button
-                                                                key={label}
-                                                                type="button"
-                                                                onClick={() => setAddrForm({ ...addrForm, label })}
-                                                                className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
-                                                                    addrForm.label === label 
-                                                                    ? 'bg-black text-white shadow-lg' 
-                                                                    : 'bg-white text-gray-400 border border-gray-100 hover:text-green-600 hover:border-green-100'
-                                                                }`}
-                                                            >
-                                                                {label}
-                                                            </button>
-                                                        ))}
+                                                    <div className="space-y-4">
+                                                        <div className="relative group">
+                                                            <input
+                                                                className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3.5 text-sm font-black text-gray-900 shadow-md focus:border-green-600 outline-none transition-all placeholder:text-gray-300"
+                                                                value={addrForm.label}
+                                                                onChange={(e) => setAddrForm({ ...addrForm, label: e.target.value })}
+                                                                placeholder="Nhập tên nhãn riêng (VD: Nhà vườn, Cơ quan...)"
+                                                                required
+                                                            />
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-300 uppercase italic opacity-0 group-focus-within:opacity-100 transition-all">Gợi ý ↓</div>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {['Nhà', 'Công ty', 'Trường học', 'Nhà riêng', 'Cơ quan'].map(suggestion => (
+                                                                <button
+                                                                    key={suggestion}
+                                                                    type="button"
+                                                                    onClick={() => setAddrForm({ ...addrForm, label: suggestion })}
+                                                                    className={`px-4 py-2 rounded-full font-black text-[9px] uppercase tracking-widest transition-all border-2 ${
+                                                                        addrForm.label === suggestion 
+                                                                        ? 'bg-green-600 text-white border-green-600 shadow-lg scale-105' 
+                                                                        : 'bg-white text-gray-400 border-gray-50 hover:border-green-100 hover:text-green-600 hover:scale-105'
+                                                                    }`}
+                                                                >
+                                                                    {suggestion}
+                                                                </button>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <button type="submit" className="w-full bg-green-600 text-white rounded-xl py-3 font-black uppercase text-xs tracking-widest shadow-lg shadow-green-900/10 hover:bg-green-500 transition-all h-[48px]">
@@ -1115,7 +1206,7 @@ export default function Profile() {
                                                         </button>
                                                     </div>
                                                     {!addr.isDefault && (
-                                                        <button type="button" onClick={() => handleSetDefault(addr.id)} className="text-[9px] font-black text-white bg-black px-5 py-2.5 rounded-full uppercase tracking-tighter hover:bg-green-600 transition-all shadow-lg active:scale-95">ĐẶT LÀM CHÍNH</button>
+                                                        <button type="button" onClick={() => handleSetDefault(addr.id)} className="text-[9px] font-black text-white bg-green-600 px-5 py-2.5 rounded-full uppercase tracking-tighter hover:bg-green-700 transition-all shadow-lg active:scale-95">ĐẶT LÀM CHÍNH</button>
                                                     )}
                                                 </div>
                                             </div>
@@ -1162,7 +1253,7 @@ export default function Profile() {
                                                                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Đánh giá ngày {new Date(review.createdAt).toLocaleDateString('vi-VN')}</p>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center gap-1.5 px-6 py-3 bg-gray-50 rounded-2xl group-hover:bg-black transition-colors">
+                                                        <div className="flex items-center gap-1.5 px-6 py-3 bg-gray-50 rounded-2xl group-hover:bg-green-600 transition-colors">
                                                             {[1, 2, 3, 4, 5].map(star => (
                                                                 <StarIcon key={star} className={`w-5 h-5 ${star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 group-hover:text-gray-800'}`} />
                                                             ))}
@@ -1235,7 +1326,7 @@ export default function Profile() {
                                         </div>
                                         <button 
                                             onClick={handleExportData}
-                                            className="w-full py-4 bg-black text-white rounded-xl font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-xl active:scale-95 hover:bg-blue-600"
+                                            className="w-full py-4 bg-green-600 text-white rounded-xl font-black uppercase text-[10px] tracking-[0.2em] transition-all shadow-xl active:scale-95 hover:bg-green-700"
                                         >
                                             YÊU CẦU TRÍCH XUẤT
                                         </button>

@@ -31,25 +31,34 @@ export default function Register() {
         <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#f0fdf4' }}>
             <div className="card w-full max-w-lg shadow-xl border-0">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6 border-4 border-white shadow-sm">
-                        <UserPlusIcon className="w-12 h-12 text-green-600" />
+                    <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-white mb-6 border-4 border-white shadow-2xl overflow-hidden group hover:scale-110 transition-all duration-500 ring-8 ring-green-100/30 p-0">
+                        <img src="/logo.png" alt="FreshFood" className="w-full h-full object-cover" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Tạo tài khoản</h1>
-                    <p className="text-gray-500">Tham gia cộng đồng thực phẩm sạch</p>
+                    <p className="text-gray-700 font-medium italic">Tham gia cộng đồng thực phẩm sạch</p>
                 </div>
                 
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Họ và tên</label>
-                        <input name="fullName" value={form.fullName} onChange={handleChange} required className="input-field py-2.5" placeholder="Nguyễn Văn A" />
+                        <input name="fullName" value={form.fullName} onChange={handleChange} required maxLength={50} className="input-field py-2.5" placeholder="Nguyễn Văn A" />
                     </div>
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Tên đăng nhập</label>
-                        <input name="username" value={form.username} onChange={handleChange} required className="input-field py-2.5" placeholder="username" />
+                        <input name="username" value={form.username} onChange={handleChange} required minLength={3} maxLength={50} className="input-field py-2.5" placeholder="username" />
                     </div>
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại</label>
-                        <input name="phone" value={form.phone} onChange={handleChange} className="input-field py-2.5" placeholder="0901234567" />
+                        <input 
+                            name="phone" 
+                            value={form.phone} 
+                            onChange={handleChange} 
+                            required
+                            pattern="^(0)(32|33|34|35|36|37|38|39|52|56|58|59|70|76|77|78|79|81|82|83|84|85|86|87|88|89|90|91|92|93|94|96|97|98|99)[0-9]{7}$"
+                            title="Số điện thoại di động Việt Nam không hợp lệ"
+                            className="input-field py-2.5" 
+                            placeholder="0901234567" 
+                        />
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>

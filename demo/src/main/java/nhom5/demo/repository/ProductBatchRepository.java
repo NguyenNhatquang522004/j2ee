@@ -32,7 +32,7 @@ public interface ProductBatchRepository extends JpaRepository<ProductBatch, Long
      */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT b FROM ProductBatch b WHERE b.product.id = :productId " +
-            "AND b.expiryDate > :today " +
+            "AND b.expiryDate >= :today " +
             "AND b.remainingQuantity > 0 " +
             "AND b.status IN (nhom5.demo.enums.BatchStatusEnum.ACTIVE, nhom5.demo.enums.BatchStatusEnum.DISCOUNT) " +
             "ORDER BY b.expiryDate ASC")
@@ -40,14 +40,25 @@ public interface ProductBatchRepository extends JpaRepository<ProductBatch, Long
             @Param("productId") Long productId,
             @Param("today") LocalDate today);
 
-    /**
-     * Tổng tồn kho còn hạn của sản phẩm.
-     */
     @Query("SELECT COALESCE(SUM(b.remainingQuantity), 0) FROM ProductBatch b " +
             "WHERE b.product.id = :productId " +
-            "AND b.expiryDate > CURRENT_DATE " +
+            "AND b.expiryDate >= :today " +
             "AND b.status IN (nhom5.demo.enums.BatchStatusEnum.ACTIVE, nhom5.demo.enums.BatchStatusEnum.DISCOUNT)")
-    Long sumRemainingQuantityByProductId(@Param("productId") Long productId);
+    Long sumRemainingQuantityByProductId(@Param("productId") Long productId, @Param("today") LocalDate today);
+
+    @Query("SELECT b.product.id, COALESCE(SUM(b.remainingQuantity), 0) FROM ProductBatch b " +
+            "WHERE b.product.id IN :productIds " +
+            "AND b.expiryDate >= :today " +
+            "AND b.status IN (nhom5.demo.enums.BatchStatusEnum.ACTIVE, nhom5.demo.enums.BatchStatusEnum.DISCOUNT) " +
+            "GROUP BY b.product.id")
+    List<Object[]> sumRemainingQuantitiesByProductIds(@Param("productIds") List<Long> productIds, @Param("today") LocalDate today);
+
+    @Query("SELECT b.product.id, COALESCE(SUM(b.remainingQuantity), 0) FROM ProductBatch b " +
+            "WHERE b.product.id IN :productIds " +
+            "AND b.expiryDate >= :today " +
+            "AND b.status IN (nhom5.demo.enums.BatchStatusEnum.ACTIVE, nhom5.demo.enums.BatchStatusEnum.DISCOUNT) " +
+            "GROUP BY b.product.id")
+    List<Object[]> sumAvailableQuantitiesByProductIds(@Param("productIds") List<Long> productIds, @Param("today") LocalDate today);
 
     /**
      * Các lô sắp hết hạn trong khoảng today → warningDate.
@@ -63,7 +74,7 @@ public interface ProductBatchRepository extends JpaRepository<ProductBatch, Long
     /**
      * Các lô đã hết hạn.
      */
-    @Query("SELECT b FROM ProductBatch b WHERE b.expiryDate <= :today " +
+    @Query("SELECT b FROM ProductBatch b WHERE b.expiryDate < :today " +
             "AND b.status NOT IN (nhom5.demo.enums.BatchStatusEnum.EXPIRED, nhom5.demo.enums.BatchStatusEnum.DISCONTINUED)")
     List<ProductBatch> findExpiredBatches(@Param("today") LocalDate today);
 

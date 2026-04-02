@@ -1,6 +1,9 @@
 import api from './axios';
 
-// Auth
+/**
+ * AUTHENTICATION SERVICE:
+ * Handles login, registration, and password recovery.
+ */
 export const authService = {
     login: (data) => api.post('/auth/login', data),
     register: (data) => api.post('/auth/register', data),
@@ -10,7 +13,10 @@ export const authService = {
     verify2fa: (data) => api.post('/auth/verify-2fa', data),
 };
 
-// Settings
+/**
+ * SYSTEM SETTINGS SERVICE (Admin/Public):
+ * Manages global configurations like store info, currencies, and system metadata.
+ */
 export const settingsService = {
     getAll: () => api.get('/settings'),
     getPublic: () => api.get('/settings/public'),
@@ -18,7 +24,10 @@ export const settingsService = {
     updateBatch: (settings) => api.put('/settings/batch', settings),
 };
 
-// 2FA Management (user)
+/**
+ * TWO-FACTOR AUTHENTICATION (User):
+ * Manages security enhancement for user accounts.
+ */
 export const twoFactorService = {
     setup: () => api.post('/2fa/setup'),
     setupEmail: () => api.post('/2fa/setup-email'),
@@ -28,7 +37,10 @@ export const twoFactorService = {
     changeMethod: (method) => api.patch('/2fa/method', { method }),
 };
 
-// Products
+/**
+ * PRODUCT MANAGEMENT SERVICE:
+ * Handles search, filters, CRUD operations, and status toggling for products.
+ */
 export const productService = {
     getAll: (params) => api.get('/products', { params }),
     getById: (id) => api.get(`/products/${id}`),
@@ -40,7 +52,10 @@ export const productService = {
     toggleStatus: (id) => api.patch(`/products/${id}/toggle-status`),
 };
 
-// Categories
+/**
+ * CATEGORY SERVICE:
+ * Manages logical grouping of food products.
+ */
 export const categoryService = {
     getAll: () => api.get('/categories'),
     getAllAdmin: () => api.get('/categories/all'),
@@ -51,7 +66,10 @@ export const categoryService = {
     toggleStatus: (id) => api.patch(`/categories/${id}/toggle-status`),
 };
 
-// Cart
+/**
+ * SHOPPING CART SERVICE:
+ * Manages temporary storage of products for checkout.
+ */
 export const cartService = {
     get: () => api.get('/cart'),
     addItem: (data) => api.post('/cart/items', data),
@@ -60,28 +78,37 @@ export const cartService = {
     clear: () => api.delete('/cart'),
 };
 
-// Orders
+/**
+ * ORDER MANAGEMENT SERVICE (User/Admin):
+ * Handles order creation, tracking, cancellation (By code or ID), and administrative status updates.
+ */
 export const orderService = {
     create: (data) => api.post('/orders', data),
     myOrders: (params) => api.get('/orders/my-orders', { params }),
     getById: (id) => api.get(`/orders/${id}`),
-    cancel: (id) => api.delete(`/orders/${id}/cancel`),
-    // Admin
+    getByCode: (code) => api.get(`/orders/code/${code}`),
+    // Supports Code-based cancel call for detail pages
+    cancel: (code) => api.delete(`/orders/code/${code}/cancel`),
+    
+    // Administrative Endpoints
     getAll: (params) => api.get('/orders', { params }),
     updateStatus: (id, status) => api.patch(`/orders/${id}/status?status=${status}`),
     refund: (id) => api.post(`/orders/${id}/refund`),
-    requestReturn: (id, reason, returnMedia) => {
+    requestReturn: (code, reason, returnMedia) => {
         const params = new URLSearchParams();
         if (reason) params.append('reason', reason);
         if (returnMedia) params.append('returnMedia', returnMedia);
-        return api.post(`/orders/${id}/return?${params.toString()}`);
+        return api.post(`/orders/code/${code}/return?${params.toString()}`);
     },
     confirmReturn: (id) => api.post(`/orders/${id}/confirm-return`),
     rejectReturn: (id, reason) => api.post(`/orders/${id}/reject-return?reason=${encodeURIComponent(reason)}`),
     getRefundRequests: (params) => api.get('/orders/refund-requests', { params }),
 };
 
-// Reviews
+/**
+ * CUSTOMER REVIEW SERVICE:
+ * Manages product feedback and administrative moderation.
+ */
 export const reviewService = {
     byProduct: (productId, params) => api.get(`/reviews/product/${productId}`, { params }),
     add: (formData) => api.post('/reviews', formData, {
@@ -95,7 +122,10 @@ export const reviewService = {
     canReview: (productId) => api.get(`/reviews/can-review/${productId}`),
 };
 
-// Farms
+/**
+ * FARM MANAGEMENT SERVICE:
+ * Manages source locations for organic products.
+ */
 export const farmService = {
     getAll: (params) => api.get('/farms', { params }),
     getById: (id) => api.get(`/farms/${id}`),
@@ -105,7 +135,10 @@ export const farmService = {
     delete: (id) => api.delete(`/farms/${id}`),
 };
 
-// Batches
+/**
+ * BATCH MANAGEMENT SERVICE:
+ * Maintains accurate inventory and expiry mapping.
+ */
 export const batchService = {
     getAll: (params) => api.get('/batches', { params }),
     getById: (id) => api.get(`/batches/${id}`),
@@ -115,23 +148,33 @@ export const batchService = {
     delete: (id) => api.delete(`/batches/${id}`),
 };
 
-// Dashboard (admin)
+/**
+ * ADMIN DASHBOARD SERVICE:
+ * Provides summarized statistics for the store owner.
+ */
 export const dashboardService = {
     get: () => api.get('/dashboard'),
 };
 
-// Users (admin)
+/**
+ * USER MANAGEMENT SERVICE (Admin/Profile):
+ * Manages user profile, avatars, and administrative status.
+ */
 export const userService = {
     me: () => api.get('/users/me'),
     updateMe: (data) => api.put('/users/me', data),
     updateAvatar: (formData) => api.post('/users/me/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),
+    removeAvatar: () => api.delete('/users/me/avatar'),
     getAll: (params) => api.get('/users', { params }),
     toggleActive: (id) => api.patch(`/users/${id}/toggle-status`),
 };
 
-// Addresses
+/**
+ * SHIPMENT ADDRESSES SERVICE:
+ * Manages multiple delivery locations for shoppers.
+ */
 export const addressService = {
     getAll: () => api.get('/addresses'),
     create: (data) => api.post('/addresses', data),
@@ -140,14 +183,20 @@ export const addressService = {
     delete: (id) => api.delete(`/addresses/${id}`),
 };
 
-// AI
+/**
+ * AI ANALYTICS SERVICE:
+ * Integration with AI for smart visual analysis or predictions.
+ */
 export const aiService = {
     analyze: (formData) => api.post('/ai/analyze', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),
 };
 
-// Coupons
+/**
+ * COUPONS & VOUCHERS SERVICE:
+ * Promotion management and checkout validation.
+ */
 export const couponService = {
     getAll: () => api.get('/coupons'),
     getById: (id) => api.get(`/coupons/${id}`),
@@ -159,7 +208,10 @@ export const couponService = {
     getMyCoupons: () => api.get('/coupons/my-vouchers'),
 };
 
-// Notifications
+/**
+ * NOTIFICATION SERVICE:
+ * Real-time or batch notifications for users.
+ */
 export const notificationService = {
     getAll: (params) => api.get('/notifications', { params }),
     getUnread: () => api.get('/notifications/unread'),
@@ -170,6 +222,10 @@ export const notificationService = {
     deleteAll: () => api.delete('/notifications/delete-all'),
 };
 
+/**
+ * WISHLIST SERVICE:
+ * Manages user-favorite products.
+ */
 export const wishlistService = {
     getAll: () => api.get('/wishlist'),
     add: (productId) => api.post(`/wishlist/${productId}`),
@@ -178,6 +234,10 @@ export const wishlistService = {
     count: () => api.get('/wishlist/count'),
 };
 
+/**
+ * NEWSLETTER SUBSCRIPTION SERVICE:
+ * Handles mailing list management.
+ */
 export const newsletterService = {
     subscribe: (email) => api.post('/newsletters/subscribe', { email }),
     getAll: () => api.get('/newsletters/all'),
@@ -185,7 +245,10 @@ export const newsletterService = {
     delete: (id) => api.delete(`/newsletters/${id}`),
 };
 
-// Media (Cloudinary)
+/**
+ * CLOUDINARY MEDIA SERVICE:
+ * Handles administrative image/video storage and deletion.
+ */
 export const mediaService = {
     upload: (formData) => api.post('/media/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -194,6 +257,10 @@ export const mediaService = {
     delete: (id) => api.delete(`/media/${id}`),
 };
 
+/**
+ * CONTACT ENQUIRY SERVICE:
+ * Manages support messages from shoppers.
+ */
 export const contactService = {
     send: (data) => api.post('/contacts', data),
     getAll: (params) => api.get('/contacts', { params }),
@@ -202,7 +269,10 @@ export const contactService = {
     getUnreadCount: () => api.get('/contacts/unread/count'),
 };
 
-// Flash Sale
+/**
+ * FLASH SALE SERVICE:
+ * Manages time-limited product promotions.
+ */
 export const flashSaleService = {
     getActive: () => api.get('/flash-sales/active'),
     getUpcoming: () => api.get('/flash-sales/upcoming'),
@@ -212,11 +282,10 @@ export const flashSaleService = {
     toggle: (id) => api.patch(`/flash-sales/${id}/toggle`),
 };
 
-// --- Xử lý Thanh toán (VnPay, SePay) ---
 /**
- * paymentService: Tạo liên kết thanh toán trực tuyến.
- * createVnPayUrl: Trả về URL để chuyển hướng sang VnPay.
+ * PAYMENT GATEWAY SERVICE (VnPay, SePay):
+ * Handles secure link creation for online transactions.
  */
 export const paymentService = {
-    createVnPayUrl: (orderId) => api.post(`/payment/vnpay/${orderId}`),
+    createVnPayUrl: (orderCode) => api.post(`/payment/vnpay/create`, null, { params: { orderCode } }),
 };

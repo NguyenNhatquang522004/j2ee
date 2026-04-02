@@ -5,23 +5,25 @@ import nhom5.demo.dto.response.OrderResponse;
 import nhom5.demo.enums.OrderStatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 
 public interface OrderService {
-    OrderResponse createOrder(String username, OrderRequest request);
+    OrderResponse createOrder(@NonNull String username, @NonNull OrderRequest request);
 
-    OrderResponse getOrderById(Long id, String username);
+    OrderResponse getOrderById(@NonNull Long id, @NonNull String username);
+    OrderResponse getOrderByCode(@NonNull String orderCode, @NonNull String username);
 
-    Page<OrderResponse> getOrdersByUser(String username, Pageable pageable);
+    Page<OrderResponse> getOrdersByUser(@NonNull String username, @NonNull Pageable pageable);
 
-    Page<OrderResponse> getAllOrders(String query, OrderStatusEnum status, Pageable pageable);
+    Page<OrderResponse> getAllOrders(String query, OrderStatusEnum status, @NonNull Pageable pageable);
 
-    OrderResponse updateOrderStatus(Long id, OrderStatusEnum status);
+    OrderResponse updateOrderStatus(@NonNull Long id, @NonNull OrderStatusEnum status);
 
-    void cancelOrder(Long id, String username);
+    void cancelOrder(@NonNull String orderCode, @NonNull String username);
 
-    OrderResponse markAsRefunded(Long id);
-    OrderResponse requestReturn(Long id, String reason, String returnMedia, String username);
-    OrderResponse confirmReturn(Long id);
-    OrderResponse rejectReturn(Long id, String reason);
-    Page<OrderResponse> getRefundRequests(String query, Pageable pageable);
+    OrderResponse markAsRefunded(@NonNull Long id);
+    OrderResponse requestReturn(@NonNull String orderCode, String reason, String returnMedia, @NonNull String username);
+    OrderResponse confirmReturn(@NonNull Long id);
+    OrderResponse rejectReturn(@NonNull Long id, String reason);
+    Page<OrderResponse> getRefundRequests(String query, @NonNull Pageable pageable);
 }

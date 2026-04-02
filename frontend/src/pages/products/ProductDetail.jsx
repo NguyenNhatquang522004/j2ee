@@ -5,6 +5,7 @@ import { BoltIcon } from '@heroicons/react/24/outline';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout';
+import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
 import { 
     CheckBadgeIcon, 
@@ -27,6 +28,8 @@ export default function ProductDetail() {
     const navigate = useNavigate();
     const { addToCart } = useCart();
     const { user } = useAuth();
+    const queryParams = new URLSearchParams(window.location.search);
+    const isViewOnly = queryParams.get('mode') === 'view';
 
     const [product, setProduct] = useState(null);
     const [reviews, setReviews] = useState([]);
@@ -43,10 +46,10 @@ export default function ProductDetail() {
     const [addingToCart, setAddingToCart] = useState(false);
 
     useEffect(() => {
-        if (user && id) {
-            wishlistService.check(id).then(res => setIsLiked(res.data)).catch(() => {});
+        if (user && product?.id) {
+            wishlistService.check(product.id).then(res => setIsLiked(res.data)).catch(() => {});
         }
-    }, [user, id]);
+    }, [user, product?.id]);
 
     const toggleWishlist = async () => {
         if (!user) { toast.error('Vui lòng đăng nhập để yêu thích'); return; }
@@ -68,23 +71,36 @@ export default function ProductDetail() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [pRes, rRes] = await Promise.all([
-                    productService.getById(id),
-                    reviewService.byProduct(id, { page: 0, size: 10 }),
-                ]);
+                // First fetch product by ID (which can be a slug)
+                const pRes = await productService.getById(id);
                 setProduct(pRes.data);
-                setReviews(rRes.data.content || rRes.data);
+                
+                if (pRes.data?.id) {
+                    const realProductId = pRes.data.id;
+                    
+                    // Then fetch reviews and check review permission using real ID
+                    const [rRes, fsRes] = await Promise.all([
+                        reviewService.byProduct(realProductId, { page: 0, size: 10 }),
+                        flashSaleService.getActive()
+                    ]);
 
-                // Check flash sale for this product
-                const fsRes = await flashSaleService.getActive();
-                if (fsRes.data) {
-                    const item = fsRes.data.items.find(it => it.product.id === parseInt(id));
-                    if (item) {
-                        setFlashSaleItem(item);
-                        setFlashSaleEndTime(fsRes.data.endTime);
+                    setReviews(rRes.data.content || rRes.data);
+
+                    if (user) {
+                        reviewService.canReview(realProductId).then(res => setCanReview(res.data)).catch(() => {});
+                    }
+
+                    // Check flash sale
+                    if (fsRes.data) {
+                        const item = fsRes.data.items.find(it => it.product.id === realProductId);
+                        if (item) {
+                            setFlashSaleItem(item);
+                            setFlashSaleEndTime(fsRes.data.endTime);
+                        }
                     }
                 }
-            } catch {
+            } catch (err) {
+                console.error("Error fetching product data:", err);
                 toast.error('Không thể tải sản phẩm');
                 navigate('/products');
             } finally {
@@ -92,9 +108,6 @@ export default function ProductDetail() {
             }
         };
         fetchData();
-        if (user && id) {
-            reviewService.canReview(id).then(res => setCanReview(res.data)).catch(() => {});
-        }
     }, [id, navigate, user]);
 
     useEffect(() => {
@@ -153,11 +166,13 @@ export default function ProductDetail() {
         }
     };
 
-    if (loading) return <Layout><div className="text-center py-20 text-gray-400">Đang tải...</div></Layout>;
+    const LayoutComponent = (isViewOnly && (user?.role === 'ADMIN' || user?.role?.name === 'ROLE_ADMIN')) ? AdminLayout : Layout;
+
+    if (loading) return <LayoutComponent><div className="text-center py-20 text-gray-400">Đang tải...</div></LayoutComponent>;
     if (!product) return null;
 
     return (
-        <Layout>
+        <LayoutComponent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                 {/* Image */}
                 <div className="rounded-2xl overflow-hidden bg-green-50 h-[450px] flex items-center justify-center border border-green-100 shadow-inner">
@@ -170,9 +185,9 @@ export default function ProductDetail() {
 
                 {/* Info */}
                 <div>
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <div className="flex items-center gap-2 mb-5 flex-wrap">
                         {product.isNew && (
-                            <span className="bg-black text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm uppercase tracking-widest">
+                            <span className="bg-green-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm uppercase tracking-widest">
                                 Mới
                             </span>
                         )}
@@ -257,7 +272,7 @@ export default function ProductDetail() {
                             </div>
                             {product.originalPrice > product.price && (
                                 <div className="flex items-center gap-3">
-                                    <div className="text-xl font-bold text-gray-300 line-through italic">
+                                    <div className="text-xl font-bold text-gray-400 line-through italic">
                                         {(product.originalPrice || 0).toLocaleString('vi-VN')}đ
                                     </div>
                                     <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-xl shadow-lg border border-white/20">
@@ -424,7 +439,7 @@ export default function ProductDetail() {
                 ) : (
                     <div className="bg-gray-50 border border-gray-100 rounded-[2rem] p-8 text-center mb-8">
                         <p className="text-gray-500 font-bold mb-4">Vui lòng đăng nhập để gửi đánh giá của bạn</p>
-                        <button onClick={() => navigate('/login')} className="bg-black text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 transition-all uppercase text-xs tracking-widest">
+                        <button onClick={() => navigate('/login')} className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-700 transition-all uppercase text-xs tracking-widest">
                             Đăng nhập ngay
                         </button>
                     </div>
@@ -484,6 +499,6 @@ export default function ProductDetail() {
                     </div>
                 )}
             </section>
-        </Layout>
+        </LayoutComponent>
     );
 }

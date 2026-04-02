@@ -67,12 +67,13 @@ export default function Home() {
                     { icon: <TruckIcon className="w-10 h-10" />, title: 'Giao hàng nhanh', desc: 'Giao hàng trong ngày, đảm bảo độ tươi của sản phẩm', color: 'bg-blue-50 text-blue-600' },
                     { icon: <ShieldCheckIcon className="w-10 h-10" />, title: 'Đảm bảo chất lượng', desc: 'Hoàn tiền 100% nếu sản phẩm không đạt chất lượng', color: 'bg-amber-50 text-amber-600' },
                 ].map((f) => (
-                    <div key={f.title} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all group">
-                        <div className={`w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3 ${f.color}`}>
+                    <div key={f.title} className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all group text-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-gray-50/50 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700"></div>
+                        <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 shadow-sm ${f.color}`}>
                             {f.icon}
                         </div>
-                        <h3 className="font-black text-gray-800 text-lg mb-2 tracking-tight">{f.title}</h3>
-                        <p className="text-gray-500 text-xs leading-relaxed">{f.desc}</p>
+                        <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">{f.title}</h3>
+                        <p className="text-gray-700 text-sm leading-relaxed font-medium px-4">{f.desc}</p>
                     </div>
                 ))}
             </section>
@@ -82,28 +83,36 @@ export default function Home() {
 
             {/* Categories */}
             {categories.length > 0 && (
-                <section className="mb-12">
-                    <div className="flex items-center gap-4 mb-6">
-                        <h2 className="text-2xl font-black text-gray-800 tracking-tight">Danh mục</h2>
+                <section className="mb-12 overflow-hidden">
+                    <div className="flex items-center gap-4 mb-8 px-4 sm:px-0">
+                        <h2 className="text-2xl font-black text-gray-800 tracking-tight">Danh mục tiêu biểu</h2>
                         <div className="h-px flex-1 bg-gray-100"></div>
+                        <Link to="/products" className="text-xs font-black uppercase text-green-600 hover:text-green-700 tracking-widest">Khám phá tất cả</Link>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-                        {categories.map((cat) => (
-                            <Link
-                                key={cat.id}
-                                to={`/products?categoryId=${cat.id}`}
-                                className="bg-white p-4 text-center rounded-2xl border border-gray-100 hover:border-green-200 hover:shadow-2xl transition-all group"
-                            >
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-green-50 transition-colors">
-                                    {cat.imageUrl ? (
-                                        <img src={cat.imageUrl} alt={cat.name} className="w-10 h-10 object-contain" />
-                                    ) : (
-                                        <TagIcon className="w-8 h-8 text-gray-300 group-hover:text-green-500 transition-colors" />
-                                    )}
-                                </div>
-                                <p className="font-bold text-sm text-gray-700 group-hover:text-green-700 tracking-tight">{cat.name}</p>
-                            </Link>
-                        ))}
+                    
+                    <div className="marquee-container">
+                        <div className="animate-marquee flex gap-10 py-5">
+                            {/* Duplicate for seamless loop */}
+                            {[...categories, ...categories, ...categories].map((cat, idx) => (
+                                <Link
+                                    key={`${cat.id}-${idx}`}
+                                    to={`/products?categoryId=${cat.id}`}
+                                    className="flex-shrink-0 w-32 text-center group transition-all"
+                                >
+                                    <div className="w-24 h-24 mx-auto mb-4 rounded-3xl bg-white flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-50 overflow-hidden relative p-0">
+                                        <div className="absolute inset-0 bg-green-600/0 group-hover:bg-green-600/5 transition-colors z-10"></div>
+                                        {cat.imageUrl ? (
+                                            <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                        ) : (
+                                            <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+                                                <TagIcon className="w-10 h-10 text-gray-200 group-hover:text-green-200 transition-colors" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="font-black text-[10px] sm:text-[11px] leading-tight text-gray-800 group-hover:text-green-700 tracking-wider uppercase transition-colors line-clamp-2 px-1 h-8 flex items-center justify-center text-center">{cat.name}</p>
+                                </Link>
+                            ))}
+                        </div>
                     </div>
                 </section>
             )}
@@ -159,7 +168,7 @@ function ProductCard({ product }) {
     };
 
     return (
-        <Link to={`/products/${product.id}`} className="group bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col h-full border-b-[3px] sm:border-b-[4px] hover:border-b-green-500">
+        <Link to={`/products/${product.slug}`} className="group bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-0 overflow-hidden relative shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col h-full border-b-[3px] sm:border-b-[4px] hover:border-b-green-500">
             <div className="h-32 sm:h-48 bg-gray-50 flex items-center justify-center overflow-hidden relative">
                 {product.imageUrl ? (
                     <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
@@ -170,7 +179,7 @@ function ProductCard({ product }) {
                 {/* Badges */}
                 <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1 sm:gap-2 z-10 transition-transform group-hover:translate-x-1 group-hover:translate-y-1 duration-500">
                     {product.isNew && (
-                        <span className="bg-black/80 backdrop-blur-md text-white text-[7px] sm:text-[10px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20">Mới</span>
+                        <span className="bg-green-600/80 backdrop-blur-md text-white text-[7px] sm:text-[10px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20">Mới</span>
                     )}
                     {product.flashSalePrice ? (
                         <span className="bg-red-600 text-white text-[7px] sm:text-[10px] font-black px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl shadow-xl uppercase tracking-widest border border-white/20 animate-pulse flex items-center gap-0.5 sm:gap-1">
@@ -194,7 +203,7 @@ function ProductCard({ product }) {
 
             <div className="p-2 sm:p-4 flex flex-col flex-1">
                 <p className="text-[7px] sm:text-[9px] font-black text-gray-500 uppercase tracking-widest mb-0.5 sm:mb-1">{product.farmName || 'Trang trại'}</p>
-                <h3 className="font-bold text-gray-800 text-[10px] sm:text-sm mb-2 sm:mb-3 line-clamp-1 group-hover:text-green-700 transition-colors uppercase tracking-tight">{product.name}</h3>
+                <h3 className="font-bold text-gray-800 text-[10px] sm:text-sm mb-2 sm:mb-3 line-clamp-2 h-7 sm:h-10 group-hover:text-green-700 transition-colors uppercase tracking-tight">{product.name}</h3>
                 
                 <div className="mt-auto pt-2 sm:pt-4 border-t border-gray-100 flex items-center justify-between">
                     <div>

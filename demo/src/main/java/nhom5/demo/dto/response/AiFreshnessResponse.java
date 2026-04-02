@@ -1,12 +1,18 @@
 package nhom5.demo.dto.response;
 
 import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AiFreshnessResponse {
     private String result;
     /** e.g. FRESH, GOOD, FAIR, POOR, SPOILED, UNKNOWN */
@@ -19,5 +25,6 @@ public class AiFreshnessResponse {
     private String description;
     /** User-facing suggestion */
     private String suggestion;
+    @JsonProperty("isFresh")
     private boolean isFresh;
 }

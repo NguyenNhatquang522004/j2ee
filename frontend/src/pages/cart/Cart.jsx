@@ -12,7 +12,8 @@ import { ShoppingCartIcon, TrashIcon, MinusIcon, PlusIcon, ArrowRightIcon, Check
 export default function Cart() {
     const { cart, loading, updateItem, removeItem, clearCart } = useCart();
     const { user } = useAuth();
-    const confirm = useConfirm();
+    const modal = useConfirm();
+    const confirm = modal?.confirm || (async (opts) => window.confirm(opts.message));
     const navigate = useNavigate();
     const [settings, setSettings] = useState({ FREE_SHIPPING_THRESHOLD: 0 });
 
@@ -155,7 +156,7 @@ function CartItem({ item, onUpdate, onRemove }) {
                 </div>
                 <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <Link to={item.isActive ? `/products/${item.productId}` : '#'} className={`font-bold text-gray-800 hover:text-green-700 transition-colors line-clamp-2 ${!item.isActive ? 'text-gray-400 cursor-default' : ''}`}>
+                        <Link to={item.isActive ? `/products/${item.productSlug}` : '#'} className={`font-bold text-gray-800 hover:text-green-700 transition-colors line-clamp-2 ${!item.isActive ? 'text-gray-400 cursor-default' : ''}`}>
                             {item.productName}
                         </Link>
                         {!item.isActive && (

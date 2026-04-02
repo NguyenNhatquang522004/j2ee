@@ -2,11 +2,17 @@ package nhom5.demo.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.lang.NonNull;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -19,22 +25,31 @@ public class RedisStockReservationService {
     private static final long DEFAULT_TTL_MINUTES = 15;
 
     /**
-     * Tạm giữ tồn kho trong Redis để chờ thanh toán (Flash Sale & Regular)
+     * Tạm giữ tồn kho trong Redis để chờ thanh toán (Flash Sale & Regular).
+     * Sử dụng Redis Transaction (MULTI/EXEC) để đảm bảo tính nguyên tử.
      */
-    public boolean reserve(String orderCode, Long productId, int quantity) {
+    public boolean reserve(@NonNull String orderCode, @NonNull Long productId, int quantity) {
         String resKey = RESERVATION_PREFIX + orderCode + ":" + productId;
         String totalKey = TOTAL_RESERVED_PREFIX + productId;
 
         try {
-            // Lưu lượng giữ chỗ của đơn hàng này
-            redisTemplate.opsForValue().set(resKey, String.valueOf(quantity), Duration.ofMinutes(DEFAULT_TTL_MINUTES));
-            
-            // Cập nhật tổng lượng đang bị giữ của sản phẩm này
-            redisTemplate.opsForValue().increment(totalKey, quantity);
-            redisTemplate.expire(totalKey, Duration.ofMinutes(DEFAULT_TTL_MINUTES + 1));
-            
-            log.info("Reserved {} units for product {} (Order: {}) in Redis", quantity, productId, orderCode);
-            return true;
+            List<Object> results = redisTemplate.execute(new SessionCallback<>() {
+                @Override
+                @SuppressWarnings("unchecked")
+                public <K, V> List<Object> execute(@NonNull RedisOperations<K, V> operations) throws DataAccessException {
+                    operations.multi();
+                    operations.opsForValue().set((K) resKey, Objects.requireNonNull((V) String.valueOf(quantity)), Objects.requireNonNull(Duration.ofMinutes(DEFAULT_TTL_MINUTES)));
+                    operations.opsForValue().increment((K) totalKey, quantity);
+                    operations.expire((K) totalKey, Objects.requireNonNull(Duration.ofMinutes(DEFAULT_TTL_MINUTES + 1)));
+                    return operations.exec();
+                }
+            });
+
+            if (results != null && !results.isEmpty()) {
+                log.info("Reserved {} units for product {} (Order: {}) in Redis", quantity, productId, orderCode);
+                return true;
+            }
+            return false;
         } catch (Exception e) {
             log.error("Failed to reserve stock in Redis: {}", e.getMessage());
             return false;
@@ -44,41 +59,57 @@ public class RedisStockReservationService {
     /**
      * Lấy tổng lượng đang bị giữ (chưa thanh toán) của một sản phẩm
      */
-    public int getTotalReserved(Long productId) {
+    public int getTotalReserved(@NonNull Long productId) {
         String totalKey = TOTAL_RESERVED_PREFIX + productId;
         String val = redisTemplate.opsForValue().get(totalKey);
         return val != null ? Integer.parseInt(val) : 0;
     }
 
     /**
-     * Giải phóng lượng giữ chỗ khi đơn hàng bị huỷ hoặc hết hạn thanh toán
+     * Giải phóng lượng giữ chỗ khi đơn hàng bị huỷ hoặc hết hạn thanh toán.
+     * Sử dụng Redis Transaction (MULTI/EXEC) để đảm bảo tính nguyên tử.
      */
-    public void release(String orderCode, Map<Long, Integer> items) {
+    public void release(@NonNull String orderCode, @NonNull Map<Long, Integer> items) {
         items.forEach((productId, quantity) -> {
             String resKey = RESERVATION_PREFIX + orderCode + ":" + productId;
             String totalKey = TOTAL_RESERVED_PREFIX + productId;
-            
+
             if (Boolean.TRUE.equals(redisTemplate.hasKey(resKey))) {
-                redisTemplate.delete(resKey);
-                redisTemplate.opsForValue().decrement(totalKey, quantity);
+                redisTemplate.execute(new SessionCallback<>() {
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public <K, V> List<Object> execute(@NonNull RedisOperations<K, V> operations) throws DataAccessException {
+                        operations.multi();
+                        operations.delete((K) resKey);
+                        operations.opsForValue().decrement((K) totalKey, quantity);
+                        return operations.exec();
+                    }
+                });
                 log.info("Released reservation for product {} (Order: {})", productId, orderCode);
             }
         });
     }
 
     /**
-     * Xác nhận giữ chỗ đã hoàn tất (thanh toán thành công)
+     * Xác nhận giữ chỗ đã hoàn tất (thanh toán thành công).
+     * Sử dụng Redis Transaction (MULTI/EXEC) để đảm bảo tính nguyên tử.
      */
-    public void commit(String orderCode, Map<Long, Integer> items) {
-        // Chỉ cần xoá key giữ chỗ, không trừ total_reserved vì nó sẽ tự hết hạn 
-        // hoặc chúng ta chủ động trừ để cập nhật số liệu ngay lập tức.
+    public void commit(@NonNull String orderCode, @NonNull Map<Long, Integer> items) {
         items.forEach((productId, quantity) -> {
             String resKey = RESERVATION_PREFIX + orderCode + ":" + productId;
             String totalKey = TOTAL_RESERVED_PREFIX + productId;
-            
+
             if (Boolean.TRUE.equals(redisTemplate.hasKey(resKey))) {
-                redisTemplate.delete(resKey);
-                redisTemplate.opsForValue().decrement(totalKey, quantity);
+                redisTemplate.execute(new SessionCallback<>() {
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public <K, V> List<Object> execute(@NonNull RedisOperations<K, V> operations) throws DataAccessException {
+                        operations.multi();
+                        operations.delete((K) resKey);
+                        operations.opsForValue().decrement((K) totalKey, quantity);
+                        return operations.exec();
+                    }
+                });
                 log.info("Committed reservation for product {} (Order: {})", productId, orderCode);
             }
         });

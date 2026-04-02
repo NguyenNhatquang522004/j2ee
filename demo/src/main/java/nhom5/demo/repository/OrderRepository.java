@@ -42,6 +42,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
+    @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM Order o " +
+            "WHERE (o.isPaid = true AND o.status NOT IN (nhom5.demo.enums.OrderStatusEnum.CANCELLED, nhom5.demo.enums.OrderStatusEnum.RETURNED))")
+    BigDecimal sumTotalRevenue();
+
     @Query("SELECT COUNT(o) FROM Order o WHERE o.createdAt BETWEEN :startDate AND :endDate")
     long countOrdersByDateRange(
             @Param("startDate") LocalDateTime startDate,

@@ -8,6 +8,9 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,13 +28,17 @@ import java.util.List;
         @Index(name = "idx_product_name", columnList = "name"),
         @Index(name = "idx_product_category", columnList = "category_id"),
         @Index(name = "idx_product_farm", columnList = "farm_id"),
-        @Index(name = "idx_product_active", columnList = "is_active")
+        @Index(name = "idx_product_active", columnList = "is_active"),
+        @Index(name = "idx_product_slug", columnList = "slug"),
+        @Index(name = "idx_product_deleted_at", columnList = "deleted_at")
 })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE products SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class Product {
 
     @Id
@@ -53,7 +60,7 @@ public class Product {
     @Column(name = "unit", length = 50)
     private String unit;
 
-    @Column(name = "image_url", length = 255)
+    @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
     /**
@@ -78,6 +85,24 @@ public class Product {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
+
+    @Column(name = "slug", unique = true, length = 255)
+    private String slug;
+
+    @PrePersist
+    @PreUpdate
+    private void generateSlug() {
+        if (this.name != null) {
+            this.slug = nhom5.demo.security.SecurityUtils.toSlug(this.name);
+        }
+    }
 
     // ====== Relationships ======
 

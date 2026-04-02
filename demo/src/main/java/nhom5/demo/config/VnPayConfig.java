@@ -7,69 +7,32 @@ import org.springframework.context.annotation.Configuration;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
 
 @Getter
 @Configuration
 public class VnPayConfig {
 
-    @Value("${app.vnpay.url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
+    @Value("${app.vnpay.url}")
     private String vnp_PayUrl;
 
-    @Value("${app.vnpay.return-url:http://localhost:8080/api/v1/payment/vnpay-callback}")
+    @Value("${app.vnpay.return-url}")
     private String vnp_Returnurl;
 
-    @Value("${app.vnpay.tmn-code:QC6STT09}")
+    @Value("${app.vnpay.tmn-code}")
     private String vnp_TmnCode;
 
-    @Value("${app.vnpay.hash-secret:YNDLIDUKMLQPKLOHVODVKKKMTFEXZSRH}")
+    @Value("${app.vnpay.hash-secret}")
     private String vnp_HashSecret;
 
     private final String vnp_Version = "2.1.0";
     private final String vnp_Command = "pay";
 
-    public String md5(String message) {
-        String digest = null;
-        try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
-            byte[] hash = md.digest(message.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(2 * hash.length);
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b & 0xff));
-            }
-            digest = sb.toString();
-        } catch (NoSuchAlgorithmException ex) {
-            digest = "";
-        }
-        return digest;
-    }
-
-    public String Sha256(String message) {
-        String digest = null;
-        try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(message.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(2 * hash.length);
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b & 0xff));
-            }
-            digest = sb.toString();
-        } catch (NoSuchAlgorithmException ex) {
-            digest = "";
-        }
-        return digest;
-    }
-
-    // VnPay currently uses HmacSHA512
+    // Chỉ nên dùng HMAC SHA512 cho bản VNPAY 2.1.0
     public String hmacSHA512(final String key, final String data) {
         try {
-            if (key == null || data == null) {
-                throw new NullPointerException();
-            }
+            if (key == null || data == null) throw new NullPointerException("Key/Data null");
             final Mac hmac512 = Mac.getInstance("HmacSHA512");
-            byte[] hmacKeyBytes = key.getBytes();
+            byte[] hmacKeyBytes = key.getBytes(StandardCharsets.UTF_8);
             final SecretKeySpec secretKey = new SecretKeySpec(hmacKeyBytes, "HmacSHA512");
             hmac512.init(secretKey);
             byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
@@ -79,27 +42,21 @@ public class VnPayConfig {
                 sb.append(String.format("%02x", b & 0xff));
             }
             return sb.toString();
-
-        } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
-            return "";
+        } catch (Exception ex) {
+            throw new RuntimeException("Lỗi tạo chữ ký số: " + ex.getMessage());
         }
     }
 
     public String getIpAddress(HttpServletRequest request) {
-        String ipAdress;
-        try {
-            ipAdress = request.getHeader("X-FORWARDED-FOR");
-            if (ipAdress == null) {
-                ipAdress = request.getRemoteAddr();
-            }
-        } catch (Exception e) {
-            ipAdress = "Invalid IP:" + e.getMessage();
+        String ipAddress = request.getHeader("X-FORWARDED-FOR");
+        if (ipAddress == null || ipAddress.isEmpty()) {
+            ipAddress = request.getRemoteAddr();
         }
-        return ipAdress;
+        return ipAddress;
     }
 
     public String getRandomNumber(int len) {
-        Random rnd = new Random();
+        java.security.SecureRandom rnd = new java.security.SecureRandom();
         String chars = "0123456789";
         StringBuilder sb = new StringBuilder(len);
         for (int i = 0; i < len; i++) {

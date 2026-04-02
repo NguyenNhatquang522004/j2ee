@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const EMPTY_FS = { name: '', startTime: '', endTime: '', description: '', items: [] };
-const EMPTY_ITEM = { productId: '', flashSalePrice: '', quantityLimit: 0 };
+const EMPTY_ITEM = { productId: '', flashSalePrice: '', quantityLimit: '' };
 
 export default function AdminFlashSales() {
     const { confirm } = useConfirm();

@@ -15,7 +15,8 @@ import {
     HomeModernIcon,
     EyeIcon,
     EyeSlashIcon,
-    XMarkIcon
+    XMarkIcon,
+    InformationCircleIcon
 } from '@heroicons/react/24/outline';
 import AdminMediaLibrary from './AdminMediaLibrary';
 
@@ -46,6 +47,7 @@ export default function AdminProducts() {
     const [direction, setDirection] = useState('desc');
     const [statusFilter, setStatusFilter] = useState('');
     const [showMediaLibrary, setShowMediaLibrary] = useState(false);
+    const [isViewOnly, setIsViewOnly] = useState(false);
 
     const fetchProducts = useCallback(async (p = 0, q = '', catId = '', fId = '', minP = '', maxP = '', sort = 'id', dir = 'desc', active = '') => {
         setLoading(true);
@@ -96,8 +98,28 @@ export default function AdminProducts() {
         setPage(0);
     };
 
-    const openCreate = () => { setEditing(null); setForm(EMPTY); setShowModal(true); };
+    const openCreate = () => { setIsViewOnly(false); setEditing(null); setForm(EMPTY); setShowModal(true); };
     const openEdit = (p) => {
+        setIsViewOnly(false);
+        setEditing(p);
+        setForm({
+            name: p.name || '',
+            description: p.description || '',
+            price: p.price ?? '',
+            unit: p.unit || '',
+            imageUrl: p.imageUrl || '',
+            categoryId: p.categoryId ?? '',
+            farmId: p.farmId ?? '',
+            stockQuantity: p.stockQuantity ?? '',
+            isActive: p.isActive ?? true,
+            isNew: p.isNew ?? true,
+            originalPrice: p.originalPrice ?? '',
+        });
+        setShowModal(true);
+    };
+
+    const openView = (p) => {
+        setIsViewOnly(true);
         setEditing(p);
         setForm({
             name: p.name || '',
@@ -120,13 +142,18 @@ export default function AdminProducts() {
         setSaving(true);
         try {
             const payload = {
-                ...form,
+                name: form.name.trim(),
+                description: form.description,
                 price: Number(form.price),
                 originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
-                categoryId: Number(form.categoryId),
-                farmId: Number(form.farmId),
-                stockQuantity: Number(form.stockQuantity),
+                unit: form.unit,
+                imageUrl: form.imageUrl,
+                categoryId: form.categoryId ? Number(form.categoryId) : null,
+                farmId: form.farmId ? Number(form.farmId) : null,
+                isActive: form.isActive,
+                isNew: form.isNew
             };
+
             if (editing) {
                 await productService.update(editing.id, payload);
                 toast.success('Đã cập nhật sản phẩm');
@@ -283,8 +310,8 @@ export default function AdminProducts() {
                     <table className="w-full text-left border-collapse min-w-[1000px]">
                         <thead>
                             <tr className="bg-gray-50/50">
-                                <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider">Sản phẩm</th>
-                                <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider">Giá & Đơn vị</th>
+                                <th className="px-5 py-3 text-[10px] font-black text-gray-600 uppercase tracking-wider">Sản phẩm</th>
+                                <th className="px-5 py-3 text-[10px] font-black text-gray-600 uppercase tracking-wider">Giá & Đơn vị</th>
                                 <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider text-center">Tồn kho</th>
                                 <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider text-center">Trạng thái</th>
                                 <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider text-center">Thao tác</th>
@@ -312,7 +339,7 @@ export default function AdminProducts() {
                                             </div>
                                             <div>
                                                 <p className="font-black text-gray-900 group-hover:text-green-600 transition-colors leading-tight text-sm capitalize">{p.name}</p>
-                                                <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-1">{p.categoryName}</p>
+                                                <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mt-1">{p.categoryName}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -328,7 +355,7 @@ export default function AdminProducts() {
                                         {p.originalPrice > p.price && (
                                             <p className="text-[9px] text-gray-300 line-through mt-0.5">{fmt(p.originalPrice)}₫</p>
                                         )}
-                                        <p className="text-[9px] text-gray-400 font-bold mt-0.5 uppercase italic leading-none">mỗi {p.unit}</p>
+                                        <p className="text-[9px] text-gray-600 font-bold mt-0.5 uppercase italic leading-none">mỗi {p.unit}</p>
                                     </td>
                                     <td className="px-5 py-2.5 text-center">
                                         <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black border ${
@@ -346,6 +373,13 @@ export default function AdminProducts() {
                                     </td>
                                     <td className="px-5 py-2.5 text-center">
                                         <div className="flex items-center justify-center gap-1">
+                                            <button 
+                                                onClick={() => openView(p)} 
+                                                className="p-1 text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                                                title="Xem chi tiết"
+                                            >
+                                                <InformationCircleIcon className="w-5 h-5" />
+                                            </button>
                                             <button 
                                                 onClick={() => handleToggle(p.id)} 
                                                 className={`p-1 rounded-lg transition-all ${p.isActive ? 'text-gray-400 hover:bg-gray-50' : 'text-green-600 hover:bg-green-50'}`}
@@ -402,8 +436,8 @@ export default function AdminProducts() {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50 bg-gray-50/30">
                             <div>
-                                <h2 className="text-xl font-black text-gray-900 tracking-tight">{editing ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</h2>
-                                <p className="text-[11px] text-gray-500 font-medium">Cập nhật đầy đủ thông tin để thu hút khách hàng.</p>
+                                <h2 className="text-xl font-black text-gray-900 tracking-tight">{isViewOnly ? 'Chi tiết sản phẩm' : editing ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</h2>
+                                <p className="text-[11px] text-gray-500 font-medium">{isViewOnly ? 'Thông tin đầy đủ về sản phẩm của bạn.' : 'Cập nhật đầy đủ thông tin để thu hút khách hàng.'}</p>
                             </div>
                             <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all">
                                 <XMarkIcon className="w-5 h-5 stroke-[3]" />
@@ -413,20 +447,21 @@ export default function AdminProducts() {
                         <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-4">
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2 md:col-span-2">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
                                         <TagIcon className="w-5 h-5" /> Tên sản phẩm
                                     </label>
                                     <input 
                                         required 
                                         value={form.name} 
                                         onChange={(e) => setForm({ ...form, name: e.target.value })} 
-                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm"
+                                        disabled={isViewOnly}
+                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm disabled:opacity-75"
                                         placeholder="Ví dụ: Táo hữu cơ, Rau muống..."
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
                                         <CurrencyDollarIcon className="w-5 h-5" /> Giá khuyến mãi (₫)
                                     </label>
                                     <input 
@@ -435,12 +470,13 @@ export default function AdminProducts() {
                                         min="0" 
                                         value={form.price} 
                                         onChange={(e) => setForm({ ...form, price: e.target.value })} 
-                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm"
+                                        disabled={isViewOnly}
+                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm disabled:opacity-75"
                                         placeholder="0"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
                                         <CurrencyDollarIcon className="w-5 h-5" /> Giá gốc (nếu có giảm giá)
                                     </label>
                                     <input 
@@ -448,46 +484,50 @@ export default function AdminProducts() {
                                         min="0" 
                                         value={form.originalPrice} 
                                         onChange={(e) => setForm({ ...form, originalPrice: e.target.value })} 
-                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm"
+                                        disabled={isViewOnly}
+                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm disabled:opacity-75"
                                         placeholder="Để trống nếu không giảm giá"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
                                         <ArchiveBoxIcon className="w-5 h-5" /> Đơn vị tính
                                     </label>
                                     <input 
                                         required 
                                         value={form.unit} 
                                         onChange={(e) => setForm({ ...form, unit: e.target.value })} 
+                                        disabled={isViewOnly}
                                         placeholder="kg, hộp, bó..." 
-                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm"
+                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm disabled:opacity-75"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
                                         <TagIcon className="w-5 h-5" /> Danh mục
                                     </label>
                                     <select 
                                         required 
                                         value={form.categoryId} 
                                         onChange={(e) => setForm({ ...form, categoryId: e.target.value })} 
-                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm"
+                                        disabled={isViewOnly}
+                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm disabled:opacity-75"
                                     >
                                         <option value="">-- Chọn danh mục --</option>
                                         {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
                                         <HomeModernIcon className="w-5 h-5" /> Trang trại
                                     </label>
                                     <select 
                                         required 
                                         value={form.farmId} 
                                         onChange={(e) => setForm({ ...form, farmId: e.target.value })} 
-                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm"
+                                        disabled={isViewOnly}
+                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm disabled:opacity-75"
                                     >
                                         <option value="">-- Chọn trang trại --</option>
                                         {farms.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -495,7 +535,7 @@ export default function AdminProducts() {
                                 </div>
 
                                 <div className="space-y-2 md:col-span-2">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
                                         <PhotoIcon className="w-5 h-5" /> Hình ảnh sản phẩm
                                     </label>
                                     <div className="flex gap-3">
@@ -503,14 +543,16 @@ export default function AdminProducts() {
                                             <input 
                                                 value={form.imageUrl} 
                                                 onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} 
-                                                className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm"
+                                                disabled={isViewOnly}
+                                                className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-black text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 text-sm disabled:opacity-75"
                                                 placeholder="Chọn từ thư viện hoặc dán URL..." 
                                             />
                                         </div>
                                         <button 
                                             type="button"
                                             onClick={() => setShowMediaLibrary(true)}
-                                            className="px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-black rounded-xl transition-all text-sm"
+                                            disabled={isViewOnly}
+                                            className="px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-black rounded-xl transition-all text-sm disabled:hidden"
                                         >
                                             Thư viện
                                         </button>
@@ -523,27 +565,26 @@ export default function AdminProducts() {
                                 </div>
 
                                 <div className="space-y-2 md:col-span-2">
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
                                         Mô tả chi tiết
                                     </label>
                                     <textarea 
                                         rows={3} 
                                         value={form.description} 
                                         onChange={(e) => setForm({ ...form, description: e.target.value })} 
-                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-medium text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 resize-none text-sm" 
+                                        disabled={isViewOnly}
+                                        className="w-full px-5 py-3 bg-gray-50 border-none rounded-xl font-medium text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 resize-none text-sm disabled:opacity-75" 
                                         placeholder="Nhập mô tả sản phẩm của bạn tại đây..."
                                     />
                                 </div>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-3">
                                 <div className="flex items-center gap-3 p-3 bg-green-50/50 rounded-xl border border-green-100">
                                     <input 
                                         type="checkbox" 
                                         id="isActive" 
                                         checked={form.isActive} 
                                         onChange={(e) => setForm({ ...form, isActive: e.target.checked })} 
-                                        className="w-5 h-5 rounded-lg text-green-600 focus:ring-green-500 border-none" 
+                                        disabled={isViewOnly}
+                                        className="w-5 h-5 rounded-lg text-green-600 focus:ring-green-500 border-none disabled:opacity-50" 
                                     />
                                     <label htmlFor="isActive" className="text-sm font-bold text-green-800">Hiển thị trên cửa hàng</label>
                                 </div>
@@ -553,7 +594,8 @@ export default function AdminProducts() {
                                         id="isNew" 
                                         checked={form.isNew} 
                                         onChange={(e) => setForm({ ...form, isNew: e.target.checked })} 
-                                        className="w-5 h-5 rounded-lg text-blue-600 focus:ring-blue-500 border-none" 
+                                        disabled={isViewOnly}
+                                        className="w-5 h-5 rounded-lg text-blue-600 focus:ring-blue-500 border-none disabled:opacity-50" 
                                     />
                                     <label htmlFor="isNew" className="text-sm font-bold text-blue-800">Sản phẩm mới (Gắn nhãn New)</label>
                                 </div>
@@ -566,21 +608,23 @@ export default function AdminProducts() {
                                 onClick={() => setShowModal(false)} 
                                 className="flex-1 px-6 py-3 bg-white border border-gray-100 rounded-xl font-black text-gray-500 hover:bg-gray-100 transition-all text-sm"
                             >
-                                Hủy bỏ
+                                {isViewOnly ? 'Đóng' : 'Hủy bỏ'}
                             </button>
-                            <button 
-                                type="submit" 
-                                onClick={handleSave}
-                                disabled={saving} 
-                                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl font-black shadow-lg shadow-green-100 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50 text-sm"
-                            >
-                                {saving ? (
-                                    <div className="flex items-center justify-center gap-2">
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                        <span>Đang lưu...</span>
-                                    </div>
-                                ) : 'Lưu sản phẩm'}
-                            </button>
+                            {!isViewOnly && (
+                                <button 
+                                    type="submit" 
+                                    onClick={handleSave}
+                                    disabled={saving} 
+                                    className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl font-black shadow-lg shadow-green-100 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50 text-sm"
+                                >
+                                    {saving ? (
+                                        <div className="flex items-center justify-center gap-2">
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            <span>Đang lưu...</span>
+                                        </div>
+                                    ) : 'Lưu sản phẩm'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

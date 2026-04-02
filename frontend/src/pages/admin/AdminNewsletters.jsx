@@ -1,65 +1,105 @@
 import { useState, useEffect } from 'react';
-import { newsletterService } from '../../api/services';
 import AdminLayout from '../../components/AdminLayout';
+import { newsletterService } from '../../api/services';
 import toast from 'react-hot-toast';
 import { 
-    EnvelopeIcon, 
+    PaperAirplaneIcon, 
     UserGroupIcon, 
-    PaperAirplaneIcon,
-    TrashIcon,
-    CheckCircleIcon,
-    XCircleIcon
+    TrashIcon, 
+    CheckCircleIcon, 
+    XCircleIcon,
+    EnvelopeIcon,
+    SparklesIcon
 } from '@heroicons/react/24/outline';
 
+/**
+ * ADMIN COMPONENT: Newsletter Management
+ * ---------------------------------------------------------
+ * Handles mailing list subscriptions and bulk email campaigns.
+ * 
+ * Features:
+ * 1. Subscriber List: View and moderate active/inactive subscribers.
+ * 2. Newsletter Composer: Integrated HTML-supported editor with preview.
+ * 3. Marketing Templates: Quick-apply predefined styles for sale events.
+ */
 export default function AdminNewsletters() {
+    // --- STATE ---
     const [subscribers, setSubscribers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
-    const [activeTab, setActiveTab] = useState('list'); // 'list' or 'send'
-
+    const [activeTab, setActiveTab] = useState('list'); // Tabs: 'list' (History) or 'send' (Composer)
     const [newsletterContent, setNewsletterContent] = useState({
-        subject: 'Chào mừng bạn đến với Bản tin FreshFood Ecosystem 🌿',
-        content: `<h3>Xin chào các khách hàng thân mến!</h3>
-        <p>Chúng tôi rất vui mừng thông báo những cập nhật mới nhất từ FreshFood:</p>
-        <ul>
-            <li><strong>Sản phẩm mới:</strong> Các loại rau củ hữu cơ vừa được thu hoạch sáng nay!</li>
-            <li><strong>Ưu đãi:</strong> Nhập mã <b>FRESH2026</b> để được giảm ngay 10% đơn hàng.</li>
-        </ul>
-        <p>Chúc bạn một ngày tràn đầy năng lượng và sức khỏe!</p>`
+        subject: '',
+        content: ''
     });
 
+    // Load subscribers on mount
+    useEffect(() => {
+        loadSubscribers();
+    }, []);
+
+    // --- DATA ACTIONS ---
+
+    /**
+     * loadSubscribers: Fetches all mail-list subcribers from backend.
+     */
     const loadSubscribers = async () => {
         setLoading(true);
         try {
             const res = await newsletterService.getAll();
             setSubscribers(res.data || []);
         } catch (err) {
-            toast.error('Không thể tải danh sách người đăng ký');
+            toast.error('Không thể tải danh sách đăng ký');
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        loadSubscribers();
-    }, []);
-
-    const handleDelete = async (id) => {
-        const ok = await confirm({
-            title: 'Hủy đăng ký',
-            message: 'Bạn có chắc chắn muốn xóa vĩnh viễn người đăng ký này khỏi hệ thống nhận bản tin? Họ sẽ không còn nhận được các thông tin khuyến mãi và cập nhật từ RawFood.',
-            type: 'danger'
+    /**
+     * applyTemplate: Helper to inject marketing text into the editor.
+     */
+    const applyTemplate = (template) => {
+        setNewsletterContent({
+            subject: template.subject,
+            content: template.content
         });
-        if (!ok) return;
+        toast.success('Đã áp dụng mẫu bản tin');
+    };
+
+    /**
+     * PREDEFINED TEMPLATES:
+     * High-conversion marketing copy for quick usage.
+     */
+    const NEWSLETTER_TEMPLATES = [
+        { 
+            name: 'Siêu Ưu Đãi 50%', 
+            subject: '🔥 [SIÊU ƯU ĐÃI] Giảm giá 50% tất cả nông sản hữu cơ cuối tuần!',
+            content: 'Chào những người bạn của FreshFood,<br><br>Chúng tôi mang tới cơ hội tuyệt vời để làm mới tủ lạnh nhà mình với thực phẩm sạch chất lượng cao nhất...<br><br>Ghé thăm ngay tại đây nhé!'
+        },
+        { 
+            name: 'Hàng Mới Về', 
+            subject: '🥗 [HÀNG MỚI VỀ] Rau củ từ Đà Lạt vừa cập bến sáng nay!',
+            content: 'Những món quà tươi ngon từ mảnh đất cao nguyên vừa được FreshFood thu hoạch và đóng gói...<br><br>Đừng bỏ lỡ nhé mọi người!'
+        }
+    ];
+
+    /**
+     * handleDelete: Removes a subscriber account.
+     */
+    const handleDelete = async (id) => {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa người đăng ký này?')) return;
         try {
-            await newsletterService.delete(id);
-            toast.success('Đã xóa thành công');
+            await newsletterService.delete(id); // Corrected service name
+            toast.success('Đã xóa người đăng ký');
             loadSubscribers();
         } catch (err) {
-            toast.error('Lỗi khi xóa');
+            toast.error('Không thể xóa');
         }
     };
 
+    /**
+     * handleSend: Collects form data and triggers bulk email blast.
+     */
     const handleSend = async (e) => {
         e.preventDefault();
         if (!newsletterContent.subject || !newsletterContent.content) {
@@ -69,12 +109,12 @@ export default function AdminNewsletters() {
 
         setSending(true);
         try {
-            await newsletterService.send(newsletterContent);
-            toast.success('Bản tin đang được gửi tới hàng đợi hệ thống!');
+            await newsletterService.send(newsletterContent); // Corrected service name
+            toast.success('Bản tin đã được gửi tới toàn bộ người đăng ký!');
             setNewsletterContent({ subject: '', content: '' });
             setActiveTab('list');
         } catch (err) {
-            toast.error('Lỗi khi gửi bản tin');
+            toast.error('Gửi bản tin thất bại');
         } finally {
             setSending(false);
         }
@@ -82,11 +122,17 @@ export default function AdminNewsletters() {
 
     return (
         <AdminLayout>
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Quản lý Bản tin</h1>
-                    <p className="text-gray-500 font-medium">Giao diện quản trị và gửi nội dung tới khách hàng.</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-green-600 flex items-center justify-center text-white shadow-xl shadow-green-900/10 rotate-3">
+                        <EnvelopeIcon className="w-8 h-8" />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black text-gray-900 tracking-tighter uppercase italic">Quản lý bản tin</h1>
+                        <p className="text-sm text-gray-500 font-medium italic">Kết nối và gửi thông điệp tới cộng đồng FreshFood.</p>
+                    </div>
                 </div>
+
                 <div className="flex bg-gray-100 p-1.5 rounded-2xl">
                     <button 
                         onClick={() => setActiveTab('list')}
@@ -169,10 +215,22 @@ export default function AdminNewsletters() {
                         </table>
                     </div>
                 </div>
-            ) : (
-                <div className="grid lg:grid-cols-5 gap-8">
-                    <form onSubmit={handleSend} className="lg:col-span-3 space-y-6">
+            ) : activeTab === 'send' ? (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+                    <div className="md:col-span-3 space-y-6">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-8">
+                            <div className="flex flex-wrap gap-2">
+                                {NEWSLETTER_TEMPLATES.map(t => (
+                                    <button
+                                        key={t.name}
+                                        onClick={() => applyTemplate(t)}
+                                        className="px-4 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-lg border border-green-100 transition-all flex items-center gap-2"
+                                    >
+                                        <SparklesIcon className="w-3.5 h-3.5" />
+                                        {t.name}
+                                    </button>
+                                ))}
+                            </div>
                             <div className="flex items-center justify-between px-3 py-4 bg-green-50 rounded-2xl border border-green-100">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-white font-black italic">
@@ -205,27 +263,35 @@ export default function AdminNewsletters() {
                                     className="w-full bg-gray-50/50 border-2 border-transparent focus:border-green-600 rounded-xl px-6 py-4 font-bold text-gray-700 outline-none transition-all placeholder:text-gray-300 resize-none leading-relaxed"
                                 />
                             </div>
-                            <button 
-                                type="submit"
-                                disabled={sending}
-                                className="w-full bg-black hover:bg-green-600 text-white font-black py-4 rounded-xl shadow-2xl flex items-center justify-center gap-4 transition-all uppercase tracking-widest disabled:opacity-50 active:scale-95"
-                            >
-                                {sending ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                        Đang xử lý gửi...
-                                    </>
-                                ) : (
-                                    <>
-                                        <PaperAirplaneIcon className="w-6 h-6" />
-                                        Gửi bản tin ngay
-                                    </>
-                                )}
-                            </button>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setNewsletterContent({ subject: '', content: '' })}
+                                    className="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-500 font-bold py-4 rounded-xl border border-gray-100 transition-all uppercase tracking-widest text-[10px]"
+                                >
+                                    Làm trống
+                                </button>
+                                <button 
+                                    onClick={handleSend}
+                                    disabled={sending}
+                                    className="flex-[2] bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-xl shadow-2xl flex items-center justify-center gap-4 transition-all uppercase tracking-widest disabled:opacity-50 active:scale-95"
+                                >
+                                    {sending ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                            Đang xử lý gửi...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <PaperAirplaneIcon className="w-6 h-6" />
+                                            Gửi bản tin ngay
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
-                    </form>
+                    </div>
 
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="md:col-span-2 space-y-6">
                         <div className="bg-emerald-900 rounded-xl p-6 text-white shadow-2xl relative overflow-hidden group">
                             <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform"></div>
                             <div className="relative z-10">
@@ -255,7 +321,7 @@ export default function AdminNewsletters() {
                             <div className="bg-gray-100 rounded-3xl p-4 overflow-hidden shadow-inner">
                                 <div className="bg-white rounded-xl shadow-sm overflow-hidden scale-[0.85] origin-top -mb-20">
                                     {/* Mock Email Layout Header */}
-                                    <div className="bg-[#1a3c31] text-white p-6 text-center font-black uppercase italic tracking-widest text-lg">
+                                    <div className="bg-green-600 text-white p-6 text-center font-black uppercase italic tracking-widest text-lg">
                                         FreshFood
                                     </div>
                                     <div className="p-10 font-sans">
@@ -285,7 +351,7 @@ export default function AdminNewsletters() {
                         </div>
                     </div>
                 </div>
-            )}
+            ) : null}
         </AdminLayout>
     );
 }

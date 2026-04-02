@@ -31,7 +31,6 @@ out/
 .docker/
 
 # Backups and SQL dumps
-*.sql
 *.zip
 *.gz
 *.tar

@@ -24,9 +24,13 @@ Tài liệu này cung cấp cái nhìn tổng quan về các điểm cuối (End
 - `POST /products`: (Admin) Tạo sản phẩm mới kèm hình ảnh.
 - `GET /categories`: Danh mục đang hoạt động.
 
-### 4. 🚜 Farms & Batches (`/farms`, `/batches`)
-- `GET /farms`: Thông tin các trang trại đối tác.
-- `POST /batches`: Nhập lô hàng mới cho sản phẩm.
+### 🛒 Đơn hàng & Giỏ hàng (`orders`, `order_items`, `cart_items`)
+- **`Order`**: Thông tin đơn hàng (Tổng cộng, Trạng thái, Phương thức thanh toán).
+    - **Định danh**: `orderCode` (ORD-...) bảo mật, chống IDOR.
+    - **Thanh toán**: `isPaid` (Đã thanh toán), `isRefunded` (Đã hoàn tiền), `paidAt`, `refundedAt`.
+    - **Logistics**: Địa chỉ 4 tầng (`addressDetail`, `ward`, `district`, `province`) đồng bộ hóa với hệ thống GHN/GHTK.
+    - **Hậu mãi**: `returnReason`, `returnMedia` (Ảnh bằng chứng), `rejectReason`, `returnRequestedAt`.
+- **`OrderItem`**: Chi tiết các sản phẩm, số lượng và giá tại thời điểm mua (Price Snapshot).
 
 ### 5. 🛒 Cart & Orders (`/cart`, `/orders`)
 - `GET /cart`: Xem giỏ hàng hiện tại.
@@ -43,6 +47,18 @@ Tài liệu này cung cấp cái nhìn tổng quan về các điểm cuối (End
 - `GET /media`: (Admin) Danh sách tài liệu đa phương tiện từ Cloudinary.
 - `POST /media/upload`: Tải tệp tin mới lên hệ thống.
 - `DELETE /media/{id}`: Xoá tài nguyên khỏi thư viện.
+
+### 💳 9. Payment Gateways (`/payment`)
+- `POST /vnpay/create`: Tạo URL thanh toán VnPay an toàn (Ownership-checked).
+- `GET /vnpay-callback`: IPN/Redirect xử lý kết quả thanh toán từ VnPay.
+- `POST /sepay-webhook`: Tự động xác thực và confirm đơn hàng từ giao dịch ngân hàng (SePay).
+
+### 🧿 10. AI & Search (`/ai`, `/products`)
+- `POST /ai/analyze`: Phân tích hình ảnh độ tươi thực phẩm qua AI.
+- `GET /products (Async)`: Tìm kiếm đa tiêu chí, tích hợp Meilisearch xử lý nền (@Async) siêu tốc.
+
+### ⚙️ 11. Settings & Infrastructure (`/settings`)
+- `GET /settings/public`: Thông tin cấu hình Shop (Tên, Liên hệ, Maintenance mode) được lọc bảo mật.
 
 ---
 © 2026 FreshFood Project.

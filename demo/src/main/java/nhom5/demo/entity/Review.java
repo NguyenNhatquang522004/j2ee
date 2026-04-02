@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 
@@ -14,13 +16,16 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "reviews", indexes = {
         @Index(name = "idx_review_product", columnList = "product_id"),
-        @Index(name = "idx_review_user", columnList = "user_id")
+        @Index(name = "idx_review_user", columnList = "user_id"),
+        @Index(name = "idx_review_deleted_at", columnList = "deleted_at")
 })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE reviews SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class Review {
 
     @Id
@@ -47,6 +52,9 @@ public class Review {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     // ====== Relationships ======
 

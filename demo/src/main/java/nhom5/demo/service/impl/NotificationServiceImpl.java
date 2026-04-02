@@ -14,6 +14,7 @@ import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .link(link)
                 .isRead(false)
                 .build();
-        Notification saved = notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(Objects.requireNonNull(notification));
 
         // Publish to Redis for real-time broadcast
         Map<String, Object> payload = new HashMap<>();
@@ -73,7 +74,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void markAsRead(Long id) {
-        Notification notification = notificationRepository.findById(id)
+        Notification notification = notificationRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
         
         // Ensure user owns this notification
@@ -95,7 +96,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void delete(Long id) {
-        Notification notification = notificationRepository.findById(id)
+        Notification notification = notificationRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
         
         // Ensure user owns this notification

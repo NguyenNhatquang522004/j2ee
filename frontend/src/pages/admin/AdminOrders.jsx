@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { orderService } from '../../api/services';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
 import { 
@@ -12,29 +12,52 @@ import {
     UserIcon,
     CurrencyDollarIcon,
     TagIcon,
-    PrinterIcon
+    PrinterIcon,
+    EyeIcon
 } from '@heroicons/react/24/outline';
 import ConfirmModal from '../../components/ConfirmModal';
 
+/**
+ * CONFIGURATION: Order Statuses
+ * Standard lifecycle of an order from payment to delivery or return.
+ */
 const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'PACKAGING', 'SHIPPING', 'DELIVERED', 'RETURN_REQUESTED', 'RETURNED', 'RETURN_REJECTED', 'CANCELLED'];
 
+/**
+ * UI CONFIG: Status Styling
+ * Maps status keys to human labels and premium Tailwind CSS classes.
+ */
 const STATUS_CONFIG = {
     PENDING: { label: 'Chờ xác nhận', cls: 'bg-amber-100 text-amber-700 border-amber-200' },
     CONFIRMED: { label: 'Đã xác nhận', cls: 'bg-blue-100 text-blue-700 border-blue-200' },
     PACKAGING: { label: 'Đang đóng gói', cls: 'bg-purple-100 text-purple-700 border-purple-200' },
     SHIPPING: { label: 'Đang giao', cls: 'bg-orange-100 text-orange-700 border-orange-200' },
-    DELIVERED: { label: 'Đã giao', cls: 'bg-green-100 text-green-700 border-green-200' },
+    DELIVERED: { label: 'Đã giao', color: 'bg-green-100 text-green-700 border-green-200' },
     RETURN_REQUESTED: { label: 'Yêu cầu trả hàng', cls: 'bg-orange-100 text-orange-700 border-orange-200' },
     RETURNED: { label: 'Đã trả hàng', cls: 'bg-gray-100 text-gray-700 border-gray-200' },
     RETURN_REJECTED: { label: 'Từ chối trả hàng', cls: 'bg-red-100 text-red-700 border-red-200' },
     CANCELLED: { label: 'Đã huỷ', cls: 'bg-red-100 text-red-700 border-red-200' },
 };
 
+/**
+ * ADMIN COMPONENT: AdminOrders
+ * ---------------------------------------------------------
+ * Comprehensive control panel for monitoring and managing customer orders.
+ * 
+ * Features:
+ * 1. Filtered Search: Search by code, name, phone, or status.
+ * 2. Status Guard: Business logic prevents invalid status jumps (e.g. Delivered -> Pending).
+ * 3. Return Management: Admin confirms or rejects return requests with reasons.
+ * 4. Refund Tracking: Manually marking cancelled/returned orders as refunded.
+ * 5. High-level Navigation: Direct link to full OrderDetail for deep auditing.
+ */
 export default function AdminOrders() {
+    // --- HOOKS & PARAMETERS ---
     const { search: urlSearch } = useLocation();
     const queryParams = new URLSearchParams(urlSearch);
     const initialStatus = queryParams.get('status') || '';
 
+    // --- STATE ---
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
@@ -43,10 +66,11 @@ export default function AdminOrders() {
     const [statusFilter, setStatusFilter] = useState(initialStatus);
     const [sortBy, setSortBy] = useState('createdAt');
     const [direction, setDirection] = useState('desc');
-    const [expanded, setExpanded] = useState(null);
-    const [updatingId, setUpdatingId] = useState(null);
+    const [expanded, setExpanded] = useState(null); // In-line expansion ID
+    const [updatingId, setUpdatingId] = useState(null); // Loading state for single order action
     const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'info', onConfirm: () => {} });
 
+    // Synchronization with URL params
     useEffect(() => {
         if (initialStatus) {
             setStatusFilter(initialStatus);
@@ -54,6 +78,11 @@ export default function AdminOrders() {
         }
     }, [initialStatus]);
 
+    // --- DATA ACTIONS ---
+
+    /**
+     * fetchOrders: Main query logic for the order table.
+     */
     const fetchOrders = useCallback(async (p = 0, q = '', status = '', sort = 'createdAt', dir = 'desc') => {
         setLoading(true);
         try {
@@ -74,22 +103,32 @@ export default function AdminOrders() {
         }
     }, []);
 
+    // Reactive fetching
     useEffect(() => { 
         fetchOrders(page, search, statusFilter, sortBy, direction); 
     }, [page, search, statusFilter, sortBy, direction, fetchOrders]);
 
+    // --- ADMINISTRATIVE ACTIONS ---
+
+    /**
+     * handleStatusChange: Updates individual order status via select dropdown.
+     */
     const handleStatusChange = async (orderId, newStatus) => {
         setUpdatingId(orderId);
         try {
             await orderService.updateStatus(orderId, newStatus);
             toast.success('Đã cập nhật trạng thái');
-            fetchOrders(page);
+            fetchOrders(page); // Refresh list
         } catch (err) {
             toast.error(err.response?.data?.message || 'Cập nhật thất bại');
         } finally {
             setUpdatingId(null);
         }
     };
+
+    /**
+     * handleRefund: Mark an order as officially refunded after manual bank transfer.
+     */
     const handleRefund = (orderId) => {
         setModal({
             isOpen: true,
@@ -112,6 +151,9 @@ export default function AdminOrders() {
         });
     };
 
+    /**
+     * handleConfirmReturn: Acceptance of returned goods.
+     */
     const handleConfirmReturn = (orderId) => {
         setModal({
             isOpen: true,
@@ -134,6 +176,9 @@ export default function AdminOrders() {
         });
     };
 
+    /**
+     * handleRejectReturn: Refusal of a return request with mandatory reason audit.
+     */
     const handleRejectReturn = (orderId) => {
         setModal({
             isOpen: true,
@@ -158,6 +203,11 @@ export default function AdminOrders() {
         });
     };
 
+    // --- RENDERING HELPERS ---
+
+    /**
+     * handlePrintInvoice: Direct printing logic for admins.
+     */
     const handlePrintInvoice = (order) => {
         const printWindow = window.open('', '_blank');
         const itemsHtml = order.orderItems.map(item => `
@@ -242,19 +292,29 @@ export default function AdminOrders() {
     };
 
     const fmt = (n) => new Intl.NumberFormat('vi-VN').format(n || 0);
+
+    /**
+     * fmtDate: Formats date to medium length for table readability.
+     */
     const fmtDate = (s) => s ? new Date(s).toLocaleString('vi-VN', {
         dateStyle: 'medium',
         timeStyle: 'short'
     }) : '';
 
+    // --- RENDER ---
+
     return (
         <AdminLayout>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Đơn hàng</h1>
-                    <p className="text-sm text-gray-500 font-medium tracking-tight">Theo dõi và cập nhật trạng thái đơn hàng của khách.</p>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight uppercase italic flex items-center gap-2">
+                        <TagIcon className="w-8 h-8 text-green-600" />
+                        Quản lý Đơn hàng
+                    </h1>
+                    <p className="text-sm text-gray-500 font-medium tracking-tight mt-1">Theo dõi và cập nhật trạng thái đơn hàng của khách.</p>
                 </div>
                 <div className="flex flex-col lg:flex-row gap-2 flex-1 max-w-3xl lg:justify-end">
+                    {/* Search Field */}
                     <div className="relative flex-1 group">
                         <UserIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" />
                         <input
@@ -264,6 +324,7 @@ export default function AdminOrders() {
                             className="w-full pl-10 pr-5 py-2.5 bg-white border border-gray-100 rounded-xl shadow-sm outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all font-medium text-xs"
                         />
                     </div>
+                    {/* Filters */}
                     <div className="grid grid-cols-2 lg:flex gap-2">
                         <select
                             value={statusFilter || ''}
@@ -299,9 +360,9 @@ export default function AdminOrders() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-gray-50/50">
-                                <th className="px-4 py-2.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">Mã đơn</th>
-                                <th className="px-4 py-2.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">Khách hàng</th>
-                                <th className="px-4 py-2.5 text-[10px] font-black text-gray-400 uppercase tracking-wider">Tổng tiền</th>
+                                <th className="px-4 py-2.5 text-[10px] font-black text-gray-600 uppercase tracking-wider">Mã đơn</th>
+                                <th className="px-4 py-2.5 text-[10px] font-black text-gray-600 uppercase tracking-wider">Khách hàng</th>
+                                <th className="px-4 py-2.5 text-[10px] font-black text-gray-600 uppercase tracking-wider">Tổng tiền</th>
                                 <th className="px-4 py-2.5 text-[10px] font-black text-gray-400 uppercase tracking-wider text-center">Trạng thái</th>
                                 <th className="px-4 py-2.5 text-[10px] font-black text-gray-400 uppercase tracking-wider text-center">Thao tác</th>
                             </tr>
@@ -315,7 +376,7 @@ export default function AdminOrders() {
                                 ))
                             ) : orders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-400 font-medium">Chưa có đơn hàng nào</td>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-400 font-medium italic">Không tìm thấy đơn hàng nào khớp với bộ lọc</td>
                                 </tr>
                             ) : orders.map((o) => {
                                 const st = STATUS_CONFIG[o.status] || { label: o.status, cls: 'bg-gray-100 text-gray-600 border-gray-200' };
@@ -329,8 +390,8 @@ export default function AdminOrders() {
                                                         <ClipboardDocumentListIcon className="w-5 h-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="font-black text-gray-900 leading-none text-sm">#{o.id}</p>
-                                                        <p className="text-[9px] text-gray-400 font-bold mt-1 uppercase leading-none">{fmtDate(o.createdAt)}</p>
+                                                        <p className="font-black text-gray-900 leading-none text-sm">#{o.orderCode}</p>
+                                                        <p className="text-[9px] text-gray-600 font-bold mt-1 uppercase leading-none">{fmtDate(o.createdAt)}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -355,7 +416,7 @@ export default function AdminOrders() {
                                                         className={`appearance-none pl-2.5 pr-7 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border cursor-pointer outline-none focus:ring-4 focus:ring-current/10 transition-all ${st.cls}`}
                                                     >
                                                         {ORDER_STATUSES.map((s) => {
-                                                            // Logic: Cannot move back to PENDING/CONFIRMED if already SHIPPING/DELIVERED
+                                                            // Guard: Prevent reverse illegal status jumps
                                                             const isPast = (o.status === 'SHIPPING' || o.status === 'DELIVERED') && (s === 'PENDING' || s === 'CONFIRMED');
                                                             return (
                                                                 <option 
@@ -372,7 +433,15 @@ export default function AdminOrders() {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-2 text-center">
-                                                <div className="flex items-center gap-1.5">
+                                                <div className="flex items-center justify-center gap-1.5">
+                                                    {/* NEW: Link to Full Premium Detail Page */}
+                                                    <Link
+                                                        to={`/admin/orders/${o.orderCode}?mode=view`}
+                                                        className="p-1.5 rounded-lg text-gray-400 hover:bg-green-100 hover:text-green-600 transition-all"
+                                                        title="Xem trang chi tiết Premium"
+                                                    >
+                                                        <EyeIcon className="w-5 h-5" />
+                                                    </Link>
                                                     <button
                                                         onClick={() => handlePrintInvoice(o)}
                                                         className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-all"
@@ -383,6 +452,7 @@ export default function AdminOrders() {
                                                     <button
                                                         onClick={() => setExpanded(isExp ? null : o.id)}
                                                         className={`p-1.5 rounded-lg transition-all ${isExp ? 'bg-green-600 text-white shadow-sm' : 'text-gray-400 hover:bg-gray-100'}`}
+                                                        title="Mở rộng xem nhanh"
                                                     >
                                                         {isExp ? <ChevronUpIcon className="w-5 h-5" /> : <ChevronDownIcon className="w-5 h-5" />}
                                                     </button>
@@ -398,26 +468,26 @@ export default function AdminOrders() {
                                                             <h3 className="text-xs font-black text-gray-900 border-l-4 border-green-500 pl-2">Thông tin nhận hàng</h3>
                                                             <div className="grid grid-cols-1 gap-3">
                                                                 <div className="space-y-1">
-                                                                    <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest ml-1">Số nhà, tên đường</p>
+                                                                    <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest ml-1">Số nhà, tên đường</p>
                                                                     <div className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[11px] font-bold text-gray-800 italic">
                                                                         {o.shippingAddress?.split(', ')[0] || o.shippingAddress}
                                                                     </div>
                                                                 </div>
                                                                 <div className="grid grid-cols-3 gap-2">
                                                                     <div className="space-y-1">
-                                                                        <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest ml-1">Phường/Xã</p>
+                                                                        <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest ml-1">Phường/Xã</p>
                                                                         <div className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold text-gray-700">
                                                                             {o.shippingAddress?.split(', ')[1] || '---'}
                                                                         </div>
                                                                     </div>
                                                                     <div className="space-y-1">
-                                                                        <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest ml-1">Quận/Huyện</p>
+                                                                        <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest ml-1">Quận/Huyện</p>
                                                                         <div className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold text-gray-700">
                                                                             {o.shippingAddress?.split(', ')[2] || '---'}
                                                                         </div>
                                                                     </div>
                                                                     <div className="space-y-1">
-                                                                        <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest ml-1">Tỉnh/TP</p>
+                                                                        <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest ml-1">Tỉnh/TP</p>
                                                                         <div className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold text-gray-700">
                                                                             {o.shippingAddress?.split(', ')[3] || '---'}
                                                                         </div>
@@ -437,7 +507,7 @@ export default function AdminOrders() {
                                                                     
                                                                     {o.returnMedia && (
                                                                         <div className="space-y-1.5">
-                                                                            <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest ml-1">Hình ảnh/Video minh chứng</p>
+                                                                            <p className="text-[8px] text-gray-600 font-black uppercase tracking-widest ml-1">Hình ảnh/Video minh chứng</p>
                                                                             <div className="w-48 h-32 rounded-2xl overflow-hidden border-2 border-orange-100 shadow-sm transition-transform hover:scale-105 bg-black">
                                                                                 {o.returnMedia.match(/\.(mp4|webm|ogg|mov)$|^https:\/\/res.cloudinary.com\/.*\/video\/upload\//i) ? (
                                                                                     <video 
@@ -461,7 +531,7 @@ export default function AdminOrders() {
 
                                                             <div className="flex gap-3">
                                                                 <div className="bg-gray-50 rounded-xl p-3 flex-1">
-                                                                    <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Thanh toán {o.isPaid ? '✅' : '❌'}</p>
+                                                                    <p className="text-[9px] text-gray-600 font-bold uppercase mb-0.5">Thanh toán {o.isPaid ? '✅' : '❌'}</p>
                                                                     <p className={`text-xs font-black mb-2 ${o.isPaid ? 'text-green-600' : 'text-red-600'}`}>
                                                                         {o.paymentMethod === 'COD' ? 'Khi nhận hàng (COD)' : o.paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' : o.paymentMethod === 'MOMO' ? 'Ví MoMo' : 'VNPay'}
                                                                         {o.isPaid ? ' (Đã trả)' : ' (Chưa trả)'}
@@ -492,7 +562,7 @@ export default function AdminOrders() {
                                                                     )}
                                                                 </div>
                                                                 <div className="bg-gray-50 rounded-xl p-3 flex-1">
-                                                                    <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Liên hệ</p>
+                                                                    <p className="text-[9px] text-gray-600 font-bold uppercase mb-0.5">Liên hệ</p>
                                                                     <p className="text-xs text-gray-800 font-black">{o.phone || 'N/A'}</p>
                                                                 </div>
                                                             </div>
@@ -504,7 +574,7 @@ export default function AdminOrders() {
                                                             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-100 shadow-sm">
                                                                 <table className="w-full">
                                                                     <thead className="bg-gray-100/50">
-                                                                        <tr className="text-[9px] text-gray-500 font-black uppercase tracking-tight">
+                                                                        <tr className="text-[9px] text-gray-700 font-black uppercase tracking-tight">
                                                                             <th className="px-4 py-1.5 text-left">Sản phẩm</th>
                                                                             <th className="px-4 py-1.5 text-right">Giá</th>
                                                                             <th className="px-4 py-1.5 text-center">SL</th>
@@ -523,7 +593,7 @@ export default function AdminOrders() {
                                                                     </tbody>
                                                                     <tfoot className="bg-green-50/50">
                                                                         <tr>
-                                                                            <td colSpan={3} className="px-4 py-1 text-right text-[8px] font-black uppercase text-gray-400 italic">Phí vận chuyển</td>
+                                                                            <td colSpan={3} className="px-4 py-1 text-right text-[8px] font-black uppercase text-gray-600 italic">Phí vận chuyển</td>
                                                                             <td className="px-4 py-1 text-right font-bold text-gray-600 text-[10px]">{fmt(o.shippingFee || 0)}₫</td>
                                                                         </tr>
                                                                         <tr>

@@ -1,6 +1,7 @@
 package nhom5.demo.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import nhom5.demo.dto.request.CartItemRequest;
 import nhom5.demo.dto.response.CartResponse;
 import nhom5.demo.entity.Cart;
@@ -17,12 +18,16 @@ import nhom5.demo.repository.UserRepository;
 import nhom5.demo.service.CartService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.lang.NonNull;
+import java.util.Objects;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
@@ -35,30 +40,40 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponse getCart(String username) {
+    public CartResponse getCart(@NonNull String username) {
         Cart cart = getOrCreateCart(username);
-        List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+        Long cartId = Objects.requireNonNull(cart.getId());
+        List<CartItem> items = cartItemRepository.findByCartId(cartId);
         return toResponse(cart, items);
     }
 
     @Override
     @Transactional
-    public CartResponse addToCart(String username, CartItemRequest request) {
+    public CartResponse addToCart(@NonNull String username, @NonNull CartItemRequest request) {
         Cart cart = getOrCreateCart(username);
-        Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", request.getProductId()));
+        Long productId = Objects.requireNonNull(request.getProductId());
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
 
-        if (!product.getIsActive()) {
+        LocalDate today = LocalDate.now();
+        boolean productActive = product.getIsActive() == null || product.getIsActive();
+        long availableStock = batchRepository.sumRemainingQuantityByProductId(Objects.requireNonNull(product.getId()), today);
+
+        if (!productActive) {
             throw new BusinessException("Sản phẩm '" + product.getName() + "' hiện không còn bán");
         }
 
-        long availableStock = batchRepository.sumRemainingQuantityByProductId(product.getId());
+        if (availableStock <= 0) {
+            throw new BusinessException("Sản phẩm '" + product.getName() + "' hiện hết hàng");
+        }
+
         if (request.getQuantity() > availableStock) {
             throw new BusinessException(
                     "Sản phẩm '" + product.getName() + "' chỉ còn " + availableStock + " " + product.getUnit());
         }
 
-        CartItem existingItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId())
+        Long cartId = Objects.requireNonNull(cart.getId());
+        CartItem existingItem = cartItemRepository.findByCartIdAndProductId(cartId, product.getId())
                 .orElse(null);
 
         if (existingItem != null) {
@@ -74,31 +89,33 @@ public class CartServiceImpl implements CartService {
                     .product(product)
                     .quantity(request.getQuantity())
                     .build();
-            cartItemRepository.save(cartItem);
+            cartItemRepository.save(Objects.requireNonNull(cartItem));
         }
 
-        List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+        List<CartItem> items = cartItemRepository.findByCartId(cartId);
         return toResponse(cart, items);
     }
 
     @Override
     @Transactional
-    public CartResponse updateCartItem(String username, Long cartItemId, int quantity) {
+    public CartResponse updateCartItem(@NonNull String username, @NonNull Long cartItemId, int quantity) {
         Cart cart = getOrCreateCart(username);
         CartItem item = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("CartItem", "id", cartItemId));
 
-        if (!item.getCart().getId().equals(cart.getId())) {
+        if (!Objects.equals(Objects.requireNonNull(item.getCart()).getId(), cart.getId())) {
             throw new BusinessException("Không có quyền cập nhật giỏ hàng này");
         }
 
         if (quantity <= 0) {
             cartItemRepository.delete(item);
         } else {
-            if (!item.getProduct().getIsActive()) {
+            boolean active = item.getProduct().getIsActive() == null || item.getProduct().getIsActive();
+            if (!active) {
                 throw new BusinessException("Sản phẩm hiện không còn kinh doanh");
             }
-            long stock = batchRepository.sumRemainingQuantityByProductId(item.getProduct().getId());
+            long stock = batchRepository
+                    .sumRemainingQuantityByProductId(Objects.requireNonNull(item.getProduct().getId()), LocalDate.now());
             if (quantity > stock) {
                 throw new BusinessException("Chỉ còn " + stock + " " + item.getProduct().getUnit() + " trong kho");
             }
@@ -106,18 +123,19 @@ public class CartServiceImpl implements CartService {
             cartItemRepository.save(item);
         }
 
-        List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+        Long cartId = Objects.requireNonNull(cart.getId());
+        List<CartItem> items = cartItemRepository.findByCartId(cartId);
         return toResponse(cart, items);
     }
 
     @Override
     @Transactional
-    public void removeCartItem(String username, Long cartItemId) {
+    public void removeCartItem(@NonNull String username, @NonNull Long cartItemId) {
         Cart cart = getOrCreateCart(username);
         CartItem item = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("CartItem", "id", cartItemId));
 
-        if (!item.getCart().getId().equals(cart.getId())) {
+        if (!Objects.equals(Objects.requireNonNull(item.getCart()).getId(), cart.getId())) {
             throw new BusinessException("Không có quyền xóa mục này");
         }
         cartItemRepository.delete(item);
@@ -125,47 +143,82 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void clearCart(String username) {
+    public void clearCart(@NonNull String username) {
         Cart cart = getOrCreateCart(username);
-        cartItemRepository.deleteByCartId(cart.getId());
+        Long cartId = Objects.requireNonNull(cart.getId());
+        cartItemRepository.deleteByCartId(cartId);
     }
 
-    private Cart getOrCreateCart(String username) {
+    private Cart getOrCreateCart(@NonNull String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
 
-        return cartRepository.findByUserId(user.getId()).orElseGet(() -> {
+        Long userId = Objects.requireNonNull(user.getId());
+        return cartRepository.findByUserId(userId).orElseGet(() -> {
             Cart newCart = Cart.builder().user(user).build();
-            return cartRepository.save(newCart);
+            return cartRepository.save(Objects.requireNonNull(newCart));
         });
     }
 
     private CartResponse toResponse(Cart cart, List<CartItem> cartItems) {
+        List<Long> productIds = cartItems.stream()
+                .map(item -> Objects.requireNonNull(item.getProduct()).getId())
+                .toList();
+
+        // 1. Pre-fetch stocks in batch (Lenient check for debugging)
+        Map<Long, Integer> stockMap = new java.util.HashMap<>();
+        LocalDate today = LocalDate.now();
+        if (!productIds.isEmpty()) {
+            List<Object[]> stocks = batchRepository.sumRemainingQuantitiesByProductIds(productIds, today);
+            for (Object[] row : stocks) {
+                if (row[0] != null && row[1] != null) {
+                    stockMap.put((Long) row[0], ((Number) row[1]).intValue());
+                }
+            }
+        }
+
+        // 2. Pre-fetch active Flash Sales in batch
+        Map<Long, nhom5.demo.entity.FlashSaleItem> flashSaleMap = new java.util.HashMap<>();
+        if (!productIds.isEmpty()) {
+            List<nhom5.demo.entity.FlashSaleItem> activeFlashSales = flashSaleItemRepository
+                    .findActiveByProductIds(productIds, java.time.LocalDateTime.now());
+            for (nhom5.demo.entity.FlashSaleItem fs : activeFlashSales) {
+                flashSaleMap.put(fs.getProduct().getId(), fs);
+            }
+        }
+
         List<CartResponse.CartItemResponse> items = cartItems.stream()
                 .map(item -> {
-                    long stock = batchRepository.sumRemainingQuantityByProductId(item.getProduct().getId());
-                    // Check Flash Sale for price display
+                    Long productId = item.getProduct().getId();
+                    int stock = stockMap.getOrDefault(productId, 0);
+
                     BigDecimal unitPrice = item.getProduct().getPrice();
-                    java.util.Optional<nhom5.demo.entity.FlashSaleItem> fsItemOpt = flashSaleItemRepository.findActiveByProductId(item.getProduct().getId(), java.time.LocalDateTime.now());
-                    
-                    if (fsItemOpt.isPresent()) {
-                        nhom5.demo.entity.FlashSaleItem fsItem = fsItemOpt.get();
+                    nhom5.demo.entity.FlashSaleItem fsItem = flashSaleMap.get(productId);
+
+                    if (fsItem != null) {
                         if (fsItem.getSoldQuantity() + item.getQuantity() <= fsItem.getQuantityLimit()) {
                             unitPrice = fsItem.getFlashSalePrice();
                         }
                     }
 
-                    BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
+                    BigDecimal subtotal = Objects.requireNonNull(unitPrice)
+                            .multiply(BigDecimal.valueOf(item.getQuantity()));
+                    // Logic isActive nới lỏng: mặc định là true trừ khi explicitly false
+                    boolean productActive = item.getProduct().getIsActive() == null || 
+                                          Boolean.TRUE.equals(item.getProduct().getIsActive()) || 
+                                          (item.getProduct().getIsActive() instanceof Boolean ? (Boolean)item.getProduct().getIsActive() : true);
+                    
                     return CartResponse.CartItemResponse.builder()
                             .cartItemId(item.getId())
-                            .productId(item.getProduct().getId())
+                            .productId(productId)
+                            .productSlug(item.getProduct().getSlug())
                             .productName(item.getProduct().getName())
                             .productImageUrl(item.getProduct().getImageUrl())
                             .unitPrice(unitPrice)
                             .quantity(item.getQuantity())
                             .subtotal(subtotal)
-                            .availableStock((int) stock)
-                            .isActive(item.getProduct().getIsActive())
+                            .availableStock(stock)
+                            .isActive(productActive)
                             .build();
                 }).toList();
 

@@ -11,18 +11,18 @@ export default function Maintenance() {
         setChecking(true);
         // Create a 10s "feel" delay as requested
         const startTime = Date.now();
-        
+
         try {
             await axios.get('/products?page=0&size=1');
-            
+
             // Calculate how much time left for 10s delay
             const elapsed = Date.now() - startTime;
             const remaining = Math.max(0, 10000 - elapsed);
-            
+
             setTimeout(() => {
                 navigate('/');
             }, remaining);
-            
+
         } catch (err) {
             console.log('Still in maintenance...');
             setChecking(false);
@@ -45,17 +45,17 @@ export default function Maintenance() {
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
                 </div>
             </div>
-            
+
             <h1 className="text-5xl font-black text-gray-900 mb-4 tracking-tighter uppercase italic">
                 Hệ thống đang bảo trì
             </h1>
-            
+
             <p className="text-xl text-gray-500 max-w-lg mx-auto font-medium leading-relaxed mb-10">
-                Chúng tôi đang nâng cấp hệ thống để mang lại trải nghiệm tốt nhất cho bạn. 
+                Chúng tôi đang nâng cấp hệ thống để mang lại trải nghiệm tốt nhất cho bạn.
                 Vui lòng quay lại sau ít phút.
             </p>
 
-            <button 
+            <button
                 onClick={checkStatus}
                 disabled={checking}
                 className="flex items-center gap-3 px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-[2rem] font-black shadow-xl shadow-green-200 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
@@ -65,7 +65,7 @@ export default function Maintenance() {
             </button>
 
             <div className="fixed bottom-10 text-xs font-black text-gray-300 tracking-[0.5rem] uppercase">
-                FreshFood - Nhóm 5 - High Quality Service
+                FreshFood - High Quality Service
             </div>
         </div>
     );

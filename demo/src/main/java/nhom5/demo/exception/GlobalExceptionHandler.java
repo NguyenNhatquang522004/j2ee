@@ -1,5 +1,7 @@
 package nhom5.demo.exception;
 
+import lombok.extern.slf4j.Slf4j;
+
 import nhom5.demo.dto.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +22,7 @@ import java.util.Map;
  * Bộ xử lý lỗi tập trung cho toàn bộ ứng dụng (Global Exception Handler).
  * Chuyển đổi các Exception thành Json ApiResponse chuẩn để Frontend dễ dàng xử lý.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -26,6 +31,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        log.info("Resource not found: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), ex.getMessage()));
     }
@@ -41,6 +47,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
+        log.warn("Business logic exception: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
     }
@@ -56,6 +63,7 @@ public class GlobalExceptionHandler {
         for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
             errors.put(fieldError.getField(), fieldError.getDefaultMessage());
         }
+        log.warn("Validation failed for request. Status: 400. Faulty fields: {}", errors.keySet());
         ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .message("Dữ liệu đầu vào không hợp lệ")
@@ -80,7 +88,33 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(),
-                        "File upload quá lớn. Kích thước tối đa là 100MB"));
+                        "File upload quá lớn. Kích thước tối đa là 10MB"));
+    }
+
+    /**
+     * Xử lý lỗi vi phạm ràng buộc DB (409 Conflict) — ví dụ: tên/slug sản phẩm bị trùng.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
+        String msg = "Dữ liệu bị trùng lặp. Vui lòng kiểm tra tên sản phẩm hoặc slug.";
+        if (ex.getMostSpecificCause().getMessage() != null &&
+                ex.getMostSpecificCause().getMessage().contains("slug")) {
+            msg = "Slug sản phẩm đã tồn tại. Vui lòng đặt tên khác.";
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(HttpStatus.CONFLICT.value(), msg));
+    }
+
+    /**
+     * Xử lý lỗi Optimistic Locking (409 Conflict) — xảy ra khi 2 request cùng sửa 1 entity.
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOptimisticLockingException(ObjectOptimisticLockingFailureException ex) {
+        log.warn("Optimistic locking failure: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(HttpStatus.CONFLICT.value(),
+                        "Dữ liệu vừa được thay đổi bởi người khác. Vui lòng tải lại trang và thử lại."));
     }
 
     /**
@@ -89,13 +123,11 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
-        ex.printStackTrace(); // Log stack trace ra Console phục vụ Debug
-        String detail = ex.getClass().getName() + ": " + ex.getMessage();
-        if (ex.getCause() != null) {
-            detail += " | Cause: " + ex.getCause().getMessage();
-        }
+        // Ghi log chi tiết phía server để Debug — KHÔNG trả về cho client
+        log.error("Lỗi hệ thống không mong đợi: {} | Cause: {}", 
+                ex.getMessage(), ex.getCause() != null ? ex.getCause().getMessage() : "N/A", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "Lỗi hệ thống: " + detail));
+                        "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau hoặc liên hệ hỗ trợ."));
     }
 }

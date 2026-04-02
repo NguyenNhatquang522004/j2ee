@@ -7,6 +7,8 @@ import lombok.*;
 import nhom5.demo.enums.CertificationEnum;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -18,13 +20,16 @@ import java.util.List;
  */
 @Entity
 @Table(name = "farms", indexes = {
-        @Index(name = "idx_farm_name", columnList = "name")
+        @Index(name = "idx_farm_name", columnList = "name"),
+        @Index(name = "idx_farm_deleted_at", columnList = "deleted_at")
 })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE farms SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class Farm {
 
     @Id
@@ -85,6 +90,9 @@ public class Farm {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     // ====== Relationships ======
     @OneToMany(mappedBy = "farm", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

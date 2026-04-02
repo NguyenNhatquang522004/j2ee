@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,13 +20,16 @@ import java.util.List;
  */
 @Entity
 @Table(name = "coupons", indexes = {
-        @Index(name = "idx_coupon_code", columnList = "code")
+        @Index(name = "idx_coupon_code", columnList = "code"),
+        @Index(name = "idx_coupon_deleted_at", columnList = "deleted_at")
 })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE coupons SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class Coupon {
 
     @Id
@@ -87,6 +92,9 @@ public class Coupon {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     /**
      * Danh sách người dùng được phép sử dụng mã này nếu isPrivate = true.

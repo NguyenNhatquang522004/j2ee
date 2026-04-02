@@ -1,0 +1,14 @@
+<div th:fragment="content">
+    <h2 style="color: #065f46; font-size: 24px; margin-bottom: 20px;">Chào mừng <span th:text="${fullName}">Quý khách</span> đến với FreshFood!</h2>
+    <p>Cảm ơn bạn đã tin tưởng và đăng ký tài khoản tại hệ thống của chúng tôi.</p>
+    <p>Tại FreshFood, chúng tôi cam kết mang đến cho bạn trải nghiệm mua sắm thực phẩm sạch, an toàn và tiện lợi nhất.</p>
+    <div class="divider"></div>
+    <h3 style="font-size: 18px; color: #111827;">Những gì bạn có thể làm ngay bây giờ:</h3>
+    <ul>
+        <li>Duyệt hàng ngàn sản phẩm nông sản tươi sạch.</li>
+        <li>Tích lũy điểm thưởng để đổi lấy voucher giảm giá.</li>
+        <li>Nhận thông báo về các chương trình Flash Sale độc quyền.</li>
+    </ul>
+    <a th:href="${frontendUrl} + '/shop'" class="btn">Bắt đầu mua sắm ngay</a>
+    <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">Nếu bạn gặp bất kỳ khó khăn nào, đừng ngần ngại liên hệ với chúng tôi qua hotline hoặc phản hồi email này.</p>
+</div>

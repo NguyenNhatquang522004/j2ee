@@ -14,7 +14,7 @@
         <encoder class="net.logstash.logback.encoder.LogstashEncoder" />
     </appender>
 
-    <springProfile name="dev">
+    <springProfile name="dev, local">
         <root level="INFO">
             <appender-ref ref="CONSOLE" />
         </root>
@@ -25,4 +25,8 @@
             <appender-ref ref="JSON" />
         </root>
     </springProfile>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
 </configuration>

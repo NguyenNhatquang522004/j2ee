@@ -13,7 +13,7 @@
 	<artifactId>demo</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>clean-food-ecommerce</name>
-	<description>Website kinh doanh thực phẩm sạch - Nhóm 5</description>
+	<description>Website kinh doanh thực phẩm sạch</description>
 	<!-- Force IDE re-index -->
 
 	<properties>

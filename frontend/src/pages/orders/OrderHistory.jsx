@@ -11,9 +11,14 @@ import {
     XCircleIcon, 
     ClockIcon, 
     ArrowPathIcon, 
-    PrinterIcon 
+    PrinterIcon,
+    CheckCircleIcon 
 } from '@heroicons/react/24/outline';
 
+/**
+ * STATIC CONFIG:
+ * Maps backend status codes to human-friendly labels and premium UI colors.
+ */
 const STATUS_MAP = {
     PENDING: { label: 'Chờ xác nhận', color: 'bg-yellow-100 text-yellow-800', icon: ClockIcon },
     CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800', icon: ClockIcon },
@@ -26,22 +31,40 @@ const STATUS_MAP = {
     RETURN_REJECTED: { label: 'Từ chối trả hàng', color: 'bg-red-100 text-red-800', icon: XCircleIcon },
 };
 
-import { CheckCircleIcon } from '@heroicons/react/24/outline';
-
+/**
+ * PAGE COMPONENT: OrderHistory
+ * ---------------------------------------------------------
+ * Displays the user's past and active orders in a clean, card-based layout.
+ * 
+ * Features:
+ * 1. Infinite Scroll/Pagination (Service-side): Fetches user-specific orders.
+ * 2. Order Actions: Quick Cancel (for Pending), Buy Again (Cart merge), and Invoice Print.
+ * 3. Deep Navigation: Links to detailed order lifecycle views using Numeric IDs.
+ */
 export default function OrderHistory() {
+    // --- STATE ---
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const { confirm } = useConfirm();
     const navigate = useNavigate();
 
+    // --- DATA FETCHING ---
     useEffect(() => {
+        // Fetch orders belonging strictly to the authenticated user
         orderService.myOrders({ page: 0, size: 20 })
             .then((r) => setOrders(r.data.content || r.data))
             .catch(() => toast.error('Không thể tải đơn hàng'))
             .finally(() => setLoading(false));
     }, []);
 
-    const handleCancel = async (orderId) => {
+    // --- ACTION HANDLERS ---
+
+    /**
+     * handleCancel:
+     * Triggers a specific cancellation flow if the order is still PENDING.
+     * Uses a global confirm modal for safety.
+     */
+    const handleCancel = async (orderCode) => {
         const ok = await confirm({
             title: 'Hủy đơn hàng',
             message: 'Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác.',
@@ -49,16 +72,21 @@ export default function OrderHistory() {
         });
         if (!ok) return;
         try {
-            await orderService.cancel(orderId);
+            await orderService.cancel(orderCode);
             toast.success('Đã hủy đơn hàng');
+            // Optimistic update of local state
             setOrders((prev) =>
-                prev.map((o) => o.id === orderId ? { ...o, status: 'CANCELLED', cancelledAt: new Date().toISOString() } : o)
+                prev.map((o) => o.orderCode === orderCode ? { ...o, status: 'CANCELLED', cancelledAt: new Date().toISOString() } : o)
             );
         } catch (err) {
             toast.error(err.response?.data?.message || 'Không thể hủy đơn hàng');
         }
     };
 
+    /**
+     * handleBuyAgain:
+     * Batch adds every item from a previous order into the current active cart.
+     */
     const handleBuyAgain = async (order) => {
         const loadingToast = toast.loading('Đang thêm vào giỏ hàng...');
         try {
@@ -68,6 +96,7 @@ export default function OrderHistory() {
                     quantity: item.quantity
                 })
             ));
+            // Trigger global cart counter update icon if any
             window.dispatchEvent(new Event('cart-updated'));
             toast.success('Đã thêm sản phẩm vào giỏ hàng', { id: loadingToast });
             navigate('/cart');
@@ -76,6 +105,10 @@ export default function OrderHistory() {
         }
     };
 
+    /**
+     * handlePrintInvoice: 
+     * Reuses the OrderDetail invoice template for a quick printout from history.
+     */
     const handlePrintInvoice = (order) => {
         const printWindow = window.open('', '_blank');
         const itemsHtml = order.orderItems.map(item => `
@@ -147,11 +180,16 @@ export default function OrderHistory() {
         printWindow.print();
     };
 
+    /**
+     * Utility: Standardized Vietnamese date-time formatter.
+     */
     const fmtFullDate = (s) => {
         if(!s) return null;
         const d = new Date(s);
         return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
     };
+
+    // --- RENDER ---
 
     return (
         <Layout>
@@ -177,8 +215,7 @@ export default function OrderHistory() {
                                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-bold text-gray-900">Đơn #{order.id}</span>
-                                            <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-mono uppercase tracking-widest">{order.orderCode}</span>
+                                            <span className="font-bold text-gray-900">Đơn hàng #{order.orderCode}</span>
                                         </div>
                                         <span className="text-sm text-gray-500">{fmtFullDate(order.createdAt)}</span>
                                     </div>
@@ -195,8 +232,9 @@ export default function OrderHistory() {
                                 </div>
 
                                 <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-50">
+                                    {/* CRITICAL: Uses Numeric ID for deep detail view navigation */}
                                     <Link
-                                        to={`/orders/${order.id}`}
+                                        to={`/orders/${order.orderCode}`}
                                         className="btn-secondary py-1.5 px-4 text-sm flex items-center gap-2"
                                     >
                                         <ChevronRightIcon className="w-4 h-4" />
@@ -221,7 +259,7 @@ export default function OrderHistory() {
 
                                     {order.status === 'PENDING' && (
                                         <button 
-                                            onClick={() => handleCancel(order.id)} 
+                                            onClick={() => handleCancel(order.orderCode)} 
                                             className="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 ml-2"
                                         >
                                             <XCircleIcon className="w-4 h-4" />

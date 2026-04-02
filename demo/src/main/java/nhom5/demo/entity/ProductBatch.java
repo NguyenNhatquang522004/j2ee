@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import nhom5.demo.enums.BatchStatusEnum;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,7 +29,8 @@ import java.time.LocalDateTime;
         @Index(name = "idx_batch_product", columnList = "product_id"),
         @Index(name = "idx_batch_expiry", columnList = "expiry_date"),
         @Index(name = "idx_batch_status", columnList = "status"),
-        @Index(name = "idx_batch_code", columnList = "batch_code")
+        @Index(name = "idx_batch_code", columnList = "batch_code"),
+        @Index(name = "idx_batch_deleted_at", columnList = "deleted_at")
 }, uniqueConstraints = {
         @UniqueConstraint(columnNames = {"batch_code"})
 })
@@ -37,6 +40,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLDelete(sql = "UPDATE product_batches SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class ProductBatch {
 
     @Id
@@ -76,9 +81,16 @@ public class ProductBatch {
     @Column(name = "note", length = 500)
     private String note;
 
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     // ====== Relationships ======
 

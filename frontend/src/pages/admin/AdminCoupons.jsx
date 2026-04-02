@@ -12,7 +12,8 @@ import {
     CalendarDaysIcon,
     CurrencyDollarIcon,
     HashtagIcon,
-    EnvelopeIcon
+    EnvelopeIcon,
+    InformationCircleIcon
 } from '@heroicons/react/24/outline';
 
 const EMPTY = { 
@@ -35,6 +36,7 @@ export default function AdminCoupons() {
     const [editing, setEditing] = useState(null);
     const [form, setForm] = useState(EMPTY);
     const [saving, setSaving] = useState(false);
+    const [isViewOnly, setIsViewOnly] = useState(false);
     const [activeTab, setActiveTab] = useState('ALL'); // ALL, PUBLIC, PRIVATE
     
     const [showGiftModal, setShowGiftModal] = useState(false);
@@ -53,8 +55,9 @@ export default function AdminCoupons() {
 
     useEffect(() => { fetchCoupons(); }, [fetchCoupons]);
 
-    const openCreate = () => { setEditing(null); setForm(EMPTY); setShowModal(true); };
+    const openCreate = () => { setIsViewOnly(false); setEditing(null); setForm(EMPTY); setShowModal(true); };
     const openEdit = (c) => {
+        setIsViewOnly(false);
         setEditing(c);
         setForm({
             ...c,
@@ -68,6 +71,25 @@ export default function AdminCoupons() {
             isActive: c.isActive ?? c.is_active ?? true,
             isPrivate: c.isPrivate ?? c.is_private ?? false,
             recipientEmail: '' // Reset recipient email on edit
+        });
+        setShowModal(true);
+    };
+
+    const openView = (c) => {
+        setIsViewOnly(true);
+        setEditing(c);
+        setForm({
+            ...c,
+            code: c.code || '',
+            description: c.description || '',
+            discountPercent: c.discountPercent || 0,
+            maxDiscountAmount: c.maxDiscountAmount || null,
+            minOrderAmount: c.minOrderAmount || 0,
+            expiryDate: c.expiryDate || new Date().toISOString().split('T')[0],
+            usageLimit: c.usageLimit || null,
+            isActive: c.isActive ?? c.is_active ?? true,
+            isPrivate: c.isPrivate ?? c.is_private ?? false,
+            recipientEmail: '' 
         });
         setShowModal(true);
     };
@@ -229,7 +251,7 @@ export default function AdminCoupons() {
                                 ))
                             ) : filteredCoupons.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-20 text-center text-gray-400 font-black italic uppercase tracking-widest leading-loose">
+                                    <td colSpan={5} className="px-6 py-20 text-center text-gray-400 font-black uppercase tracking-widest leading-loose">
                                         Chưa có mã giảm giá nào thuộc mục này
                                     </td>
                                 </tr>
@@ -249,7 +271,7 @@ export default function AdminCoupons() {
                                                         <span className="px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase tracking-tighter">Công khai</span>
                                                     )}
                                                 </div>
-                                                <p className="text-[11px] text-gray-400 font-bold mt-1 line-clamp-1 italic">{c.description || 'Không có mô tả'}</p>
+                                                <p className="text-[11px] text-gray-400 font-bold mt-1 line-clamp-1">{c.description || 'Không có mô tả'}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -278,8 +300,8 @@ export default function AdminCoupons() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-center pr-8">
-                                        <div className="flex items-center justify-center gap-1.5">
-                                            {(c.isPrivate ?? c.is_private) && (
+                                        <div className="flex items-center justify-end gap-2 text-right">
+                                            {(c.isPrivate ?? c.is_private) ? (
                                                 <button 
                                                     onClick={() => { 
                                                         setGiftForm({ email: '', ...c, code: c.code }); 
@@ -290,7 +312,16 @@ export default function AdminCoupons() {
                                                 >
                                                     <EnvelopeIcon className="w-5 h-5" />
                                                 </button>
+                                            ) : (
+                                                <div className="w-9"></div> 
                                             )}
+                                            <button 
+                                                onClick={() => openView(c)} 
+                                                className="p-2 text-green-600 hover:bg-green-50 rounded-xl transition-all"
+                                                title="Xem chi tiết"
+                                            >
+                                                <InformationCircleIcon className="w-5 h-5" />
+                                            </button>
                                             <button 
                                                 onClick={() => openEdit(c)} 
                                                 className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
@@ -319,8 +350,8 @@ export default function AdminCoupons() {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 max-h-[90vh]">
                         <div className="flex items-center justify-between p-6 border-b border-gray-50 bg-gray-50/30">
                             <div>
-                                <h2 className="text-xl font-black text-gray-900 tracking-tight">{editing ? 'Chi tiết Voucher' : 'Tạo Voucher mới'}</h2>
-                                <p className="text-sm text-gray-500 font-medium font-vietnam">Cấu hình tham số cho chương trình khuyến mãi.</p>
+                                <h2 className="text-xl font-black text-gray-900 tracking-tight">{isViewOnly ? 'Thông tin Voucher' : editing ? 'Chỉnh sửa Voucher' : 'Tạo Voucher mới'}</h2>
+                                <p className="text-sm text-gray-500 font-medium font-vietnam">{isViewOnly ? 'Chi tiết thông số khuyến mãi.' : 'Cấu hình tham số cho chương trình khuyến mãi.'}</p>
                             </div>
                             <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all">
                                 <XMarkIcon className="w-6 h-6 stroke-[3]" />
@@ -336,7 +367,8 @@ export default function AdminCoupons() {
                                         required 
                                         value={form.code} 
                                         onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} 
-                                        className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-black text-sm text-gray-900 uppercase focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
+                                        disabled={isViewOnly}
+                                        className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-black text-sm text-gray-900 uppercase focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none disabled:opacity-75"
                                         placeholder="VÍ DỤ: GIAM50K"
                                     />
                             </div>
@@ -349,7 +381,8 @@ export default function AdminCoupons() {
                                     rows={2}
                                     value={form.description} 
                                     onChange={(e) => setForm({ ...form, description: e.target.value })} 
-                                    className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-bold text-sm text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none font-vietnam"
+                                    disabled={isViewOnly}
+                                    className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-bold text-sm text-gray-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none resize-none font-vietnam disabled:opacity-75"
                                     placeholder="Vd: Giảm 50% cho đơn hàng thực phẩm sạch đầu tiên..."
                                 />
                             </div>
@@ -359,9 +392,10 @@ export default function AdminCoupons() {
                                     <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1 font-vietnam">Phần trăm giảm (%)</label>
                                     <input 
                                         type="number" min="0" max="100" required 
-                                        value={form.discountPercent ?? 0} 
-                                        onChange={(e) => setForm({ ...form, discountPercent: Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })} 
-                                        className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-black text-sm text-gray-900 outline-none"
+                                        value={form.discountPercent ?? ''} 
+                                        onChange={(e) => setForm({ ...form, discountPercent: e.target.value })} 
+                                        disabled={isViewOnly}
+                                        className="w-full px-5 py-3.5 bg-gray-50 border-none rounded-xl font-black text-sm text-gray-900 outline-none disabled:opacity-75"
                                     />
                                 </div>
                                 <div className="space-y-3">
@@ -369,8 +403,9 @@ export default function AdminCoupons() {
                                     <input 
                                         type="number" min="0"
                                         value={form.maxDiscountAmount ?? ''} 
-                                        onChange={(e) => setForm({ ...form, maxDiscountAmount: e.target.value === '' ? null : Math.max(0, parseFloat(e.target.value)) })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 outline-none"
+                                        onChange={(e) => setForm({ ...form, maxDiscountAmount: e.target.value })} 
+                                        disabled={isViewOnly}
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 outline-none disabled:opacity-75"
                                         placeholder="Không giới hạn"
                                     />
                                 </div>
@@ -381,9 +416,10 @@ export default function AdminCoupons() {
                                     <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1 font-vietnam">Đơn tối thiểu (đ)</label>
                                     <input 
                                         type="number" min="0" required 
-                                        value={form.minOrderAmount ?? 0} 
-                                        onChange={(e) => setForm({ ...form, minOrderAmount: Math.max(0, parseFloat(e.target.value) || 0) })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 outline-none font-vietnam"
+                                        value={form.minOrderAmount ?? ''} 
+                                        onChange={(e) => setForm({ ...form, minOrderAmount: e.target.value })} 
+                                        disabled={isViewOnly}
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 outline-none font-vietnam disabled:opacity-75"
                                     />
                                 </div>
                                 <div className="space-y-3">
@@ -392,7 +428,8 @@ export default function AdminCoupons() {
                                         type="date" required 
                                         value={form.expiryDate} 
                                         onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 outline-none"
+                                        disabled={isViewOnly}
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 outline-none disabled:opacity-75"
                                     />
                                 </div>
                             </div>
@@ -404,7 +441,8 @@ export default function AdminCoupons() {
                                         type="number" min="1"
                                         value={form.usageLimit ?? ''} 
                                         onChange={(e) => setForm({ ...form, usageLimit: e.target.value === '' ? null : Math.max(1, parseInt(e.target.value)) })} 
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 outline-none font-vietnam"
+                                        disabled={isViewOnly}
+                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl font-black text-gray-900 outline-none font-vietnam disabled:opacity-75"
                                         placeholder="Vô hạn"
                                     />
                                 </div>
@@ -419,17 +457,17 @@ export default function AdminCoupons() {
                                         type="email"
                                         value={form.recipientEmail} 
                                         onChange={(e) => setForm({ ...form, recipientEmail: e.target.value })} 
-                                        className="w-full px-6 py-4 bg-white border-none rounded-2xl font-bold text-gray-900 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none font-vietnam"
+                                        disabled={isViewOnly}
+                                        className="w-full px-6 py-4 bg-white border-none rounded-2xl font-bold text-gray-900 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none font-vietnam disabled:opacity-75"
                                         placeholder="customer@example.com (Nếu muốn gửi ngay)"
                                     />
-                                    <p className="text-[10px] text-purple-400 font-bold px-2 uppercase tracking-wide">Để trống nếu bạn chỉ muốn tạo mã mà chưa gán cho ai.</p>
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-6">
                                 <div 
-                                    onClick={() => setForm({ ...form, isActive: !form.isActive })}
-                                    className={`p-4 rounded-3xl border flex items-center justify-between cursor-pointer transition-all ${form.isActive ? 'bg-emerald-50/50 border-emerald-100' : 'bg-gray-50 border-gray-100'}`}
+                                    onClick={() => !isViewOnly && setForm({ ...form, isActive: !form.isActive })}
+                                    className={`p-4 rounded-3xl border flex items-center justify-between transition-all ${form.isActive ? 'bg-emerald-50/50 border-emerald-100' : 'bg-gray-50 border-gray-100'} ${!isViewOnly ? 'cursor-pointer hover:shadow-md' : 'opacity-75'}`}
                                 >
                                     <div className="flex flex-col">
                                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Trạng thái</span>
@@ -441,10 +479,9 @@ export default function AdminCoupons() {
                                         <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.isActive ? 'left-5' : 'left-1'}`} />
                                     </div>
                                 </div>
-
                                 <div 
-                                    onClick={() => setForm({ ...form, isPrivate: !form.isPrivate })}
-                                    className={`p-4 rounded-3xl border flex items-center justify-between cursor-pointer transition-all ${form.isPrivate ? 'bg-purple-50/50 border-purple-100' : 'bg-gray-50 border-gray-100'}`}
+                                    onClick={() => !isViewOnly && setForm({ ...form, isPrivate: !form.isPrivate })}
+                                    className={`p-4 rounded-3xl border flex items-center justify-between transition-all ${form.isPrivate ? 'bg-purple-50/50 border-purple-100' : 'bg-gray-50 border-gray-100'} ${!isViewOnly ? 'cursor-pointer hover:shadow-md' : 'opacity-75'}`}
                                 >
                                     <div className="flex flex-col">
                                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Loại Voucher</span>
@@ -459,10 +496,12 @@ export default function AdminCoupons() {
                             </div>
 
                             <div className="flex gap-4 pt-4 sticky bottom-0 bg-white">
-                                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-8 py-5 bg-gray-100 rounded-3xl font-black text-gray-500 hover:bg-gray-200 transition-all font-vietnam">Hủy</button>
-                                <button type="submit" disabled={saving} className="flex-1 px-8 py-5 bg-emerald-600 text-white rounded-3xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 font-vietnam">
-                                    {saving ? 'Đang lưu...' : 'Lưu Voucher'}
-                                </button>
+                                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-8 py-5 bg-gray-100 rounded-3xl font-black text-gray-500 hover:bg-gray-200 transition-all font-vietnam">{isViewOnly ? 'Đóng' : 'Hủy'}</button>
+                                {!isViewOnly && (
+                                    <button type="submit" disabled={saving} className="flex-1 px-8 py-5 bg-emerald-600 text-white rounded-3xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 font-vietnam">
+                                        {saving ? 'Đang lưu...' : 'Lưu Voucher'}
+                                    </button>
+                                )}
                             </div>
                         </form>
                     </div>

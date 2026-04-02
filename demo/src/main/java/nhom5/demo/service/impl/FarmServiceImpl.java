@@ -12,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +24,17 @@ public class FarmServiceImpl implements FarmService {
 
     @Override
     @Transactional
-    public FarmResponse createFarm(FarmRequest request) {
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
+    public FarmResponse createFarm(@NonNull FarmRequest request) {
+        if (request.getCertificationExpiryDate() != null) {
+            if (request.getCertificationExpiryDate().getYear() > 2099) {
+                throw new nhom5.demo.exception.BusinessException("Năm hết hạn chứng nhận không hợp lệ (tối đa 2099)");
+            }
+            if (request.getCertificationExpiryDate().isBefore(java.time.LocalDate.now())) {
+                throw new nhom5.demo.exception.BusinessException("Chứng nhận đã hết hạn, không thể đăng ký");
+            }
+        }
+        
         Farm farm = Farm.builder()
                 .name(request.getName())
                 .address(request.getAddress())
@@ -39,12 +51,13 @@ public class FarmServiceImpl implements FarmService {
                 .longitude(request.getLongitude())
                 .isActive(true)
                 .build();
-        return toResponse(farmRepository.save(farm));
+        return toResponse(farmRepository.save(Objects.requireNonNull(farm)));
     }
 
     @Override
     @Transactional
-    public FarmResponse updateFarm(Long id, FarmRequest request) {
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
+    public FarmResponse updateFarm(@NonNull Long id, @NonNull FarmRequest request) {
         Farm farm = findById(id);
         farm.setName(request.getName());
         farm.setAddress(request.getAddress());
@@ -55,7 +68,12 @@ public class FarmServiceImpl implements FarmService {
         farm.setDescription(request.getDescription());
         farm.setCertification(request.getCertification());
         farm.setCertificationCode(request.getCertificationCode());
-        farm.setCertificationExpiryDate(request.getCertificationExpiryDate());
+        if (request.getCertificationExpiryDate() != null) {
+            if (request.getCertificationExpiryDate().getYear() > 2099) {
+                throw new nhom5.demo.exception.BusinessException("Năm hết hạn chứng nhận không hợp lệ (tối đa 2099)");
+            }
+            farm.setCertificationExpiryDate(request.getCertificationExpiryDate());
+        }
         farm.setImageUrl(request.getImageUrl());
         farm.setLatitude(request.getLatitude());
         farm.setLongitude(request.getLongitude());
@@ -66,7 +84,8 @@ public class FarmServiceImpl implements FarmService {
 
     @Override
     @Transactional
-    public void deleteFarm(Long id) {
+    @org.springframework.cache.annotation.CacheEvict(value = {"products", "product_detail"}, allEntries = true)
+    public void deleteFarm(@NonNull Long id) {
         if (!farmRepository.existsById(id)) {
             throw new ResourceNotFoundException("Farm", "id", id);
         }
@@ -75,31 +94,33 @@ public class FarmServiceImpl implements FarmService {
 
     @Override
     @Transactional(readOnly = true)
-    public FarmResponse getFarmById(Long id) {
-        return toResponse(findById(id));
+    public FarmResponse getFarmById(@NonNull Long id) {
+        return toResponse(Objects.requireNonNull(findById(id)));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<FarmResponse> getActiveFarms(Pageable pageable) {
+    public Page<FarmResponse> getActiveFarms(@NonNull Pageable pageable) {
         return farmRepository.findByIsActiveTrue(pageable).map(this::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<FarmResponse> searchFarms(String name, Pageable pageable) {
-        return farmRepository.findByNameContainingIgnoreCase(name, pageable).map(this::toResponse);
+    public Page<FarmResponse> searchFarms(String name, @NonNull Pageable pageable) {
+        return farmRepository.findByNameContainingIgnoreCase(name != null ? name : "", pageable)
+                .map(this::toResponse);
     }
 
-    private Farm findById(Long id) {
+    private Farm findById(@NonNull Long id) {
         return farmRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Farm", "id", id));
     }
 
-    private FarmResponse toResponse(Farm farm) {
-        long productCount = productRepository.countByFarmId(farm.getId());
+    private FarmResponse toResponse(@NonNull Farm farm) {
+        Long farmId = Objects.requireNonNull(farm.getId());
+        long productCount = productRepository.countByFarmId(farmId);
         return FarmResponse.builder()
-                .id(farm.getId())
+                .id(farmId)
                 .name(farm.getName())
                 .address(farm.getAddress())
                 .province(farm.getProvince())

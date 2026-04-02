@@ -14,6 +14,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Objects;
+
+/**
+ * REST CONTROLLER: DashboardController
+ * ---------------------------------------------------------
+ * Serves as the primary data source for the Admin Analytical Dashboard.
+ * Aggregates high-level business intelligence, including revenue, user growth, and order velocity.
+ * 
+ * Security: Strictly restricted to 'ADMIN' role.
+ */
 @Tag(name = "Dashboard", description = "Thống kê tổng quan dành cho Admin")
 @SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasRole('ADMIN')")
@@ -24,10 +34,14 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
 
+    /**
+     * getDashboard: Compiles a unified snapshot of the application's current health and performance metrics.
+     * Triggers analytical queries across order, product, and user repositories.
+     */
     @Operation(summary = "Lấy dữ liệu dashboard tổng quan")
     @GetMapping
     public ResponseEntity<ApiResponse<DashboardResponse>> getDashboard() {
-        DashboardResponse data = dashboardService.getDashboardData();
+        DashboardResponse data = Objects.requireNonNull(dashboardService.getDashboardData());
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 }

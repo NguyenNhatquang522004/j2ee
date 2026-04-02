@@ -28,4 +28,8 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
     List<Coupon> findByIsPrivateFalse();
 
     List<Coupon> findByAssignedUsersContaining(User user);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("UPDATE Coupon c SET c.isActive = false WHERE c.expiryDate < :now AND c.isActive = true")
+    int deactivateExpiredCoupons(@org.springframework.data.repository.query.Param("now") java.time.LocalDate now);
 }

@@ -26,9 +26,10 @@ public class SettingServiceImpl implements SettingService {
     }
 
     private static final Set<String> PUBLIC_KEYS = new HashSet<>(Arrays.asList(
-        "MAINTENANCE_MODE", "STORE_NAME", "CONTACT_EMAIL", 
-        "CONTACT_PHONE", "ADDRESS", "FB_LINK", 
-        "TWITTER_LINK", "INSTA_LINK", "YOUTUBE_LINK"
+        "MAINTENANCE_MODE", "STORE_NAME", "STORE_EMAIL", 
+        "STORE_PHONE", "STORE_ADDRESS", "COPYRIGHT_TEXT",
+        "FACEBOOK", "INSTAGRAM", "YOUTUBE", "TWITTER",
+        "SHIPPING_FEE", "FREE_SHIPPING_THRESHOLD", "TAX", "CURRENCY"
     ));
 
     @Override
@@ -48,6 +49,34 @@ public class SettingServiceImpl implements SettingService {
     @Override
     @Transactional
     public void updateSetting(String key, String value) {
+        // Basic validation for common numeric keys
+        if (key.endsWith("_AMOUNT") || key.endsWith("_THRESHOLD") || key.endsWith("_LIMIT") || 
+            key.endsWith("_PERCENT") || key.endsWith("_FEE") || key.equals("TAX") || key.startsWith("LOYALTY_")) {
+            try {
+                double val = Double.parseDouble(value);
+                if (val < 0) throw new nhom5.demo.exception.BusinessException("Giá trị cấu hình " + key + " không được âm");
+                
+                if ((key.endsWith("_PERCENT") || key.equals("TAX")) && val > 100) {
+                    throw new nhom5.demo.exception.BusinessException("Giá trị " + key + " không được vượt quá 100%");
+                }
+                
+                if (key.equals("LOYALTY_RATIO") && val <= 0) {
+                    throw new nhom5.demo.exception.BusinessException("Tỉ giá tích điểm (LOYALTY_RATIO) phải lớn hơn 0");
+                }
+            } catch (NumberFormatException e) {
+                if (!key.equals("CURRENCY")) { // Currency is text
+                    throw new nhom5.demo.exception.BusinessException("Giá trị cấu hình " + key + " phải là một số hợp lệ");
+                }
+            }
+        }
+        
+        // Basic validation for boolean keys
+        if (key.equals("MAINTENANCE_MODE") || key.startsWith("ENABLE_")) {
+            if (!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) {
+                throw new nhom5.demo.exception.BusinessException("Giá trị cấu hình " + key + " phải là 'true' hoặc 'false'");
+            }
+        }
+
         SystemSetting setting = repository.findBySettingKey(key)
                 .orElse(SystemSetting.builder().settingKey(key).build());
         setting.setSettingValue(value);

@@ -18,6 +18,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Objects;
+
+/**
+ * REST CONTROLLER: ProductController
+ * ---------------------------------------------------------
+ * Manages the full lifecycle of FreshFood products.
+ * Handles search, public catalog viewing (by ID or Slug), and administrative CRUD operations.
+ */
 @Tag(name = "Products", description = "Quản lý sản phẩm thực phẩm sạch")
 @RestController
 @RequestMapping(AppConstants.PRODUCT_PATH)
@@ -42,8 +50,6 @@ public class ProductController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String direction) {
         
-        // Nếu không truyền isActive, mặc định khách thường chỉ xem sản phẩm ACTIVE
-        // Admin xem được tất cả (isActive = null)
         Boolean finalIsActive = isActive;
         if (isActive == null) {
             boolean isAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null &&
@@ -56,7 +62,6 @@ public class ProductController {
 
         Sort sort;
         if (sortBy.equals("id") || sortBy.equals("createdAt")) {
-            // Đối với 'Mới nhất', ưu tiên hàng có nhãn isNew=true rồi mới đến ID/Date
             sort = Sort.by(Sort.Order.desc("isNew"), Sort.Order.desc(sortBy));
         } else {
             sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
@@ -77,10 +82,18 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(data)));
     }
 
-    @Operation(summary = "Chi tiết sản phẩm (public)")
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductResponse>> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(productService.getProductById(id)));
+    /**
+     * getProduct: Unified entry point for finding products by ID OR Slug.
+     * Disambiguates based on numeric vs. alpha-numeric format.
+     */
+    @Operation(summary = "Chi tiết sản phẩm (theo ID hoặc Slug)")
+    @GetMapping("/{identifier}")
+    public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable String identifier) {
+        if (identifier.matches("\\d+")) {
+            return ResponseEntity.ok(ApiResponse.success(productService.getProductById(Long.parseLong(identifier))));
+        } else {
+            return ResponseEntity.ok(ApiResponse.success(productService.getProductBySlug(identifier)));
+        }
     }
 
     @Operation(summary = "Tạo sản phẩm mới (Admin)")
@@ -89,7 +102,7 @@ public class ProductController {
     @PostMapping
     public ResponseEntity<ApiResponse<ProductResponse>> create(
             @Valid @RequestBody ProductRequest request) {
-        ProductResponse data = productService.createProduct(request);
+        ProductResponse data = productService.createProduct(Objects.requireNonNull(request));
         return ResponseEntity.status(201).body(ApiResponse.created(data));
     }
 
@@ -100,7 +113,7 @@ public class ProductController {
     public ResponseEntity<ApiResponse<ProductResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody ProductRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(productService.updateProduct(id, request)));
+        return ResponseEntity.ok(ApiResponse.success(productService.updateProduct(Objects.requireNonNull(id), Objects.requireNonNull(request))));
     }
 
     @Operation(summary = "Xoá sản phẩm (Admin)")
@@ -108,7 +121,7 @@ public class ProductController {
     @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:products')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
-        productService.deleteProduct(id);
+        productService.deleteProduct(Objects.requireNonNull(id));
         return ResponseEntity.ok(ApiResponse.success("Xoá sản phẩm thành công", null));
     }
 
@@ -117,7 +130,7 @@ public class ProductController {
     @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:products')")
     @PatchMapping("/{id}/toggle-status")
     public ResponseEntity<ApiResponse<Void>> toggleStatus(@PathVariable Long id) {
-        productService.toggleProductStatus(id);
+        productService.toggleProductStatus(Objects.requireNonNull(id));
         return ResponseEntity.ok(ApiResponse.success("Đã cập nhật trạng thái sản phẩm", null));
     }
 }

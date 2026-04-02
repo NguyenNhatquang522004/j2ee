@@ -1,0 +1,15 @@
+<div th:fragment="content">
+    <h2 style="color: #1a3c31; font-size: 24px; margin-bottom: 20px;">Thông báo Cập nhật Đơn hàng</h2>
+    <p>Chào <strong><span th:text="${customerName}">Quý khách</span></strong>,</p>
+    <p>Đơn hàng mã số <strong th:text="${orderCode}" style="color: #065f46;">#ORD-XXXX</strong> của bạn vừa có một sự thay đổi trạng thái mới.</p>
+    
+    <div style="background-color: #f0fdf4; border-left: 5px solid #10b981; padding: 20px; font-size: 18px; font-weight: bold; color: #064e3b; margin: 25px 0;">
+        Trạng thái hiện tại: <span th:text="${status}">GIAO HÀNG THÀNH CÔNG</span>
+    </div>
+    
+    <p>Bạn có thể theo dõi hành trình chi tiết của đơn hàng tại trang quản lý đơn hàng bên dưới.</p>
+    <a th:href="${frontendUrl} + '/orders/code/' + ${orderCode}" class="btn">Xem chi tiết đơn hàng</a>
+    
+    <div class="divider"></div>
+    <p style="font-size: 14px; color: #6b7280; font-style: italic;">Cảm ơn bạn đã lựa chọn thực phẩm sạch FreshFood!</p>
+</div>

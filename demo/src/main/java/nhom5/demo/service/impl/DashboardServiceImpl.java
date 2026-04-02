@@ -54,6 +54,7 @@ public class DashboardServiceImpl implements DashboardService {
         // Revenue
         BigDecimal revenueToday = orderRepository.sumRevenueByDateRange(startOfToday, endOfToday);
         BigDecimal revenueThisMonth = orderRepository.sumRevenueByDateRange(startOfMonth, endOfToday);
+        BigDecimal totalRevenue = orderRepository.sumTotalRevenue();
 
         // Orders by status
         List<Object[]> statusCounts = orderRepository.countGroupByStatus();
@@ -78,10 +79,10 @@ public class DashboardServiceImpl implements DashboardService {
                     .build());
         }
 
-        // Revenue chart for last 7 days
+        // Revenue chart for last 10 days
         List<DashboardResponse.RevenueChartData> revenueChart = new ArrayList<>();
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        for (int i = 6; i >= 0; i--) {
+        for (int i = 9; i >= 0; i--) {
             LocalDate date = today.minusDays(i);
             LocalDateTime start = date.atStartOfDay();
             LocalDateTime end = date.atTime(23, 59, 59);
@@ -102,6 +103,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .totalSubscribers(totalSubscribers)
                 .revenueToday(revenueToday != null ? revenueToday : BigDecimal.ZERO)
                 .revenueThisMonth(revenueThisMonth != null ? revenueThisMonth : BigDecimal.ZERO)
+                .totalRevenue(totalRevenue != null ? totalRevenue : BigDecimal.ZERO)
                 .ordersByStatus(ordersByStatus)
                 .nearExpiryBatches(nearExpiryBatches)
                 .topSellingProducts(topSellingProducts)

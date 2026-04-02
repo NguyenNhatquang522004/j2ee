@@ -14,6 +14,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Objects;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -50,8 +52,8 @@ public class AiServiceImpl implements AiService {
             
             // Thực hiện POST hình ảnh sang Server Python AI
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                    aiApiUrl,
-                    HttpMethod.POST,
+                    Objects.requireNonNull(aiApiUrl),
+                    Objects.requireNonNull(HttpMethod.POST),
                     requestEntity,
                     new ParameterizedTypeReference<Map<String, Object>>() {}
             );
@@ -59,7 +61,7 @@ public class AiServiceImpl implements AiService {
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 log.info("AI service response body: {}", response.getBody());
-                Map<String, Object> result = response.getBody();
+                Map<String, Object> result = Objects.requireNonNull(response.getBody());
                 String label = String.valueOf(result.getOrDefault("label", "UNKNOWN"));
                 double confidence = result.containsKey("confidence")
                         ? Double.parseDouble(String.valueOf(result.get("confidence")))

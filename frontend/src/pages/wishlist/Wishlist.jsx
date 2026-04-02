@@ -75,7 +75,7 @@ export default function Wishlist() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                         {items.map((product) => (
                             <div key={product.id} className="group bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 relative">
-                                <Link to={`/products/${product.id}`} className="block relative aspect-square overflow-hidden bg-gray-50">
+                                <Link to={`/products/${product.slug}`} className="block relative aspect-square overflow-hidden bg-gray-50">
                                     {product.imageUrl ? (
                                         <img 
                                             src={product.imageUrl} 
@@ -90,7 +90,7 @@ export default function Wishlist() {
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
                                     <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 transition-transform group-hover:translate-x-1 duration-500">
                                         {product.isNew && (
-                                            <span className="bg-black text-white text-[9px] font-black px-3 py-1.5 rounded-xl shadow-xl uppercase tracking-widest border border-white/20">Mới</span>
+                                            <span className="bg-green-600 text-white text-[9px] font-black px-3 py-1.5 rounded-xl shadow-xl uppercase tracking-widest border border-white/20">Mới</span>
                                         )}
                                         {product.flashSalePrice ? (
                                             <span className="bg-red-600 text-white text-[9px] font-black px-3 py-1.5 rounded-xl shadow-xl uppercase tracking-widest border border-white/20 animate-pulse flex items-center gap-1">
@@ -118,7 +118,7 @@ export default function Wishlist() {
                                         <span className="w-1 h-1 rounded-full bg-green-500"></span>
                                         {product.farmName || 'Trang trại hữu cơ'}
                                     </div>
-                                    <Link to={`/products/${product.id}`} className="block mb-4">
+                                    <Link to={`/products/${product.slug}`} className="block mb-4">
                                         <h3 className="text-lg font-bold text-gray-800 hover:text-green-600 transition-colors line-clamp-1 uppercase tracking-tight">{product.name}</h3>
                                         <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest mb-2">{product.categoryName || 'Sản phẩm'}</p>
                                         <div className="flex items-center gap-2">
@@ -165,7 +165,7 @@ export default function Wishlist() {
                                                  )}
                                              </div>
                                          </div>
-                                        <Link to={`/products/${product.id}`} className="w-10 h-10 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center hover:bg-green-600 hover:text-white transition-all duration-300">
+                                        <Link to={`/products/${product.slug}`} className="w-10 h-10 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center hover:bg-green-600 hover:text-white transition-all duration-300">
                                             <ArrowRightIcon className="w-5 h-5" />
                                         </Link>
                                     </div>
