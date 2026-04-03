@@ -57,8 +57,7 @@ public class User {
     @Column(name = "full_name", nullable = false, length = 50)
     private String fullName;
 
-    @NotBlank
-    @Column(name = "phone", unique = true, nullable = false, length = 15)
+    @Column(name = "phone", unique = true, nullable = true, length = 15)
     private String phone;
 
 

@@ -23,6 +23,7 @@ import nhom5.demo.security.RateLimitFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 
 /**
@@ -116,22 +117,31 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/payment/**").authenticated()
                         .requestMatchers("/api/v1/ai/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/farms/**", "/api/v1/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/flash-sales/active", "/api/v1/flash-sales/upcoming").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/settings/public").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/newsletters/subscribe", "/api/v1/contacts").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/api/v1/dashboard/**").hasAuthority("view:reports")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/farms/**", "/api/v1/coupons/**").hasAnyAuthority("ROLE_ADMIN", "manage:products", "manage:categories", "manage:farms")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/farms/**", "/api/v1/coupons/**").hasAnyAuthority("ROLE_ADMIN", "manage:products", "manage:categories", "manage:farms")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/farms/**", "/api/v1/coupons/**").hasAnyAuthority("ROLE_ADMIN", "manage:products", "manage:categories", "manage:farms")
+                        .requestMatchers("/api/v1/dashboard/**").hasAnyAuthority("ROLE_ADMIN", "view:dashboard", "manage:dashboard", "view:reports")
+                        .requestMatchers("/api/v1/products/**", "/api/v1/categories/**", "/api/v1/farms/**", "/api/v1/coupons/**").authenticated()
                         .requestMatchers("/api/v1/batches/**").hasAnyAuthority("ROLE_ADMIN", "manage:batches", "view:batches")
+                        .requestMatchers("/api/v1/orders/**").authenticated()
+                        .requestMatchers("/api/v1/newsletters/all", "/api/v1/newsletters/send").hasAnyAuthority("ROLE_ADMIN", "manage:newsletters")
                         .requestMatchers("/api/v1/users/me").authenticated()
-                        .requestMatchers("/api/v1/users/**").hasAuthority("manage:users")
+                        .requestMatchers("/api/v1/users/**").hasAnyAuthority("ROLE_ADMIN", "manage:users")
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(jwtAuthenticationFilter, RateLimitFilter.class)
                 .addFilterAfter(adminIpWhitelistFilter, JwtAuthenticationFilter.class)
-                .addFilterAfter(maintenanceFilter, AdminIpWhitelistFilter.class);
+                .addFilterAfter(maintenanceFilter, AdminIpWhitelistFilter.class)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"success\": false, \"message\": \"Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.\"}");
+                        })
+                );
 
         return http.build();
     }

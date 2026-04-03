@@ -53,9 +53,13 @@ Sử dụng Redis Sorted Sets để triển khai thuật toán **Sliding Window 
 
 ## 🔐 6. Bảo mật 2 lớp (2FA) & Kiểm soát Truy cập (Access Control)
 - **Đa phương thức**: Hỗ trợ Google Authenticator (TOTP) và Email OTP.
-- **RBAC (Role-Based Access Control)**: Phân quyền theo vai trò (Admin, User, Staff) và **Granular Permissions** chi tiết.
-- **Chính sách Khóa tài khoản (Account Lockout)**: Tự động khóa tài khoản trong 30 phút sau 5 lần đăng nhập sai liên tiếp.
+- **RBAC (Role-Based Access Control) & Granular Permissions (v3.5)**: 
+    - **Authority Escalation**: Chuyển đổi toàn bộ logic bảo mật từ `hasRole` sang `hasAnyAuthority` tại Controller layer, hỗ trợ nhân viên (Staff) với các quyền hạn cụ thể (`view:*` và `manage:*`).
+    - **View Mode (Read-only)**: Nhân viên có quyền `view:categories`, `view:products` có thể truy xuất dữ liệu nhưng bị chặn hoàn toàn các hành động can thiệp dữ liệu (`POST`, `PUT`, `DELETE`).
+    - **Manage Mode (Full Access)**: Chỉ những nhân viên có quyền `manage:*` mới có thể truy cập các tính năng ghi dữ liệu.
+    - **Admin Context Filter**: Hệ thống Frontend tự động lọc Sidebar và ẩn các nút thao tác thông qua `AuthContext.hasPermission`.
 - **Admin IP Whitelisting (V3.1 & Hardened)**: Chỉ cho phép truy cập quyền quản trị từ các địa chỉ IP cụ thể. Hệ thống đã được hợp nhất bộ lọc vào `AdminIpWhitelistFilter`, sử dụng Key cấu hình `ADMIN_IP_WHITELIST` (Viết HOA) đồng bộ với cơ sở dữ liệu. Hỗ trợ Header `X-Forwarded-For` để xác định chính xác IP ngay cả sau Proxy/Docker.
+- **Admin Route Hardening**: Mọi tuyến đường `/admin/**` trong `App.jsx` đều được bảo vệ bởi `AdminRoute` với tham số `permission` bắt buộc, ngăn chặn truy cập URL trực tiếp.
 - **AI Analysis Access Control**: API `/api/v1/ai/**` yêu cầu xác thực người dùng, ngăn chặn việc lạm dụng tài nguyên AI công cộng.
 
 ---

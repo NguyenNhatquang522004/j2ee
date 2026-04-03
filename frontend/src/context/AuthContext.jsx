@@ -59,7 +59,8 @@ export function AuthProvider({ children }) {
 
     const hasPermission = (permission) => {
         if (isAdmin) return true;
-        return user?.permissions?.includes(permission);
+        if (!user?.permissions || !Array.isArray(user.permissions)) return false;
+        return user.permissions.includes(permission);
     };
 
     return (

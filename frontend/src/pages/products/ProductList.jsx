@@ -131,7 +131,9 @@ export default function ProductList() {
         <Layout>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-12">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2 uppercase">Cửa hàng</h1>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2 uppercase">
+                        {keyword ? `Kết quả: ${keyword}` : 'Cửa hàng'}
+                    </h1>
                     <div className="flex items-center gap-2">
                         <span className="w-8 h-1 bg-green-600 rounded-full"></span>
                         <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">
@@ -147,11 +149,26 @@ export default function ProductList() {
                             value={searchTerm} 
                             onChange={(e) => handleSearch(e.target.value)}
                             placeholder="Tìm kiếm sản phẩm..." 
-                            className="w-[300px] pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all shadow-sm font-medium" 
+                            className="w-[300px] pl-12 pr-10 py-3 bg-white border border-gray-100 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all shadow-sm font-medium" 
                         />
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors">
                             <ShoppingBagIcon className="w-5 h-5" />
                         </div>
+                        {searchTerm && (
+                            <button 
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    const newParams = { ...Object.fromEntries(searchParams) };
+                                    delete newParams.keyword;
+                                    setSearchParams(newParams);
+                                }}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors p-1"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
 
                     <div className="w-56">
@@ -441,9 +458,18 @@ function ProductCard({ product }) {
 
                 <button 
                     onClick={toggleWishlist}
-                    className={`absolute top-2 right-2 sm:top-4 sm:right-4 w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 ${isLiked ? 'bg-white text-red-500' : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500'}`}
+                    className={`absolute top-2 right-2 sm:top-14 sm:right-4 w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 ${isLiked ? 'bg-white text-red-500' : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500'}`}
+                    title={isLiked ? "Xoá khỏi yêu thích" : "Thêm vào yêu thích"}
                 >
                     {isLiked ? <HeartIconSolid className="w-3 h-3 sm:w-5 sm:h-5 transition-transform active:scale-110" /> : <HeartIcon className="w-3 h-3 sm:w-5 sm:h-5 transition-transform active:scale-110" />}
+                </button>
+
+                <button 
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCompare(product); }}
+                    className="absolute top-2 right-2 sm:top-4 sm:right-4 w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl bg-white/80 backdrop-blur-sm text-gray-400 hover:text-blue-500 shadow-lg transition-all z-10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100"
+                    title="So sánh giá"
+                >
+                    <ArrowsRightLeftIcon className="w-3 h-3 sm:w-5 sm:h-5 transition-transform active:scale-110" />
                 </button>
             </Link>
             

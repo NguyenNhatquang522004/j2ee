@@ -38,6 +38,7 @@ public class CouponController {
      * getAllCoupons: Returns all vouchers available in the system catalog.
      */
     @Operation(summary = "Tất cả mã giảm giá")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'view:coupons', 'manage:coupons')")
     @GetMapping
     public ResponseEntity<ApiResponse<List<Coupon>>> getAllCoupons() {
         return ResponseEntity.ok(ApiResponse.success(couponService.getAllCoupons()));
@@ -47,7 +48,7 @@ public class CouponController {
      * getCoupon: Detailed metadata for a specific voucher (Admin specific).
      */
     @Operation(summary = "Chi tiết mã giảm giá (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'view:coupons', 'manage:coupons')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Coupon>> getCoupon(@PathVariable @NonNull Long id) {
         return ResponseEntity.ok(ApiResponse.success(couponService.getCouponById(Objects.requireNonNull(id))));
@@ -57,7 +58,7 @@ public class CouponController {
      * createCoupon: Administrative creation of new marketing codes.
      */
     @Operation(summary = "Tạo mã giảm giá mới (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:coupons')")
     @PostMapping
     public ResponseEntity<ApiResponse<Coupon>> createCoupon(@Valid @RequestBody @NonNull Coupon coupon) {
         return ResponseEntity.status(201).body(ApiResponse.created(couponService.createCoupon(Objects.requireNonNull(coupon))));
@@ -67,7 +68,7 @@ public class CouponController {
      * updateCoupon: Modifies specific parameters like usage limits or discount value.
      */
     @Operation(summary = "Cập nhật mã giảm giá (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:coupons')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Coupon>> updateCoupon(@PathVariable @NonNull Long id, @Valid @RequestBody @NonNull Coupon coupon) {
         return ResponseEntity.ok(ApiResponse.success(couponService.updateCoupon(Objects.requireNonNull(id), Objects.requireNonNull(coupon))));
@@ -77,7 +78,7 @@ public class CouponController {
      * deleteCoupon: Permanent removal of a promotional code.
      */
     @Operation(summary = "Xóa mã giảm giá (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:coupons')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteCoupon(@PathVariable @NonNull Long id) {
         couponService.deleteCoupon(Objects.requireNonNull(id));
@@ -89,7 +90,7 @@ public class CouponController {
      * Uses internal ObjectMapper to deserialize complex gift structures.
      */
     @Operation(summary = "Tặng mã giảm giá cho người dùng (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:coupons')")
     @PostMapping("/send-personal-gift")
     public ResponseEntity<ApiResponse<Void>> giftCoupon(@RequestBody @NonNull Map<String, Object> body) {
         String email = Objects.requireNonNull((String) body.get("email"));

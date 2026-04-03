@@ -33,13 +33,24 @@ const ALL_PERMISSIONS = [
     { key: 'manage:reviews', name: 'Quản lý đánh giá', group: 'Hệ thống' },
     { key: 'view:reports', name: 'Xem báo cáo', group: 'Báo cáo' },
     { key: 'manage:newsletters', name: 'Quản lý bản tin', group: 'Bản tin' },
+    { key: 'manage:promotions', name: 'Quản lý khuyến mãi', group: 'Hệ thống' },
+    { key: 'manage:settings', name: 'Cài đặt hệ thống', group: 'Hệ thống' },
 ];
 
 const ROLES = [
     { 
         value: 'ROLE_ADMIN', 
         name: 'Quản trị viên',
-        permissions: ["view:products", "manage:products", "manage:categories", "manage:farms", "manage:orders", "manage:users", "manage:batches", "manage:reviews", "view:reports", "manage:newsletters"]
+        permissions: [
+            "view:products", "manage:products", 
+            "view:categories", "manage:categories", 
+            "view:batches", "manage:batches", 
+            "view:farms", "manage:farms", 
+            "manage:orders", "manage:refunds", 
+            "manage:users", "manage:reviews", 
+            "view:reports", "manage:newsletters",
+            "manage:promotions", "manage:settings"
+        ]
     },
     { 
         value: 'ROLE_STAFF', 
@@ -50,7 +61,7 @@ const ROLES = [
 
 export default function AdminStaff() {
     const { confirm } = useConfirm();
-    const { hasPermission } = useAuth();
+    const { hasPermission, isAdmin } = useAuth();
     const [staff, setStaff] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -65,7 +76,7 @@ export default function AdminStaff() {
         fullName: '',
         phone: '',
         role: 'ROLE_STAFF',
-        customPermissions: [],
+        customPermissions: ROLES.find(r => r.value === 'ROLE_STAFF')?.permissions || [],
         isActive: true
     });
 
@@ -94,7 +105,7 @@ export default function AdminStaff() {
             fullName: '',
             phone: '',
             role: 'ROLE_STAFF',
-            customPermissions: [],
+            customPermissions: ROLES.find(r => r.value === 'ROLE_STAFF')?.permissions || [],
             isActive: true
         });
         setSelectedUser(null);
@@ -103,8 +114,10 @@ export default function AdminStaff() {
     const handleEdit = (user) => {
         setSelectedUser(user);
         setFormData({
-            fullName: user.fullName || '',
+            username: user.username || '',
             email: user.email || '',
+            password: '', // Password stays empty on edit
+            fullName: user.fullName || '',
             phone: user.phone || '',
             role: user.role,
             customPermissions: user.customPermissions || [],
@@ -213,6 +226,7 @@ export default function AdminStaff() {
         if (!search) return true;
         return (u.fullName || '').toLowerCase().includes(search) ||
                (u.username || '').toLowerCase().includes(search) ||
+               (u.phone || '').includes(search) ||
                (u.email || '').toLowerCase().includes(search);
     });
 
@@ -311,12 +325,13 @@ export default function AdminStaff() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <button 
-                                                    onClick={() => handleToggleStatus(user)}
+                                                    onClick={() => user.role !== 'ROLE_ADMIN' && handleToggleStatus(user)}
+                                                    disabled={user.role === 'ROLE_ADMIN'}
                                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all whitespace-nowrap ${
                                                         user.isActive !== false 
                                                         ? 'bg-green-100 text-green-700 hover:bg-green-200' 
                                                         : 'bg-red-100 text-red-700 hover:bg-red-200 animate-pulse'
-                                                    }`}
+                                                    } ${user.role === 'ROLE_ADMIN' ? 'cursor-default opacity-90' : 'cursor-pointer'}`}
                                                 >
                                                     {user.isActive !== false ? <CheckCircleIcon className="w-4 h-4" /> : <XCircleIcon className="w-4 h-4" />}
                                                     {user.isActive !== false ? 'ACTIVE' : 'LOCKED'}
@@ -338,13 +353,15 @@ export default function AdminStaff() {
                                                     >
                                                         <PencilSquareIcon className="w-5 h-5" />
                                                     </button>
-                                                    <button 
-                                                        onClick={() => handleDelete(user)}
-                                                        className="p-2 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                                        title="Xoá"
-                                                    >
-                                                        <TrashIcon className="w-5 h-5" />
-                                                    </button>
+                                                    {user.role !== 'ROLE_ADMIN' && (
+                                                        <button 
+                                                            onClick={() => handleDelete(user)}
+                                                            className="p-2 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                                            title="Xoá"
+                                                        >
+                                                            <TrashIcon className="w-5 h-5" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -521,9 +538,17 @@ export default function AdminStaff() {
                                         name="role"
                                         className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none appearance-none"
                                         value={formData.role}
-                                        onChange={(e) => setFormData({...formData, role: e.target.value})}
+                                        onChange={(e) => {
+                                            const newRole = e.target.value;
+                                            const roleDefaults = ROLES.find(r => r.value === newRole)?.permissions || [];
+                                            setFormData({
+                                                ...formData, 
+                                                role: newRole,
+                                                customPermissions: roleDefaults // Template logic for new staff
+                                            });
+                                        }}
                                     >
-                                        {ROLES.map(r => <option key={r.value} value={r.value}>{r.name}</option>)}
+                                        {ROLES.filter(r => r.value !== 'ROLE_ADMIN').map(r => <option key={r.value} value={r.value}>{r.name}</option>)}
                                     </select>
                                 </div>
                             </div>
@@ -608,7 +633,15 @@ export default function AdminStaff() {
                                         name="role"
                                         className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none appearance-none"
                                         value={formData.role}
-                                        onChange={(e) => setFormData({...formData, role: e.target.value})}
+                                        onChange={(e) => {
+                                            const newRole = e.target.value;
+                                            const roleDefaults = ROLES.find(r => r.value === newRole)?.permissions || [];
+                                            setFormData({
+                                                ...formData, 
+                                                role: newRole,
+                                                customPermissions: roleDefaults // Suggest perms based on template
+                                            });
+                                        }}
                                     >
                                         {ROLES.map(r => <option key={r.value} value={r.value}>{r.name}</option>)}
                                     </select>
@@ -628,25 +661,23 @@ export default function AdminStaff() {
                                                 <h4 className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-5">{group}</h4>
                                                 <div className="space-y-4">
                                                     {perms.map(p => {
-                                                        const currentRole = ROLES.find(r => r.value === formData.role);
-                                                        const isInherited = currentRole?.permissions?.includes(p.key);
-                                                        const isChecked = isInherited || formData.customPermissions.includes(p.key);
+                                                        const isRoleDefault = ROLES.find(r => r.value === formData.role)?.permissions?.includes(p.key);
+                                                        const isChecked = formData.customPermissions.includes(p.key);
                                                         
                                                         return (
-                                                            <label key={p.key} className={`flex items-center gap-3 group ${isInherited ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}>
+                                                            <label key={p.key} className="flex items-center gap-3 group cursor-pointer">
                                                                 <input 
                                                                     type="checkbox"
-                                                                    className={`w-5 h-5 rounded-lg border-gray-200 text-green-600 focus:ring-green-500/20 transition-all ${isInherited ? 'bg-gray-100' : 'cursor-pointer'}`}
+                                                                    className="w-5 h-5 rounded-lg border-gray-200 text-green-600 focus:ring-green-500/20 transition-all cursor-pointer"
                                                                     checked={!!isChecked}
-                                                                    disabled={isInherited}
-                                                                    onChange={() => !isInherited && handleTogglePermission(p.key)}
+                                                                    onChange={() => handleTogglePermission(p.key)}
                                                                 />
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-sm font-semibold text-gray-600 group-hover:text-gray-900 transition-colors">
+                                                                    <span className={`text-sm font-semibold transition-colors ${isChecked ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-600'}`}>
                                                                         {p.name}
                                                                     </span>
-                                                                    {isInherited && (
-                                                                        <span className="text-[9px] text-green-500 font-bold uppercase tracking-tighter">Từ vai trò</span>
+                                                                    {isRoleDefault && (
+                                                                        <span className="text-[9px] text-green-500 font-bold uppercase tracking-tighter opacity-60">Nên có cho {ROLES.find(r => r.value === formData.role)?.name}</span>
                                                                     )}
                                                                 </div>
                                                             </label>
@@ -659,21 +690,23 @@ export default function AdminStaff() {
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-between p-8 bg-gray-50 rounded-[28px] mb-12 border border-gray-100">
-                                <div>
-                                    <div className="font-bold text-lg text-gray-900">Trạng thái tài khoản</div>
-                                    <div className="text-xs text-gray-500 font-medium">Khóa tài khoản nếu nhân viên nghỉ việc hoặc có dấu hiệu bất thường</div>
+                            {formData.role === 'ROLE_STAFF' && (
+                                <div className="flex items-center justify-between p-8 bg-gray-50 rounded-[28px] mb-12 border border-gray-100">
+                                    <div>
+                                        <div className="font-bold text-lg text-gray-900">Trạng thái tài khoản</div>
+                                        <div className="text-xs text-gray-500 font-medium">Khóa tài khoản nếu nhân viên nghỉ việc hoặc có dấu hiệu bất thường</div>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer scale-110">
+                                        <input 
+                                            type="checkbox" 
+                                            className="sr-only peer"
+                                            checked={formData.isActive}
+                                            onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
+                                        />
+                                        <div className="w-14 h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
+                                    </label>
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer scale-110">
-                                    <input 
-                                        type="checkbox" 
-                                        className="sr-only peer"
-                                        checked={formData.isActive}
-                                        onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-                                    />
-                                    <div className="w-14 h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
-                                </label>
-                            </div>
+                            )}
 
                             <div className="flex gap-4">
                                 <button 

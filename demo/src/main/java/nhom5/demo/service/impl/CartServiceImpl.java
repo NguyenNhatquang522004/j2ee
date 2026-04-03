@@ -78,12 +78,18 @@ public class CartServiceImpl implements CartService {
 
         if (existingItem != null) {
             int newQty = existingItem.getQuantity() + request.getQuantity();
+            if (newQty > 10) {
+                throw new BusinessException("Mỗi sản phẩm chỉ được mua tối đa 10 đơn vị để đảm bảo sản phẩm có thể đến tay nhiều khách hàng nhất");
+            }
             if (newQty > availableStock) {
                 throw new BusinessException("Tổng số lượng vượt quá tồn kho: " + availableStock);
             }
             existingItem.setQuantity(newQty);
             cartItemRepository.save(existingItem);
         } else {
+            if (request.getQuantity() > 10) {
+                throw new BusinessException("Mỗi sản phẩm chỉ được mua tối đa 10 đơn vị để đảm bảo sản phẩm có thể đến tay nhiều khách hàng nhất");
+            }
             CartItem cartItem = CartItem.builder()
                     .cart(cart)
                     .product(product)
@@ -109,6 +115,8 @@ public class CartServiceImpl implements CartService {
 
         if (quantity <= 0) {
             cartItemRepository.delete(item);
+        } else if (quantity > 10) {
+            throw new BusinessException("Rất tiếc, mỗi sản phẩm chỉ được mua tối đa 10 đơn vị để phục vụ được nhiều khách hàng hơn");
         } else {
             boolean active = item.getProduct().getIsActive() == null || item.getProduct().getIsActive();
             if (!active) {

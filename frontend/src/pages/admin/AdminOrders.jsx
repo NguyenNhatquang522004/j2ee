@@ -32,7 +32,7 @@ const STATUS_CONFIG = {
     CONFIRMED: { label: 'Đã xác nhận', cls: 'bg-blue-100 text-blue-700 border-blue-200' },
     PACKAGING: { label: 'Đang đóng gói', cls: 'bg-purple-100 text-purple-700 border-purple-200' },
     SHIPPING: { label: 'Đang giao', cls: 'bg-orange-100 text-orange-700 border-orange-200' },
-    DELIVERED: { label: 'Đã giao', color: 'bg-green-100 text-green-700 border-green-200' },
+    DELIVERED: { label: 'Đã giao', cls: 'bg-green-100 text-green-700 border-green-200' },
     RETURN_REQUESTED: { label: 'Yêu cầu trả hàng', cls: 'bg-orange-100 text-orange-700 border-orange-200' },
     RETURNED: { label: 'Đã trả hàng', cls: 'bg-gray-100 text-gray-700 border-gray-200' },
     RETURN_REJECTED: { label: 'Từ chối trả hàng', cls: 'bg-red-100 text-red-700 border-red-200' },
@@ -63,6 +63,13 @@ export default function AdminOrders() {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedSearch(search), 500);
+        return () => clearTimeout(handler);
+    }, [search]);
+
     const [statusFilter, setStatusFilter] = useState(initialStatus);
     const [sortBy, setSortBy] = useState('createdAt');
     const [direction, setDirection] = useState('desc');
@@ -105,8 +112,8 @@ export default function AdminOrders() {
 
     // Reactive fetching
     useEffect(() => { 
-        fetchOrders(page, search, statusFilter, sortBy, direction); 
-    }, [page, search, statusFilter, sortBy, direction, fetchOrders]);
+        fetchOrders(page, debouncedSearch, statusFilter, sortBy, direction); 
+    }, [page, debouncedSearch, statusFilter, sortBy, direction, fetchOrders]);
 
     // --- ADMINISTRATIVE ACTIONS ---
 
@@ -308,10 +315,10 @@ export default function AdminOrders() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight uppercase italic flex items-center gap-2">
-                        <TagIcon className="w-8 h-8 text-green-600" />
-                        Quản lý Đơn hàng
+                        <TagIcon className="w-8 h-8 text-emerald-600" />
+                        Đơn hàng <span className="text-emerald-600">FRESHFOOD</span>
                     </h1>
-                    <p className="text-sm text-gray-500 font-medium tracking-tight mt-1">Theo dõi và cập nhật trạng thái đơn hàng của khách.</p>
+                    <p className="text-sm text-gray-500 font-medium tracking-tight mt-1">Theo dõi và cập nhật trạng thái đơn hàng từ cộng đồng.</p>
                 </div>
                 <div className="flex flex-col lg:flex-row gap-2 flex-1 max-w-3xl lg:justify-end">
                     {/* Search Field */}
@@ -411,9 +418,9 @@ export default function AdminOrders() {
                                                 <div className="inline-block relative">
                                                     <select
                                                         value={o.status || ''}
-                                                        disabled={updatingId === o.id || o.status === 'DELIVERED' || o.status === 'CANCELLED'}
+                                                        disabled={updatingId === o.id || ['DELIVERED', 'CANCELLED', 'RETURNED', 'RETURN_REJECTED'].includes(o.status)}
                                                         onChange={(e) => handleStatusChange(o.id, e.target.value)}
-                                                        className={`appearance-none pl-2.5 pr-7 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border cursor-pointer outline-none focus:ring-4 focus:ring-current/10 transition-all ${st.cls}`}
+                                                        className={`appearance-none pl-2.5 pr-7 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border outline-none focus:ring-4 focus:ring-current/10 transition-all ${st.cls} ${['DELIVERED', 'CANCELLED', 'RETURNED', 'RETURN_REJECTED'].includes(o.status) ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
                                                     >
                                                         {ORDER_STATUSES.map((s) => {
                                                             // Guard: Prevent reverse illegal status jumps

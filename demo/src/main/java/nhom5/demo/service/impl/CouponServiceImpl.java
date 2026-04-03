@@ -86,28 +86,27 @@ public class CouponServiceImpl implements CouponService {
     @Transactional
     public Coupon updateCoupon(@NonNull Long id, @NonNull Coupon couponDetails) {
         Coupon coupon = getCouponById(id);
-        
-        if (couponDetails.getExpiryDate() != null) {
-            if (couponDetails.getExpiryDate().getYear() > 2099) {
-                throw new BusinessException("Năm hết hạn không hợp lệ (tối đa 2099)");
+        if (couponDetails.getCode() != null && !couponDetails.getCode().isBlank()) {
+            if (!coupon.getCode().equals(couponDetails.getCode()) && 
+                couponRepository.findByCode(couponDetails.getCode()).isPresent()) {
+                throw new BusinessException("Mã giảm giá '" + couponDetails.getCode() + "' đã tồn tại");
             }
-            if (couponDetails.getExpiryDate().isBefore(LocalDate.now())) {
-                throw new BusinessException("Ngày hết hạn không được ở trong quá khứ");
-            }
+            coupon.setCode(couponDetails.getCode().toUpperCase());
         }
-
+        
         coupon.setDescription(couponDetails.getDescription());
-        coupon.setDiscountPercent(couponDetails.getDiscountPercent());
+        coupon.setDiscountPercent(couponDetails.getDiscountPercent() != null ? couponDetails.getDiscountPercent() : 0);
         coupon.setMaxDiscountAmount(couponDetails.getMaxDiscountAmount());
-        coupon.setMinOrderAmount(couponDetails.getMinOrderAmount());
-        coupon.setExpiryDate(couponDetails.getExpiryDate());
+        coupon.setMinOrderAmount(couponDetails.getMinOrderAmount() != null ? couponDetails.getMinOrderAmount() : java.math.BigDecimal.ZERO);
+        coupon.setExpiryDate(couponDetails.getExpiryDate() != null ? couponDetails.getExpiryDate() : coupon.getExpiryDate());
         coupon.setUsageLimit(couponDetails.getUsageLimit());
-        coupon.setIsActive(couponDetails.getIsActive());
-        coupon.setIsPrivate(couponDetails.getIsPrivate() != null ? couponDetails.getIsPrivate() : false);
+        coupon.setIsActive(Boolean.TRUE.equals(couponDetails.getIsActive()));
+        coupon.setIsPrivate(Boolean.TRUE.equals(couponDetails.getIsPrivate()));
         
         Coupon updated = couponRepository.save(coupon);
-        Long updatedId = Objects.requireNonNull(updated.getId());
-        auditService.log(SecurityUtils.getCurrentUsername(), "UPDATE", "COUPON", updatedId.toString(), "Modified: " + updated.getCode());
+        String currentUsername = SecurityUtils.getCurrentUsername();
+        String finalUser = (currentUsername != null && !currentUsername.isBlank()) ? currentUsername : "anonymous";
+        auditService.log(finalUser, "UPDATE", "COUPON", updated.getId().toString(), "Modified: " + updated.getCode());
         return updated;
     }
 

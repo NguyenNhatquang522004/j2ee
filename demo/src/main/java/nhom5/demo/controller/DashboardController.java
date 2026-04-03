@@ -26,7 +26,7 @@ import java.util.Objects;
  */
 @Tag(name = "Dashboard", description = "Thống kê tổng quan dành cho Admin")
 @SecurityRequirement(name = "bearerAuth")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'view:dashboard', 'manage:dashboard', 'view:reports')")
 @RestController
 @RequestMapping(AppConstants.DASHBOARD_PATH)
 @RequiredArgsConstructor

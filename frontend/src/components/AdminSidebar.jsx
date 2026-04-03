@@ -27,30 +27,30 @@ import {
 } from '@heroicons/react/24/outline';
 
 const MENU_ITEMS = [
+    { name: 'Cài đặt', path: '/admin/settings', icon: Cog8ToothIcon, permission: null },
     { name: 'Tổng quan', path: '/admin', icon: ChartBarIcon, permission: 'view:reports' },
     { name: 'Người dùng', path: '/admin/users', icon: UserGroupIcon, permission: 'manage:users' },
-    { name: 'Sản phẩm', path: '/admin/products', icon: ShoppingBagIcon, permission: 'manage:products' },
-    { name: 'Danh mục', path: '/admin/categories', icon: TagIcon, permission: 'manage:categories' },
-    { name: 'Lô hàng', path: '/admin/batches', icon: PuzzlePieceIcon, permission: 'manage:batches' },
-    { name: 'Trang trại', path: '/admin/farms', icon: HomeIcon, permission: 'manage:farms' },
+    { name: 'Sản phẩm', path: '/admin/products', icon: ShoppingBagIcon, permission: 'view:products' },
+    { name: 'Danh mục', path: '/admin/categories', icon: TagIcon, permission: 'view:categories' },
+    { name: 'Lô hàng', path: '/admin/batches', icon: PuzzlePieceIcon, permission: 'view:batches' },
+    { name: 'Trang trại', path: '/admin/farms', icon: HomeIcon, permission: 'view:farms' },
     { name: 'Đơn hàng', path: '/admin/orders', icon: ClipboardDocumentListIcon, permission: 'manage:orders' },
-    { name: 'Hoàn hàng', path: '/admin/refunds', icon: TruckIcon, permission: 'manage:orders' },
+    { name: 'Hoàn hàng', path: '/admin/refunds', icon: TruckIcon, permission: 'manage:refunds' },
     { name: 'Mã giảm giá', path: '/admin/coupons', icon: TicketIcon, permission: 'manage:promotions' },
     { name: 'Flash Sale', path: '/admin/flash-sales', icon: BoltIcon, permission: 'manage:promotions' },
     { name: 'Đánh giá', path: '/admin/reviews', icon: UserIcon, permission: 'manage:reviews' },
     { name: 'Nhân sự', path: '/admin/staff', icon: ShieldCheckIcon, permission: 'manage:users' },
     { name: 'Nhật ký', path: '/admin/audit-logs', icon: ClockIcon, permission: 'view:reports' },
-    { name: 'Thư viện', path: '/admin/media', icon: PhotoIcon, permission: 'manage:products' },
+    { name: 'Thư viện', path: '/admin/media', icon: PhotoIcon, permission: 'view:media' },
     { name: 'Bản tin', path: '/admin/newsletters', icon: NewspaperIcon, permission: 'manage:newsletters' },
     { name: 'Thông báo', path: '/admin/notifications', icon: BellIcon, permission: 'view:reports' },
-    { name: 'Cài đặt', path: '/admin/settings', icon: Cog8ToothIcon, permission: 'manage:settings' },
     { name: 'Hộp thư', path: '/admin/contacts', icon: ChatBubbleLeftRightIcon, permission: 'manage:users' },
     { name: 'Hướng dẫn', path: '/admin/guide', icon: InformationCircleIcon, permission: 'view:reports' },
 ];
 
 export default function AdminSidebar({ onClose }) {
     const { pathname } = useLocation();
-    const { logout, hasPermission } = useAuth();
+    const { logout, hasPermission, user } = useAuth();
     const navigate = useNavigate();
     const [unreadContacts, setUnreadContacts] = useState(0);
 
@@ -80,16 +80,19 @@ export default function AdminSidebar({ onClose }) {
     };
 
     const filteredMenu = MENU_ITEMS.filter(item => {
-        if (item.path === '/admin') return true; // Everyone in management can see Dashboard
-        if (item.path === '/admin/settings') return true; // Settings for profile/security
+        // ALWAYS SHOW SETTINGS for everyone who can access sidebar
+        if (item.path === '/admin/settings') return true; 
         
-        // Handle combined permission check (allow view OR manage)
-        if (item.permission && item.permission.includes(':')) {
+        // Check permissions for other items
+        if (hasPermission(item.permission)) return true;
+
+        // If item needs view:X → allow if they have manage:X
+        if (item.permission?.startsWith('view:')) {
             const domain = item.permission.split(':')[1];
-            return hasPermission(`view:${domain}`) || hasPermission(`manage:${domain}`);
+            return hasPermission(`manage:${domain}`);
         }
 
-        return hasPermission(item.permission);
+        return false;
     });
 
     return (
@@ -100,7 +103,7 @@ export default function AdminSidebar({ onClose }) {
                         <img src="/logo.png" alt="FreshFood" className="w-full h-full object-cover" />
                     </div>
                     <span className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-green-700 to-green-500 uppercase">
-                        Admin <span className="text-xs text-gray-400 font-normal">Panel</span>
+                        {hasPermission('manage:settings') && !user?.role?.includes('STAFF') ? 'Admin' : 'Staff'} <span className="text-xs text-gray-400 font-normal">Panel</span>
                     </span>
                 </Link>
             </div>
@@ -137,6 +140,16 @@ export default function AdminSidebar({ onClose }) {
             </nav>
 
             <div className="p-3 border-t">
+                {/* DEBUG SECTION - Remove after fixing */}
+                <div className="mb-4 px-3 py-2 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                    <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Permissions Debug:</p>
+                    <div className="flex flex-wrap gap-1">
+                        {user?.permissions?.length > 0 ? user.permissions.map(p => (
+                            <span key={p} className="text-[8px] bg-green-100 text-green-700 px-1 rounded font-bold">{p}</span>
+                        )) : <span className="text-[8px] text-red-500 font-bold">Empty/Forbidden</span>}
+                    </div>
+                </div>
+
                 <button 
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-3.5 py-2 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all rounded-xl cursor-pointer"

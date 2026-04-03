@@ -27,4 +27,5 @@ public class AuthResponse {
     private boolean isTwoFactorEnabled;
     private boolean isTwoFactorEnforced;
     private String twoFactorMethod; // "TOTP", "EMAIL"
+    private java.util.Set<String> permissions;
 }

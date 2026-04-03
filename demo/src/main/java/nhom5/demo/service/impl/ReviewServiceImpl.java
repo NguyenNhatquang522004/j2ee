@@ -3,6 +3,7 @@ package nhom5.demo.service.impl;
 import lombok.RequiredArgsConstructor;
 import nhom5.demo.dto.request.ReviewRequest;
 import nhom5.demo.dto.response.ReviewResponse;
+import nhom5.demo.dto.response.MediaResponse;
 import nhom5.demo.entity.Product;
 import nhom5.demo.entity.Review;
 import nhom5.demo.entity.User;
@@ -101,13 +102,15 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public Page<ReviewResponse> getReviewsByProduct(@NonNull Long productId, @NonNull Pageable pageable) {
+    @Transactional(readOnly = true)
+    public Page<ReviewResponse> getReviewsByProduct(@NonNull Long productId, Integer rating, String viewerUsername, @NonNull Pageable pageable) {
         return reviewRepository
-                .findByProductIdAndStatusOrderByCreatedAtDesc(productId, ReviewStatusEnum.APPROVED, pageable)
+                .findByProductIdAndRating(productId, ReviewStatusEnum.APPROVED, viewerUsername, rating, pageable)
                 .map(this::toResponse);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ReviewResponse> getMyReviews(@NonNull String username, @NonNull Pageable pageable) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
@@ -116,6 +119,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ReviewResponse> getAllReviews(@NonNull Pageable pageable) {
         return reviewRepository.findAllByOrderByCreatedAtDesc(pageable).map(this::toResponse);
     }
@@ -140,44 +144,124 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    @Transactional
+    public void deleteMyReview(@NonNull String username, @NonNull Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review", "id", reviewId));
+        
+        if (!review.getUser().getUsername().equals(username)) {
+            throw new BusinessException("Bạn không có quyền xoá đánh giá của người khác");
+        }
+        
+        reviewRepository.delete(review);
+    }
+
+    @Override
+    @Transactional
+    public ReviewResponse updateReview(@NonNull String username, @NonNull Long reviewId, @NonNull ReviewRequest request, List<MultipartFile> files) throws IOException {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review", "id", reviewId));
+
+        if (!review.getUser().getUsername().equals(username)) {
+            throw new BusinessException("Bạn không có quyền sửa đánh giá của người khác");
+        }
+
+        if (request.getRating() != null) {
+            review.setRating(request.getRating());
+        }
+        
+        if (request.getComment() != null) {
+            review.setComment(SecurityUtils.sanitize(request.getComment()));
+        }
+        
+        review.setStatus(ReviewStatusEnum.PENDING); // Reset status for re-moderation
+
+        // 1. Remove media if requested
+        if (request.getRemoveMediaIds() != null && !request.getRemoveMediaIds().isEmpty()) {
+            review.getMedia().removeIf(m -> request.getRemoveMediaIds().contains(m.getId()));
+        }
+
+        // 2. Add new media if provided
+        if (files != null && !files.isEmpty()) {
+            if (review.getMedia() == null) {
+                review.setMedia(new java.util.ArrayList<>());
+            }
+            
+            for (MultipartFile file : files) {
+                String contentType = file.getContentType();
+                boolean isVideo = contentType != null && contentType.startsWith("video");
+                long maxSize = isVideo ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
+
+                if (file.getSize() > maxSize) {
+                    throw new BusinessException((isVideo ? "Video" : "Hình ảnh") + " đánh giá không được vượt quá "
+                            + (maxSize / (1024 * 1024)) + "MB");
+                }
+
+                String resourceType = isVideo ? "video" : "image";
+                Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                        com.cloudinary.utils.ObjectUtils.asMap("resource_type", resourceType, "folder", "reviews"));
+
+                nhom5.demo.entity.ReviewMedia media = nhom5.demo.entity.ReviewMedia.builder()
+                        .url(Objects.requireNonNull(uploadResult.get("secure_url")).toString())
+                        .fileType(resourceType)
+                        .review(review)
+                        .build();
+                review.getMedia().add(media);
+            }
+        }
+
+        return toResponse(reviewRepository.save(review));
+    }
+
+    @Override
     @Transactional(readOnly = true)
-    public boolean canReview(@NonNull String username, @NonNull Long productId) {
+    public String canReview(@NonNull String username, @NonNull Long productId) {
         User user = userRepository.findByUsername(username).orElse(null);
         if (user == null)
-            return false;
+            return "NOT_PURCHASED"; // Default to forbid if user not found
 
         Long userId = Objects.requireNonNull(user.getId());
         boolean hasPurchased = orderItemRepository.existsByOrderUserIdAndProductIdAndOrderStatus(
                 userId, productId, OrderStatusEnum.DELIVERED);
 
         if (!hasPurchased)
-            return false;
+            return "NOT_PURCHASED";
 
         boolean alreadyReviewed = reviewRepository.existsByProductIdAndUserIdAndStatusIsNot(
                 productId, userId, ReviewStatusEnum.REJECTED);
 
-        return !alreadyReviewed;
+        if (alreadyReviewed)
+            return "ALREADY_REVIEWED";
+
+        return "ALLOWED";
     }
 
     private ReviewResponse toResponse(@NonNull Review review) {
-        User user = Objects.requireNonNull(review.getUser());
-        Product product = Objects.requireNonNull(review.getProduct());
+        User user = review.getUser();
+        Product product = review.getProduct();
+
+        java.util.List<MediaResponse> mediaResponses = (review.getMedia() == null) ? new java.util.ArrayList<>() : 
+                review.getMedia().stream()
+                        .map(m -> MediaResponse.builder()
+                                .id(m.getId())
+                                .url(m.getUrl())
+                                .fileType(m.getFileType())
+                                .build())
+                        .collect(java.util.stream.Collectors.toList());
 
         return ReviewResponse.builder()
                 .id(review.getId())
                 .rating(review.getRating())
                 .comment(review.getComment())
-                .userId(user.getId())
-                .username(user.getUsername())
-                .userFullName(user.getFullName())
-                .userAvatarUrl(user.getAvatarUrl())
-                .productId(product.getId())
-                .productName(product.getName())
+                .userId(user != null ? user.getId() : null)
+                .username(user != null ? user.getUsername() : "deleted")
+                .userFullName(user != null ? user.getFullName() : "Người dùng đã xóa")
+                .userAvatarUrl(user != null ? user.getAvatarUrl() : null)
+                .productId(product != null ? product.getId() : null)
+                .productName(product != null ? product.getName() : "Sản phẩm đã xóa")
                 .status(review.getStatus())
                 .adminReply(review.getAdminReply())
-                .mediaUrls(review.getMedia().stream()
-                        .map(m -> Objects.requireNonNull(m.getUrl()))
-                        .collect(java.util.stream.Collectors.toList()))
+                .media(mediaResponses)
                 .createdAt(review.getCreatedAt())
                 .build();
     }

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { productService, categoryService, farmService } from '../../api/services';
+import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../context/ModalContext';
@@ -27,6 +28,8 @@ const EMPTY = {
 };
 
 export default function AdminProducts() {
+    const { hasPermission } = useAuth();
+    const canManage = hasPermission('manage:products');
     const { confirm } = useConfirm();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -39,6 +42,13 @@ export default function AdminProducts() {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedSearch(search), 500);
+        return () => clearTimeout(handler);
+    }, [search]);
+
     const [categoryId, setCategoryId] = useState('');
     const [farmId, setFarmId] = useState('');
     const [minPrice, setMinPrice] = useState('');
@@ -73,8 +83,8 @@ export default function AdminProducts() {
     }, []);
 
     useEffect(() => {
-        fetchProducts(page, search, categoryId, farmId, minPrice, maxPrice, sortBy, direction, statusFilter);
-    }, [page, search, categoryId, farmId, minPrice, maxPrice, sortBy, direction, statusFilter, fetchProducts]);
+        fetchProducts(page, debouncedSearch, categoryId, farmId, minPrice, maxPrice, sortBy, direction, statusFilter);
+    }, [page, debouncedSearch, categoryId, farmId, minPrice, maxPrice, sortBy, direction, statusFilter, fetchProducts]);
 
     useEffect(() => {
         Promise.all([
@@ -202,16 +212,21 @@ export default function AdminProducts() {
         <AdminLayout>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight italic uppercase leading-tight">Sản phẩm</h1>
-                    <p className="text-xs sm:text-sm text-gray-500 font-medium tracking-tight">Quản lý kho hàng và danh mục của bạn.</p>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight italic uppercase flex items-center gap-3">
+                        <div className="w-2.5 h-10 bg-emerald-600 rounded-full"></div>
+                        Sản phẩm <span className="text-emerald-600">FRESHFOOD</span>
+                    </h1>
+                    <p className="text-sm text-gray-500 font-medium tracking-tight mt-1">Quản lý kho hàng và danh mục xanh của cộng đồng.</p>
                 </div>
-                <button 
-                    onClick={openCreate} 
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black px-5 py-3 rounded-xl shadow-lg shadow-green-100 transition-all active:scale-95 text-sm"
-                >
-                    <PlusIcon className="w-5 h-5 stroke-[3]" />
-                    <span>Thêm sản phẩm</span>
-                </button>
+                {canManage && (
+                    <button 
+                        onClick={openCreate} 
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black px-5 py-3 rounded-xl shadow-lg shadow-green-100 transition-all active:scale-95 text-sm"
+                    >
+                        <PlusIcon className="w-5 h-5 stroke-[3]" />
+                        <span>Thêm sản phẩm</span>
+                    </button>
+                )}
             </div>
 
             <div className="space-y-3 mb-6">
@@ -380,27 +395,31 @@ export default function AdminProducts() {
                                             >
                                                 <InformationCircleIcon className="w-5 h-5" />
                                             </button>
-                                            <button 
-                                                onClick={() => handleToggle(p.id)} 
-                                                className={`p-1 rounded-lg transition-all ${p.isActive ? 'text-gray-400 hover:bg-gray-50' : 'text-green-600 hover:bg-green-50'}`}
-                                                title={p.isActive ? 'Ẩn sản phẩm' : 'Hiện sản phẩm'}
-                                            >
-                                                {p.isActive ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
-                                            </button>
-                                            <button 
-                                                onClick={() => openEdit(p)} 
-                                                className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                title="Sửa sản phẩm"
-                                            >
-                                                <PencilSquareIcon className="w-5 h-5" />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleDelete(p.id)} 
-                                                className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                                title="Xóa sản phẩm"
-                                            >
-                                                <TrashIcon className="w-5 h-5" />
-                                            </button>
+                                            {canManage && (
+                                                <>
+                                                    <button 
+                                                        onClick={() => handleToggle(p.id)} 
+                                                        className={`p-1 rounded-lg transition-all ${p.isActive ? 'text-gray-400 hover:bg-gray-50' : 'text-green-600 hover:bg-green-50'}`}
+                                                        title={p.isActive ? 'Ẩn sản phẩm' : 'Hiện sản phẩm'}
+                                                    >
+                                                        {p.isActive ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => openEdit(p)} 
+                                                        className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                        title="Sửa sản phẩm"
+                                                    >
+                                                        <PencilSquareIcon className="w-5 h-5" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDelete(p.id)} 
+                                                        className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                        title="Xóa sản phẩm"
+                                                    >
+                                                        <TrashIcon className="w-5 h-5" />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

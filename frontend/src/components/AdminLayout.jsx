@@ -41,7 +41,9 @@ export default function AdminLayout({ children }) {
                         </button>
                         <div className="flex flex-col">
                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-0.5 leading-none hidden xs:block">Hệ thống quản lý</p>
-                            <h2 className="text-xs sm:text-sm font-black text-gray-900 border-l-2 border-green-500 pl-3 leading-none italic uppercase tracking-tighter">FreshFood Admin</h2>
+                            <h2 className="text-xs sm:text-sm font-black text-gray-900 border-l-2 border-green-500 pl-3 leading-none italic uppercase tracking-tighter">
+                                FreshFood {user?.role === 'ROLE_ADMIN' ? 'Admin' : 'Management'}
+                            </h2>
                         </div>
                     </div>
 
@@ -72,7 +74,9 @@ export default function AdminLayout({ children }) {
                         <div className="flex items-center gap-3">
                             <div className="text-right hidden sm:block">
                                 <p className="text-xs font-black text-gray-900 leading-none">{user?.username}</p>
-                                <p className="text-[9px] font-bold text-green-600 uppercase tracking-tighter mt-1">Quản trị viên</p>
+                                <p className="text-[9px] font-bold text-green-600 uppercase tracking-tighter mt-1">
+                                    {user?.role === 'ROLE_ADMIN' ? 'Quản trị viên' : 'Nhân viên hệ thống'}
+                                </p>
                             </div>
                             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-green-600 to-green-400 p-0.5 shadow-lg shadow-green-100 ring-2 ring-white overflow-hidden shrink-0 group cursor-pointer hover:rotate-6 transition-transform">
                                 {user?.avatarUrl ? (
@@ -92,8 +96,10 @@ export default function AdminLayout({ children }) {
                     </div>
                 </main>
                 <footer className="h-10 bg-white/95 sm:bg-white/90 backdrop-blur-xl border-t border-gray-100 flex items-center justify-between px-6 shrink-0 z-40">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">© 2026 RawFood Eco-System</p>
-                    <p className="text-[10px] font-black text-green-600 uppercase tracking-widest italic">Hệ thống quản trị thông minh</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">© 2026 FreshFood Eco-System</p>
+                    <p className="text-[10px] font-black text-green-600 uppercase tracking-widest italic">
+                        Hệ thống {user?.role === 'ROLE_ADMIN' ? 'quản trị thông minh' : 'vận hành chuyên nghiệp'}
+                    </p>
                 </footer>
             </div>
         </div>

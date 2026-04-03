@@ -67,10 +67,13 @@ public class ReviewController {
     @GetMapping("/product/{productId}")
     public ResponseEntity<ApiResponse<Page<ReviewResponse>>> getByProduct(
             @PathVariable @NonNull Long productId,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) Integer rating,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<ReviewResponse> data = reviewService.getReviewsByProduct(Objects.requireNonNull(productId), pageable);
+        String viewerUsername = userDetails != null ? userDetails.getUsername() : null;
+        Page<ReviewResponse> data = reviewService.getReviewsByProduct(Objects.requireNonNull(productId), rating, viewerUsername, pageable);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
@@ -129,16 +132,42 @@ public class ReviewController {
         return ResponseEntity.ok(ApiResponse.success("Đã xoá đánh giá", null));
     }
 
+    @Operation(summary = "Xoá đánh giá của tôi (User)")
+    @SecurityRequirement(name = "bearerAuth")
+    @DeleteMapping("/my/{reviewId}")
+    public ResponseEntity<ApiResponse<Void>> deleteMyReview(
+            @AuthenticationPrincipal @NonNull UserDetails userDetails,
+            @PathVariable @NonNull Long reviewId) {
+        reviewService.deleteMyReview(Objects.requireNonNull(userDetails.getUsername()), Objects.requireNonNull(reviewId));
+        return ResponseEntity.ok(ApiResponse.success("Đã xoá đánh giá của bạn", null));
+    }
+
+    @Operation(summary = "Cập nhật đánh giá của tôi (User)")
+    @SecurityRequirement(name = "bearerAuth")
+    @PutMapping(value = "/{reviewId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<ReviewResponse>> updateReview(
+            @AuthenticationPrincipal @NonNull UserDetails userDetails,
+            @PathVariable @NonNull Long reviewId,
+            @RequestPart("review") @Valid @NonNull ReviewRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files) throws java.io.IOException {
+        ReviewResponse data = reviewService.updateReview(
+                Objects.requireNonNull(userDetails.getUsername()), 
+                Objects.requireNonNull(reviewId), 
+                Objects.requireNonNull(request), 
+                files);
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật đánh giá", data));
+    }
+
     /**
      * canReview: Security check for UI logic to determine if a user has purchased the item and can leave feedback.
      */
     @Operation(summary = "Kiểm tra quyền đánh giá")
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/can-review/{productId}")
-    public ResponseEntity<ApiResponse<Boolean>> canReview(
+    public ResponseEntity<ApiResponse<String>> canReview(
             @AuthenticationPrincipal @NonNull UserDetails userDetails,
             @PathVariable @NonNull Long productId) {
-        boolean canReview = reviewService.canReview(Objects.requireNonNull(userDetails.getUsername()), Objects.requireNonNull(productId));
-        return ResponseEntity.ok(ApiResponse.success(canReview));
+        String status = reviewService.canReview(Objects.requireNonNull(userDetails.getUsername()), Objects.requireNonNull(productId));
+        return ResponseEntity.ok(ApiResponse.success(status));
     }
 }

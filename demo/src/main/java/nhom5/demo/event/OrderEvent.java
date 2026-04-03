@@ -13,4 +13,5 @@ public class OrderEvent {
     private final Order order;
     private final OrderStatusEnum status;
     private final String type; // e.g., "CREATED", "STATUS_UPDATED", "CANCELLED"
+    private final String username; // The person who triggered the event
 }

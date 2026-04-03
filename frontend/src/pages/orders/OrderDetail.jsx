@@ -70,10 +70,24 @@ export default function OrderDetail() {
 
     // --- DATA FETCHING ---
     useEffect(() => {
-        orderService.getByCode(id)
-            .then(res => setOrder(res.data))
-            .catch(() => toast.error('Không thể tải chi tiết đơn hàng'))
-            .finally(() => setLoading(false));
+        const fetchOrder = async () => {
+            try {
+                setLoading(true);
+                // Smart fetch: If id is numeric, it's a DB ID (from Admin Audit), else it's an Order Code
+                const isNumericId = /^\d+$/.test(id);
+                const res = isNumericId 
+                    ? await orderService.getById(id)
+                    : await orderService.getByCode(id);
+                setOrder(res.data);
+            } catch (err) {
+                console.error('Fetch order detail error:', err);
+                toast.error('Không tìm thấy thông tin đơn hàng này');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (id) fetchOrder();
     }, [id]);
 
     // --- ACTION HANDLERS ---
@@ -108,7 +122,7 @@ export default function OrderDetail() {
         if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
         const loadingToast = toast.loading('Đang xử lý hủy đơn...');
         try {
-            const res = await orderService.cancel(id);
+            const res = await orderService.cancel(order.orderCode);
             setOrder(res.data);
             toast.success('Đã hủy đơn hàng thành công', { id: loadingToast });
         } catch (err) {
@@ -169,7 +183,7 @@ export default function OrderDetail() {
                 imageUrl = uploadRes.data.url;
             }
 
-            const res = await orderService.requestReturn(id, returnReason, imageUrl);
+            const res = await orderService.requestReturn(order.orderCode, returnReason, imageUrl);
             setOrder(res.data);
             setShowReturnModal(false);
             setReturnReason('');
@@ -188,7 +202,9 @@ export default function OrderDetail() {
         const loadingToast = toast.loading('Đang cập nhật trạng thái...');
         try {
             await orderService.updateStatus(order.id, newStatus);
-            const res = await orderService.getByCode(id);
+            // Refresh: use ID if id is numeric, else Code
+            const isNumericId = /^\d+$/.test(id);
+            const res = isNumericId ? await orderService.getById(id) : await orderService.getByCode(id);
             setOrder(res.data);
             toast.success('Đã cập nhật trạng thái đơn hàng', { id: loadingToast });
         } catch (err) {
@@ -204,7 +220,8 @@ export default function OrderDetail() {
         const loadingToast = toast.loading('Đang xác nhận trả hàng...');
         try {
             await orderService.confirmReturn(order.id);
-            const res = await orderService.getByCode(id);
+            const isNumericId = /^\d+$/.test(id);
+            const res = isNumericId ? await orderService.getById(id) : await orderService.getByCode(id);
             setOrder(res.data);
             toast.success('Đã xác nhận trả hàng thành công', { id: loadingToast });
         } catch (err) {
@@ -222,7 +239,8 @@ export default function OrderDetail() {
         const loadingToast = toast.loading('Đang xử lý...');
         try {
             await orderService.rejectReturn(order.id, reason);
-            const res = await orderService.getByCode(id);
+            const isNumericId = /^\d+$/.test(id);
+            const res = isNumericId ? await orderService.getById(id) : await orderService.getByCode(id);
             setOrder(res.data);
             toast.success('Đã từ chối yêu cầu trả hàng', { id: loadingToast });
         } catch (err) {
@@ -238,7 +256,8 @@ export default function OrderDetail() {
         const loadingToast = toast.loading('Đang xử lý hoàn tiền...');
         try {
             await orderService.refund(order.id);
-            const res = await orderService.getByCode(id);
+            const isNumericId = /^\d+$/.test(id);
+            const res = isNumericId ? await orderService.getById(id) : await orderService.getByCode(id);
             setOrder(res.data);
             toast.success('Đã đánh dấu hoàn tiền thành công', { id: loadingToast });
         } catch (err) {
@@ -370,11 +389,16 @@ export default function OrderDetail() {
             }
         ];
     } else {
+        const isDelivered = order.status === 'DELIVERED';
+        const isShipping = order.status === 'SHIPPING' || isDelivered;
+        const isPackaging = order.status === 'PACKAGING' || isShipping;
+        const isConfirmed = order.status === 'CONFIRMED' || isPackaging;
+
         displaySteps = [
             { key: 'PENDING', label: 'Đặt hàng', icon: ClockIcon, completed: true, time: order.createdAt },
-            { key: 'CONFIRMED', label: 'Đã xác nhận', icon: CheckCircleIcon, completed: !!order.confirmedAt, time: order.confirmedAt },
-            { key: 'SHIPPING', label: 'Đang vận chuyển', icon: TruckIcon, completed: !!order.shippedAt, time: order.shippedAt },
-            { key: 'DELIVERED', label: 'Giao hàng thành công', icon: ArchiveBoxIcon, completed: !!order.deliveredAt, time: order.deliveredAt },
+            { key: 'CONFIRMED', label: 'Đã xác nhận', icon: CheckCircleIcon, completed: isConfirmed || !!order.confirmedAt, time: order.confirmedAt || (isPackaging ? order.packagingAt || order.shippedAt || order.deliveredAt : null) },
+            { key: 'SHIPPING', label: 'Đang vận chuyển', icon: TruckIcon, completed: isShipping || !!order.shippedAt, time: order.shippedAt || (isDelivered ? order.deliveredAt : null) },
+            { key: 'DELIVERED', label: 'Giao hàng thành công', icon: ArchiveBoxIcon, completed: isDelivered || !!order.deliveredAt, time: order.deliveredAt },
         ];
     }
 
@@ -395,9 +419,9 @@ export default function OrderDetail() {
                                     <span className="text-[10px] font-black text-gray-400 uppercase italic">Trạng thái:</span>
                                     <select 
                                         value={order.status}
-                                        disabled={isViewOnly || updating}
+                                        disabled={isViewOnly || updating || ['DELIVERED', 'CANCELLED', 'RETURNED', 'RETURN_REJECTED'].includes(order.status)}
                                         onChange={(e) => handleAdminStatusUpdate(e.target.value)}
-                                        className={`bg-transparent text-xs font-black text-green-700 outline-none uppercase ${isViewOnly ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                        className={`bg-transparent text-xs font-black text-green-700 outline-none uppercase ${isViewOnly || ['DELIVERED', 'CANCELLED', 'RETURNED', 'RETURN_REJECTED'].includes(order.status) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                                     >
                                         {['PENDING', 'CONFIRMED', 'PACKAGING', 'SHIPPING', 'DELIVERED', 'RETURN_REQUESTED', 'RETURNED', 'RETURN_REJECTED', 'CANCELLED'].map(s => (
                                             <option key={s} value={s}>{s}</option>
@@ -501,7 +525,7 @@ export default function OrderDetail() {
                                                         ) : (
                                                             <div className="space-y-1 transform group-hover:translate-y-1 transition-transform">
                                                                 {step.key === 'SHIPPING' && (
-                                                                    <p className="text-[10px] text-gray-500 font-bold">Mã vận đơn<br/><span className="text-green-600 text-xs tracking-wider">{order.trackingNumber || 'CHỜ CẬP NHẬT'}</span></p>
+                                                                    <p className="text-[10px] text-gray-500 font-bold">Mã vận đơn<br/><span className="text-green-600 text-xs tracking-wider">{order.trackingNumber || (order.status === 'DELIVERED' ? 'GIAO BỞI FRESHFOOD' : 'CHỜ CẬP NHẬT')}</span></p>
                                                                 )}
                                                                 {step.key === 'DELIVERED' && (
                                                                     <p className="text-[10px] text-gray-500 font-bold">Dự kiến<br/><span className="text-gray-900 text-xs tracking-wider uppercase">{order.estimatedArrival ? fmtFullDate(order.estimatedArrival) : 'SỚM THÔI'}</span></p>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { dashboardService, orderService } from '../../api/services';
 import AdminLayout from '../../components/AdminLayout';
+import { useAuth } from '../../context/AuthContext';
 import {
     ShoppingBagIcon,
     UserGroupIcon,
@@ -11,7 +13,8 @@ import {
     ArrowDownIcon,
     BellIcon,
     PlusIcon,
-    ChartBarIcon
+    ChartBarIcon,
+    ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
 
 /**
@@ -59,27 +62,47 @@ const ORDER_STATUS = {
 
 export default function AdminDashboard() {
     // --- STATE ---
+    const { hasPermission } = useAuth();
     const [stats, setStats] = useState(null);
     const [recentOrders, setRecentOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const canViewStats = hasPermission('view:reports');
+    const canManageOrders = hasPermission('manage:orders');
+
+    const navigate = useNavigate();
+
     // Initial data hydration
     useEffect(() => {
+        // AUTO REDIRECT for staff without dashboard access (to Settings)
+        if (!canViewStats && !hasPermission('view:dashboard')) {
+            navigate('/admin/settings', { replace: true });
+            return;
+        }
+
         const load = async () => {
             try {
-                // Batch fetch key metrics to minimize loading screen time
-                const [dashRes, ordersRes] = await Promise.all([
-                    dashboardService.get(),
-                    orderService.getAll({ page: 0, size: 5 }),
-                ]);
-                setStats(dashRes.data);
+                // Batch fetch key metrics based on permissions
+                const tasks = [];
+                if (canViewStats) tasks.push(dashboardService.get());
+                else tasks.push(Promise.resolve({ data: null }));
+
+                if (canManageOrders) tasks.push(orderService.getAll({ page: 0, size: 5 }));
+                else tasks.push(Promise.resolve({ data: { content: [] } }));
+
+                const [dashRes, ordersRes] = await Promise.all(tasks);
+                
+                if (dashRes.data) setStats(dashRes.data);
                 setRecentOrders(ordersRes.data.content || []);
+            } catch (error) {
+                console.error("Dashboard data load error (likely missing permissions):", error);
+                // Silent fail for stats, they just won't show
             } finally {
                 setLoading(false);
             }
         };
         load();
-    }, []);
+    }, [canViewStats, canManageOrders]);
 
     const fmt = (n) => new Intl.NumberFormat('vi-VN').format(n);
 
@@ -106,51 +129,62 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            {/* Top Stat Cards Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-                <StatCard title="Tổng doanh thu" value={fmt(stats?.totalRevenue || 0) + '₫'} icon={CurrencyDollarIcon} color="bg-green-100" />
-                <StatCard title="Đơn hàng" value={fmt(stats?.totalOrders || 0)} icon={ArchiveBoxIcon} color="bg-blue-100" trend="up" trendValue="8.2" />
-                <StatCard title="Khách hàng" value={fmt(stats?.totalUsers || 0)} icon={UserGroupIcon} color="bg-indigo-100" trend="up" trendValue="15.8" />
-                <StatCard title="Sản phẩm" value={fmt(stats?.totalProducts || 0)} icon={ShoppingBagIcon} color="bg-amber-100" />
-                <StatCard title="Newsletter" value={fmt(stats?.totalSubscribers || 0)} icon={BellIcon} color="bg-orange-100" trend="up" trendValue="4.1" />
-            </div>
+            {/* Top Stat Cards Grid (Only visible if has view:reports) */}
+            {canViewStats && (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                    <StatCard title="Tổng doanh thu" value={fmt(stats?.totalRevenue || 0) + '₫'} icon={CurrencyDollarIcon} color="bg-green-100" />
+                    <StatCard title="Đơn hàng" value={fmt(stats?.totalOrders || 0)} icon={ArchiveBoxIcon} color="bg-blue-100" trend="up" trendValue="8.2" />
+                    <StatCard title="Khách hàng" value={fmt(stats?.totalUsers || 0)} icon={UserGroupIcon} color="bg-indigo-100" trend="up" trendValue="15.8" />
+                    <StatCard title="Sản phẩm" value={fmt(stats?.totalProducts || 0)} icon={ShoppingBagIcon} color="bg-amber-100" />
+                    <StatCard title="Newsletter" value={fmt(stats?.totalSubscribers || 0)} icon={BellIcon} color="bg-orange-100" trend="up" trendValue="4.1" />
+                </div>
+            )}
 
             <div className="grid lg:grid-cols-3 gap-8 mb-8">
-                {/* REVENUE CHART (Pure CSS/SVG Implementation) */}
-                <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm">
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h2 className="text-xl font-black text-gray-900 tracking-tight">Hiệu suất bán hàng</h2>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">10 ngày gần nhất • VNĐ (thống kê thực tế)</p>
+                {/* REVENUE CHART (Visible if view:reports) */}
+                {canViewStats ? (
+                    <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm">
+                        <div className="flex items-center justify-between mb-8">
+                            <div>
+                                <h2 className="text-xl font-black text-gray-900 tracking-tight">Hiệu suất bán hàng</h2>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">10 ngày gần nhất • VNĐ (thống kê thực tế)</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="w-3 h-3 rounded bg-green-500"></span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase">Doanh thu</span>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 rounded bg-green-500"></span>
-                            <span className="text-[10px] font-black text-gray-400 uppercase">Doanh thu</span>
-                        </div>
-                    </div>
-                    {/* The Chart: Calibrated based on max weekly revenue to ensure relative scaling */}
-                    <div className="h-[220px] flex items-end gap-3 sm:gap-6 px-2 text-center">
-                        {(stats?.revenueChart?.length > 0 ? stats.revenueChart : Array(7).fill({ revenue: 0, date: '?' })).map((item, i) => {
-                            const val = Number(item.revenue || 0);
-                            const maxRev = Math.max(...(stats?.revenueChart?.map(r => Number(r.revenue)) || [1]));
-                            const height = maxRev > 0 ? (val / maxRev) * 100 : 0;
-                            const label = item.date ? item.date.split('-').pop() : '-';
-                            return (
-                                <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer h-full justify-end">
-                                    <div 
-                                        className="w-full bg-gradient-to-t from-green-600 to-green-400 rounded-lg group-hover:from-green-50 group-hover:to-green-300 transition-all duration-500 relative min-h-[4px]"
-                                        style={{ height: `${Math.max(4, height)}%` }}
-                                    >
-                                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-green-600 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity font-black whitespace-nowrap z-10 shadow-xl border border-white/20">
-                                            {fmt(val)}₫
+                        <div className="h-[220px] flex items-end gap-3 sm:gap-6 px-2 text-center">
+                            {(stats?.revenueChart?.length > 0 ? stats.revenueChart : Array(7).fill({ revenue: 0, date: '?' })).map((item, i) => {
+                                const val = Number(item.revenue || 0);
+                                const maxRev = Math.max(...(stats?.revenueChart?.map(r => Number(r.revenue)) || [1]));
+                                const height = maxRev > 0 ? (val / maxRev) * 100 : 0;
+                                const label = item.date ? item.date.split('-').pop() : '-';
+                                return (
+                                    <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer h-full justify-end">
+                                        <div 
+                                            className="w-full bg-gradient-to-t from-green-600 to-green-400 rounded-lg group-hover:from-green-50 group-hover:to-green-300 transition-all duration-500 relative min-h-[4px]"
+                                            style={{ height: `${Math.max(4, height)}%` }}
+                                        >
+                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-green-600 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity font-black whitespace-nowrap z-10 shadow-xl border border-white/20">
+                                                {fmt(val)}₫
+                                            </div>
                                         </div>
+                                        <span className="text-[10px] font-black text-gray-400 uppercase mt-1 tracking-tighter">{label}</span>
                                     </div>
-                                    <span className="text-[10px] font-black text-gray-400 uppercase mt-1 tracking-tighter">{label}</span>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="lg:col-span-2 bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border border-dashed border-gray-200 flex flex-col items-center justify-center text-center">
+                        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 mb-4">
+                            <ChartBarIcon className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-lg font-black text-gray-400 uppercase tracking-tighter">Báo cáo bị giới hạn</h3>
+                        <p className="text-xs text-gray-300 font-bold mt-2 max-w-xs">Bạn cần quyền 'view:reports' để xem dữ liệu thống kê doanh thu và biểu đồ hiệu suất.</p>
+                    </div>
+                )}
 
                 {/* Quick Shortcuts & Task Monitor */}
                 <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm">
@@ -201,23 +235,29 @@ export default function AdminDashboard() {
                             </span>
                         </div>
                         <div className="space-y-3">
-                            {stats?.ordersByStatus?.PENDING > 0 && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl bg-red-50/50 border border-red-100/50">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-sm"></div>
-                                    <span className="text-[10px] font-black text-red-700 uppercase tracking-tight">Duyệt {stats.ordersByStatus.PENDING} đơn hàng mới</span>
-                                </div>
-                            )}
-                            {stats?.ordersByStatus?.CONFIRMED > 0 && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50/50 border border-blue-100/50">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm"></div>
-                                    <span className="text-[10px] font-black text-blue-700 uppercase tracking-tight">Đóng gói {stats.ordersByStatus.CONFIRMED} đơn hàng</span>
-                                </div>
-                            )}
-                            {!stats?.ordersByStatus?.PENDING && !stats?.ordersByStatus?.CONFIRMED && (
-                                <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50/50 border border-green-100/50 border-dashed">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-sm"></div>
-                                    <span className="text-[10px] font-black text-green-700 uppercase tracking-tight italic">Tất cả đều ổn! Nghỉ ngơi thôi.</span>
-                                </div>
+                            {!canViewStats ? (
+                                <div className="text-[10px] text-gray-300 italic font-medium px-1">Báo cáo ưu tiên bị ẩn</div>
+                            ) : (
+                                <>
+                                    {stats?.ordersByStatus?.PENDING > 0 && (
+                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-red-50/50 border border-red-100/50">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-sm"></div>
+                                            <span className="text-[10px] font-black text-red-700 uppercase tracking-tight">Duyệt {stats.ordersByStatus.PENDING} đơn hàng mới</span>
+                                        </div>
+                                    )}
+                                    {stats?.ordersByStatus?.CONFIRMED > 0 && (
+                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50/50 border border-blue-100/50">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm"></div>
+                                            <span className="text-[10px] font-black text-blue-700 uppercase tracking-tight">Đóng gói {stats.ordersByStatus.CONFIRMED} đơn hàng</span>
+                                        </div>
+                                    )}
+                                    {!stats?.ordersByStatus?.PENDING && !stats?.ordersByStatus?.CONFIRMED && (
+                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50/50 border border-green-100/50 border-dashed">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-sm"></div>
+                                            <span className="text-[10px] font-black text-green-700 uppercase tracking-tight italic">Tất cả đều ổn! Nghỉ ngơi thôi.</span>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
@@ -257,48 +297,57 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Newsfeed: Recent Transaction Logs */}
-                <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm overflow-hidden">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h2 className="text-xl font-black text-gray-900 tracking-tight">Đơn hàng mới</h2>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Giao dịch vừa cập bến</p>
+                {/* Newsfeed: Recent Transaction Logs (Visible if canManageOrders) */}
+                {canManageOrders ? (
+                    <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm overflow-hidden">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 className="text-xl font-black text-gray-900 tracking-tight">Đơn hàng mới</h2>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Giao dịch vừa cập bến</p>
+                            </div>
+                            <div className="p-2 rounded-xl bg-gray-50 border border-gray-100 shadow-sm group hover:bg-green-50 cursor-pointer transition-colors" onClick={() => window.location.href='/admin/orders'}>
+                                <ChevronRightIcon className="w-5 h-5 text-gray-400 group-hover:text-green-600" />
+                            </div>
                         </div>
-                        <div className="p-2 rounded-xl bg-gray-50 border border-gray-100 shadow-sm group hover:bg-green-50 cursor-pointer transition-colors" onClick={() => window.location.href='/admin/orders'}>
-                            <ChevronRightIcon className="w-5 h-5 text-gray-400 group-hover:text-green-600" />
-                        </div>
-                    </div>
-                    <div className="space-y-4">
-                        {recentOrders.map((o) => {
-                            const st = ORDER_STATUS[o.status] || { label: o.status, cls: 'bg-gray-100 text-gray-600 border-gray-200' };
-                            return (
-                                <div 
-                                    key={o.id} 
-                                    onClick={() => window.location.href=`/admin/orders/${o.id}?mode=view`}
-                                    className="flex flex-col gap-2 p-4 rounded-2xl border border-white bg-white/40 hover:border-green-100 hover:bg-green-50/20 transition-all group cursor-pointer shadow-sm active:scale-95 duration-300"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-black text-gray-400 group-hover:text-green-700 uppercase tracking-widest">ORDER #{o.id}</span>
-                                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border leading-none ${st.cls}`}>{st.label}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between mt-1">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-[10px] font-black text-gray-400 uppercase group-hover:bg-white group-hover:text-green-600 transition-all">
-                                                {o.username?.charAt(0) || 'U'}
-                                            </div>
-                                            <span className="text-sm font-black text-gray-900 group-hover:text-green-900 capitalize italic tracking-tight">{o.username || o.userId}</span>
+                        <div className="space-y-4">
+                            {recentOrders.map((o) => {
+                                const st = ORDER_STATUS[o.status] || { label: o.status, cls: 'bg-gray-100 text-gray-600 border-gray-200' };
+                                return (
+                                    <div 
+                                        key={o.id} 
+                                        onClick={() => window.location.href=`/admin/orders/${o.id}?mode=view`}
+                                        className="flex flex-col gap-2 p-4 rounded-2xl border border-white bg-white/40 hover:border-green-100 hover:bg-green-50/20 transition-all group cursor-pointer shadow-sm active:scale-95 duration-300"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black text-gray-400 group-hover:text-green-700 uppercase tracking-widest">ORDER #{o.id}</span>
+                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border leading-none ${st.cls}`}>{st.label}</span>
                                         </div>
-                                        <span className="text-sm font-black text-green-700">{fmt(o.totalAmount)}₫</span>
+                                        <div className="flex items-center justify-between mt-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-[10px] font-black text-gray-400 uppercase group-hover:bg-white group-hover:text-green-600 transition-all">
+                                                    {o.username?.charAt(0) || 'U'}
+                                                </div>
+                                                <span className="text-sm font-black text-gray-900 group-hover:text-green-900 capitalize italic tracking-tight">{o.username || o.userId}</span>
+                                            </div>
+                                            <span className="text-sm font-black text-green-700">{fmt(o.totalAmount)}₫</span>
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
-                        {recentOrders.length === 0 && (
-                            <div className="text-center py-10 text-gray-400 font-medium border-2 border-dashed border-gray-100 rounded-3xl italic">Chưa có giao dịch nào</div>
-                        )}
-                        <button onClick={() => window.location.href='/admin/orders'} className="w-full py-3 bg-green-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-green-700 transition-all mt-4 border border-white/20 shadow-lg">Xem tất cả đơn hàng</button>
+                                );
+                            })}
+                            {recentOrders.length === 0 && (
+                                <div className="text-center py-10 text-gray-400 font-medium border-2 border-dashed border-gray-100 rounded-3xl italic">Chưa có giao dịch nào</div>
+                            )}
+                            <button onClick={() => window.location.href='/admin/orders'} className="w-full py-3 bg-green-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-green-700 transition-all mt-4 border border-white/20 shadow-lg">Xem tất cả đơn hàng</button>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="bg-gray-50/50 rounded-2xl p-6 border border-dashed border-gray-200 flex flex-col items-center justify-center text-center">
+                        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-300 mb-4">
+                            <ClipboardDocumentListIcon className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-sm font-black text-gray-300 uppercase italic">Truy cập đơn hàng bị chặn</h3>
+                    </div>
+                )}
             </div>
         </AdminLayout>
     );

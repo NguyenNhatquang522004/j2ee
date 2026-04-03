@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
 
@@ -20,9 +19,11 @@ export function NotificationProvider({ children }) {
             return;
         }
 
-        const socketUrl = '/ws'; // Using proxy in vite.config.js
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const brokerURL = `${protocol}//${window.location.host}/ws`;
+
         const client = new Client({
-            webSocketFactory: () => new SockJS(socketUrl),
+            brokerURL,
             connectHeaders: {
                 Authorization: `Bearer ${user.accessToken}`
             },

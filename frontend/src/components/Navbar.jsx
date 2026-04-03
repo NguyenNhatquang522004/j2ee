@@ -240,7 +240,10 @@ export default function Navbar() {
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         const q = e.target.value.trim();
-                                        if (q) navigate(`/products?keyword=${encodeURIComponent(q)}`);
+                                        if (q) {
+                                            navigate(`/products?keyword=${encodeURIComponent(q)}`);
+                                            e.target.value = '';
+                                        }
                                     }
                                 }}
                             />
@@ -342,6 +345,7 @@ export default function Navbar() {
                                     const q = e.target.value.trim();
                                     if (q) {
                                         navigate(`/products?keyword=${encodeURIComponent(q)}`);
+                                        e.target.value = '';
                                         setIsMenuOpen(false);
                                     }
                                 }

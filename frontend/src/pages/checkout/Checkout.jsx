@@ -200,7 +200,7 @@ export default function Checkout() {
                 toast.success('Đơn hàng đã được tạo. Vui lòng thanh toán!');
             } else {
                 toast.success('Đặt hàng thành công!');
-                navigate(`/success?orderCode=${res.data.orderCode}`);
+                navigate(`/success?orderCode=${res.data.orderCode}&method=${form.paymentMethod}`);
             }
         } catch (err) {
             toast.error(err.response?.data?.message || 'Đặt hàng thất bại');

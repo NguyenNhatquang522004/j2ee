@@ -7,7 +7,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,7 +40,7 @@ services:
       - freshfood-network
 
   freshfood-backend:
-    build: 
+    build:
       context: ./demo
     container_name: freshfood-api
     ports:
@@ -58,6 +58,7 @@ services:
       - SENTRY_TRACES_SAMPLE_RATE=1.0
       - MEILI_SERVER_URL=http://meilisearch:7700
       - MEILI_API_KEY=${MEILI_MASTER_KEY:-freshfood_super_secret_master_key_123}
+      - APP_AI_API_URL=http://ai-service:5001/api/predict-freshness
       - SPRING_MAIL_HOST=${SPRING_MAIL_HOST:-smtp.gmail.com}
       - SPRING_MAIL_PORT=${SPRING_MAIL_PORT:-587}
       - SPRING_MAIL_USERNAME=${MAIL_USERNAME}
@@ -75,6 +76,21 @@ services:
         condition: service_healthy
       meilisearch:
         condition: service_started
+      ai-service:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - freshfood-network
+
+  ai-service:
+    build:
+      context: ./ai-service
+    container_name: freshfood-ai
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - ROBOFLOW_API_KEY=${ROBOFLOW_API_KEY:-m1244nLCpKjzFXsEBUJt}
     restart: unless-stopped
     networks:
       - freshfood-network

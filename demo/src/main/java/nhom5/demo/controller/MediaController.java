@@ -51,7 +51,7 @@ public class MediaController {
      * getAllMedia: Administrative catalog of all assets currently managed by the application.
      */
     @Operation(summary = "Lấy danh sách tất cả file trong thư viện")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'view:media', 'manage:media')")
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<MediaResponse>>> getAllMedia() {
         return ResponseEntity.ok(ApiResponse.success(mediaService.getAllMedia()));
@@ -62,7 +62,7 @@ public class MediaController {
      * @throws IOException if the cloud provider API rejects the removal request.
      */
     @Operation(summary = "Xóa file khỏi thư viện và Cloudinary")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:media')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMedia(@PathVariable Long id) throws IOException {
         mediaService.deleteMedia(Objects.requireNonNull(id));

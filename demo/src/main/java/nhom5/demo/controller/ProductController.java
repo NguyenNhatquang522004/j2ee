@@ -52,10 +52,12 @@ public class ProductController {
         
         Boolean finalIsActive = isActive;
         if (isActive == null) {
-            boolean isAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null &&
+            boolean isStaffOrAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null &&
                     org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-            if (!isAdmin) {
+                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || 
+                                          a.getAuthority().equals("view:products") || 
+                                          a.getAuthority().equals("manage:products"));
+            if (!isStaffOrAdmin) {
                 finalIsActive = true;
             }
         }
@@ -98,7 +100,7 @@ public class ProductController {
 
     @Operation(summary = "Tạo sản phẩm mới (Admin)")
     @SecurityRequirement(name = "bearerAuth")
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:products')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:products')")
     @PostMapping
     public ResponseEntity<ApiResponse<ProductResponse>> create(
             @Valid @RequestBody ProductRequest request) {
@@ -108,7 +110,7 @@ public class ProductController {
 
     @Operation(summary = "Cập nhật sản phẩm (Admin)")
     @SecurityRequirement(name = "bearerAuth")
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:products')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:products')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductResponse>> update(
             @PathVariable Long id,
@@ -118,7 +120,7 @@ public class ProductController {
 
     @Operation(summary = "Xoá sản phẩm (Admin)")
     @SecurityRequirement(name = "bearerAuth")
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:products')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:products')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         productService.deleteProduct(Objects.requireNonNull(id));
@@ -127,7 +129,7 @@ public class ProductController {
 
     @Operation(summary = "Bật/tắt trạng thái sản phẩm (Admin)")
     @SecurityRequirement(name = "bearerAuth")
-    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('manage:products')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:products')")
     @PatchMapping("/{id}/toggle-status")
     public ResponseEntity<ApiResponse<Void>> toggleStatus(@PathVariable Long id) {
         productService.toggleProductStatus(Objects.requireNonNull(id));

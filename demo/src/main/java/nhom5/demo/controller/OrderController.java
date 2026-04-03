@@ -72,7 +72,7 @@ public class OrderController {
      * Visibility: Restricted to Staff/Admin with 'manage:refunds' authority.
      */
     @Operation(summary = "Danh sách yêu cầu hoàn trả/hoàn tiền (Admin)")
-    @PreAuthorize("hasAnyAuthority('manage:orders', 'manage:refunds')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:orders', 'view:orders', 'manage:refunds')")
     @GetMapping("/refund-requests")
     public ResponseEntity<ApiResponse<Page<OrderResponse>>> getRefundRequests(
             @RequestParam(required = false) String query,
@@ -115,7 +115,7 @@ public class OrderController {
      * getAllOrders: Master list of all transactions for administrative oversight and bulk management.
      */
     @Operation(summary = "Tất cả đơn hàng (Admin)")
-    @PreAuthorize("hasAuthority('manage:orders')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:orders', 'view:orders')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(
             @RequestParam(required = false) String query,

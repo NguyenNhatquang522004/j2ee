@@ -9,7 +9,9 @@ import {
     LockOpenIcon,
     EnvelopeIcon,
     PhoneIcon,
-    ShieldCheckIcon
+    ShieldCheckIcon,
+    TrashIcon,
+    BriefcaseIcon
 } from '@heroicons/react/24/outline';
 
 export default function AdminUsers() {
@@ -19,10 +21,16 @@ export default function AdminUsers() {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [sortBy, setSortBy] = useState('createdAt');
     const [direction, setDirection] = useState('desc');
+
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedSearch(search), 500);
+        return () => clearTimeout(handler);
+    }, [search]);
 
     const fetchUsers = useCallback(async (p = 0, q = '', role = '', active = '', sort = 'createdAt', dir = 'desc') => {
         setLoading(true);
@@ -46,8 +54,25 @@ export default function AdminUsers() {
     }, []);
 
     useEffect(() => { 
-        fetchUsers(page, search, roleFilter, statusFilter, sortBy, direction); 
-    }, [page, search, roleFilter, statusFilter, sortBy, direction, fetchUsers]);
+        fetchUsers(page, debouncedSearch, roleFilter, statusFilter, sortBy, direction); 
+    }, [page, debouncedSearch, roleFilter, statusFilter, sortBy, direction, fetchUsers]);
+
+    const handleDelete = async (user) => {
+        if (user.role?.includes('ADMIN') || user.role?.includes('STAFF')) {
+            toast.error('Không thể xóa tài khoản quản trị hoặc nhân viên tại đây');
+            return;
+        }
+        
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản ${user.fullName}? Hành động này không thể hoàn tác.`)) return;
+
+        try {
+            await userService.delete(user.id);
+            toast.success('Đã xóa tài khoản người dùng thành công');
+            fetchUsers(page);
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Xóa thất bại');
+        }
+    };
 
     const handleToggle = async (id) => {
         setTogglingId(id);
@@ -175,10 +200,14 @@ export default function AdminUsers() {
                                         </div>
                                     </td>
                                     <td className="px-5 py-3 text-center">
-                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
-                                            u.role?.includes('ADMIN') ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-gray-100 text-gray-600 border-gray-200'
+                                        <span className={`inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                                            u.role?.includes('ADMIN') ? 'bg-purple-100 text-purple-700 border-purple-200' : 
+                                            u.role?.includes('STAFF') ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                            'bg-gray-100 text-gray-600 border-gray-200'
                                         }`}>
-                                            {u.role?.includes('ADMIN') && <ShieldCheckIcon className="w-5 h-5" />}
+                                            {u.role?.includes('ADMIN') ? <ShieldCheckIcon className="w-3.5 h-3.5" /> : 
+                                             u.role?.includes('STAFF') ? <BriefcaseIcon className="w-3.5 h-3.5" /> :
+                                             <UserIcon className="w-3.5 h-3.5" />}
                                             {u.role?.replace('ROLE_', '')}
                                         </span>
                                     </td>
@@ -190,26 +219,38 @@ export default function AdminUsers() {
                                         </span>
                                     </td>
                                     <td className="px-5 py-3 text-center">
-                                        <button
-                                            disabled={togglingId === u.id || u.role?.includes('ADMIN')}
-                                            onClick={() => handleToggle(u.id)}
-                                            className={`p-1.5 rounded-lg transition-all ${
-                                                u.role?.includes('ADMIN')
-                                                ? 'text-gray-100 cursor-not-allowed' 
-                                                : u.isActive 
-                                                    ? 'text-red-500 hover:bg-red-50 bg-red-50/30' 
-                                                    : 'text-green-600 hover:bg-green-50 bg-green-50/30'
-                                            }`}
-                                            title={u.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-                                        >
-                                            {togglingId === u.id ? (
-                                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                                            ) : u.isActive ? (
-                                                <LockClosedIcon className="w-5 h-5" />
-                                            ) : (
-                                                <LockOpenIcon className="w-5 h-5" />
+                                        <div className="flex items-center justify-center gap-1">
+                                            {!u.role?.includes('ADMIN') && !u.role?.includes('STAFF') && (
+                                                <button
+                                                    disabled={togglingId === u.id}
+                                                    onClick={() => handleToggle(u.id)}
+                                                    className={`p-2 rounded-xl transition-all ${
+                                                        u.isActive 
+                                                            ? 'text-red-500 hover:bg-red-50 bg-red-50/10' 
+                                                            : 'text-green-600 hover:bg-green-50 bg-green-50/10'
+                                                    }`}
+                                                    title={u.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                                                >
+                                                    {togglingId === u.id ? (
+                                                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                                    ) : u.isActive ? (
+                                                        <LockClosedIcon className="w-5 h-5" />
+                                                    ) : (
+                                                        <LockOpenIcon className="w-5 h-5" />
+                                                    )}
+                                                </button>
                                             )}
-                                        </button>
+
+                                            {!u.role?.includes('ADMIN') && !u.role?.includes('STAFF') && (
+                                                <button
+                                                    onClick={() => handleDelete(u)}
+                                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                                    title="Xóa tài khoản"
+                                                >
+                                                    <TrashIcon className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

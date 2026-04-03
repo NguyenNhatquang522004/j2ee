@@ -44,7 +44,7 @@ public class SettingController {
      */
     @Operation(summary = "Lấy tất cả cài đặt hệ thống (Admin)")
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'view:settings', 'manage:settings')")
     public ResponseEntity<ApiResponse<List<SystemSetting>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(settingService.getAllSettings()));
     }
@@ -54,7 +54,7 @@ public class SettingController {
      */
     @Operation(summary = "Cập nhật một cài đặt")
     @PutMapping("/{key}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:settings')")
     public ResponseEntity<ApiResponse<Void>> update(@PathVariable String key, @RequestBody Map<String, String> body) {
         settingService.updateSetting(Objects.requireNonNull(key), Objects.requireNonNull(body.get("value")));
         return ResponseEntity.ok(ApiResponse.success("Cập nhật cài đặt thành công", null));
@@ -66,7 +66,7 @@ public class SettingController {
      */
     @Operation(summary = "Cập nhật nhiều cài đặt cùng lúc")
     @PutMapping("/batch")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:settings')")
     public ResponseEntity<ApiResponse<Void>> updateBatch(@RequestBody Map<String, String> settings) {
         settingService.updateSettings(Objects.requireNonNull(settings));
         return ResponseEntity.ok(ApiResponse.success("Cập nhật các cài đặt thành công", null));

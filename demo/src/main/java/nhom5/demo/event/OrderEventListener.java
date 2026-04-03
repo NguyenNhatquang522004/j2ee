@@ -33,18 +33,19 @@ public class OrderEventListener {
         String type = Objects.requireNonNull(event.getType());
         OrderStatusEnum status = event.getStatus();
 
-        log.info("Processing OrderEvent for Order #{}: Type={}", order.getOrderCode(), type);
+        log.info("Processing OrderEvent for Order #{}: Type={} by {}", order.getOrderCode(), type, event.getUsername());
 
         try {
+            String actor = event.getUsername() != null ? event.getUsername() : "SYSTEM";
             switch (type) {
                 case "CREATED" -> {
                     mailService.sendOrderConfirmation(order);
                     notificationService.createNotification(user,
                             "Đơn hàng #" + order.getOrderCode() + " của bạn đã được tạo thành công!",
                             "SUCCESS",
-                            "/orders/" + order.getId());
+                            "/orders/" + order.getOrderCode());
                     
-                    publishAuditLog("SYSTEM", "ORDER_CREATE", "Order", String.valueOf(order.getId()), 
+                    publishAuditLog(actor, "ORDER_CREATE", "Order", order.getOrderCode(), 
                             "Order created: " + order.getOrderCode());
                 }
                 case "STATUS_UPDATED" -> {
@@ -52,14 +53,14 @@ public class OrderEventListener {
                         notificationService.createNotification(user,
                                 "Đơn hàng #" + order.getOrderCode() + " đã chuyển sang trạng thái: " + status.getDisplayName(),
                                 status == OrderStatusEnum.CANCELLED ? "WARNING" : "INFO",
-                                "/orders/" + order.getId());
+                                "/orders/" + order.getOrderCode());
 
                         // Send Email for important status changes
                         if (status != OrderStatusEnum.PENDING) {
                             mailService.sendOrderStatusUpdate(order);
                         }
 
-                        publishAuditLog("SYSTEM", "STATUS_UPDATE", "Order", String.valueOf(order.getId()), 
+                        publishAuditLog(actor, "STATUS_UPDATE", "Order", order.getOrderCode(), 
                                 "Updated order " + order.getOrderCode() + " status to " + status);
                         
                         if (status == OrderStatusEnum.DELIVERED) {
@@ -71,9 +72,9 @@ public class OrderEventListener {
                     notificationService.createNotification(user,
                             "Bạn đã hủy thành công đơn hàng #" + order.getOrderCode(),
                             "WARNING",
-                            "/orders/" + order.getId());
+                            "/orders/" + order.getOrderCode());
 
-                    publishAuditLog("SYSTEM", "CANCEL", "Order", String.valueOf(order.getId()), 
+                    publishAuditLog(actor, "CANCEL", "Order", order.getOrderCode(), 
                             "Cancelled order " + order.getOrderCode());
                 }
             }

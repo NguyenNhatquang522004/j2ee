@@ -43,6 +43,8 @@ public class AuthServiceImpl implements AuthService {
     private final TwoFactorService twoFactorService;
     private final SettingService settingService;
     private final NotificationService notificationService;
+    private final nhom5.demo.service.SecurityLogService securityLogService;
+    private final jakarta.servlet.http.HttpServletRequest httpServletRequest;
 
     @Override
     @Transactional
@@ -103,6 +105,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("Tài khoản của bạn đã bị khoá bởi Quản trị viên");
         }
 
+        String ip = httpServletRequest.getRemoteAddr();
         if (user.getLockoutUntil() != null && user.getLockoutUntil().isAfter(LocalDateTime.now())) {
             throw new BusinessException("Tài khoản bị tạm khoá do nhập sai quá nhiều. Hãy thử lại sau " + 
                 java.time.Duration.between(LocalDateTime.now(), user.getLockoutUntil()).toMinutes() + " phút.");
@@ -117,6 +120,7 @@ public class AuthServiceImpl implements AuthService {
             user.setLockoutUntil(null);
             userRepository.save(user);
 
+            securityLogService.log("LOGIN_SUCCESS", "LOW", "Đăng nhập thành công", ip, user.getUsername());
         } catch (org.springframework.security.authentication.BadCredentialsException e) {
             // Tăng đếm lỗi đăng nhập. Nếu >= 5 lần, khóa tài khoản trong 30 phút.
             int attempts = (user.getFailedLoginAttempts() != null ? user.getFailedLoginAttempts() : 0) + 1;
@@ -125,10 +129,12 @@ public class AuthServiceImpl implements AuthService {
             if (attempts >= 5) {
                 user.setLockoutUntil(LocalDateTime.now().plusMinutes(30)); 
                 userRepository.save(user);
+                securityLogService.log("ACCOUNT_LOCKED", "HIGH", "Tài khoản bị khóa do nhập sai mật khẩu 5 lần", ip, user.getUsername());
                 throw new BusinessException("Tài khoản đã bị khoá 30 phút do nhập sai mật khẩu 5 lần.");
             }
             
             userRepository.save(user);
+            securityLogService.log("LOGIN_FAILED", "MEDIUM", "Nhập sai mật khẩu (Lần " + attempts + ")", ip, user.getUsername());
             throw new BusinessException("Mật khẩu không chính xác. Bạn còn " + (5 - attempts) + " lần thử.");
         }
 
@@ -153,6 +159,9 @@ public class AuthServiceImpl implements AuthService {
                     .isTwoFactorEnabled(true)
                     .isTwoFactorEnforced(enfored2FA)
                     .twoFactorMethod(user.getTwoFactorMethod())
+                    .permissions(user.getCustomPermissions() != null && !user.getCustomPermissions().isEmpty()
+                        ? user.getCustomPermissions()
+                        : user.getRole().getPermissions())
                     .build();
         }
 
@@ -286,6 +295,7 @@ public class AuthServiceImpl implements AuthService {
         
         // Thông báo đăng nhập mạng xã hội
         notificationService.createNotification(user, "Bạn đã đăng nhập thành công qua " + request.getProvider(), "LOGIN", null);
+        securityLogService.log("SOCIAL_LOGIN_SUCCESS", "LOW", "Đăng nhập qua " + request.getProvider(), httpServletRequest.getRemoteAddr(), user.getUsername());
         
         return buildAuthResponse(user, token);
     }
@@ -307,6 +317,9 @@ public class AuthServiceImpl implements AuthService {
                 .isTwoFactorEnabled(user.getIsTwoFactorEnabled())
                 .isTwoFactorEnforced("true".equalsIgnoreCase(settingService.getSettingValue("2FA_ENFORCED", "false")))
                 .twoFactorMethod(user.getTwoFactorMethod())
+                .permissions(user.getCustomPermissions() != null && !user.getCustomPermissions().isEmpty()
+                    ? user.getCustomPermissions()
+                    : user.getRole().getPermissions())
                 .build();
     }
 }

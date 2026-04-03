@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { mediaService } from '../../api/services';
+import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
 import { 
@@ -27,6 +28,8 @@ import { useConfirm } from '../../context/ModalContext';
  */
 export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }) {
     // --- STATE MANAGEMENT ---
+    const { hasPermission } = useAuth();
+    const canManage = hasPermission('manage:media');
     const { confirm } = useConfirm();
     const [media, setMedia] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -163,11 +166,13 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                 </div>
                 <div className="flex items-center gap-3">
                     {/* Floating Upload Button */}
-                    <label className={`cursor-pointer flex items-center gap-2 px-4.5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-black rounded-lg shadow-lg shadow-green-100 transition-all active:scale-95 text-[11px] uppercase tracking-wider ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
-                        <CloudArrowUpIcon className="w-5 h-5 stroke-[3]" />
-                        <span>{uploading ? 'Đang tải...' : 'Tải lên'}</span>
-                        <input type="file" className="hidden" accept="image/*,video/*" onChange={handleUpload} disabled={uploading} />
-                    </label>
+                    {canManage && (
+                        <label className={`cursor-pointer flex items-center gap-2 px-4.5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-black rounded-lg shadow-lg shadow-green-100 transition-all active:scale-95 text-[11px] uppercase tracking-wider ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <CloudArrowUpIcon className="w-5 h-5 stroke-[3]" />
+                            <span>{uploading ? 'Đang tải...' : 'Tải lên'}</span>
+                            <input type="file" className="hidden" accept="image/*,video/*" onChange={handleUpload} disabled={uploading} />
+                        </label>
+                    )}
                     {isModal && (
                         <button onClick={onClose} className="p-3 text-gray-400 hover:bg-gray-100 rounded-xl transition-all">
                             <XMarkIcon className="w-6 h-6" />
@@ -263,13 +268,15 @@ export default function AdminMediaLibrary({ onSelect, isModal = false, onClose }
                                                 >
                                                     <ClipboardDocumentIcon className="w-5 h-5" />
                                                 </button>
-                                                <button 
-                                                    onClick={() => handleDelete(m.id)}
-                                                    className="w-10 h-10 flex items-center justify-center bg-red-500/20 hover:bg-red-500 text-white rounded-full transition-colors"
-                                                    title="Xóa"
-                                                >
-                                                    <TrashIcon className="w-5 h-5" />
-                                                </button>
+                                                {canManage && (
+                                                    <button 
+                                                        onClick={() => handleDelete(m.id)}
+                                                        className="w-10 h-10 flex items-center justify-center bg-red-500/20 hover:bg-red-500 text-white rounded-full transition-colors"
+                                                        title="Xóa"
+                                                    >
+                                                        <TrashIcon className="w-5 h-5" />
+                                                    </button>
+                                                )}
                                             </>
                                         )}
                                     </div>

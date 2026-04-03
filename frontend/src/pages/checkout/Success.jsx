@@ -13,6 +13,8 @@ import confetti from 'canvas-confetti';
 export default function Success() {
     const [searchParams] = useSearchParams();
     const orderCode = searchParams.get('orderCode');
+    const paymentMethod = searchParams.get('method') || 'COD';
+    const isCOD = paymentMethod === 'COD';
 
     useEffect(() => {
         // Hiệu ứng pháo hoa chúc mừng
@@ -41,7 +43,9 @@ export default function Success() {
                     <div className="absolute inset-0 bg-green-500 rounded-full blur-[120px] opacity-20 animate-pulse"></div>
                     <div className="relative z-10 p-10 bg-white border border-gray-100 rounded-[4rem] shadow-2xl shadow-green-100/50">
                         <CheckCircleIcon className="w-24 h-24 text-green-600 mb-6 mx-auto" />
-                        <h1 className="text-5xl font-black text-gray-900 leading-none italic uppercase tracking-tighter mb-4">Thanh toán <span className="text-green-600">thành công!</span></h1>
+                        <h1 className="text-5xl font-black text-gray-900 leading-none italic uppercase tracking-tighter mb-4">
+                            {isCOD ? 'Đặt hàng' : 'Thanh toán'} <span className="text-green-600">thành công!</span>
+                        </h1>
                         <p className="text-xl text-gray-600 font-bold uppercase tracking-widest italic leading-none">Cảm ơn bạn đã tin tưởng FreshFood</p>
                     </div>
                 </div>
@@ -56,8 +60,9 @@ export default function Success() {
                         </div>
                         
                         <p className="text-gray-500 font-medium leading-relaxed max-w-md mx-auto">
-                            Đơn hàng của bạn đang được hệ thống xử lý tự động qua SePay. 
-                            Chúng tôi sẽ sớm liên hệ xác nhận và giao nông sản tươi sạch đến tay bạn trong thời gian sớm nhất.
+                            {isCOD 
+                                ? 'Đơn hàng của bạn đã được tạo thành công. Bạn sẽ thanh toán khi nhận hàng. Chúng tôi sẽ sớm liên hệ xác nhận và giao nông sản tươi sạch đến tay bạn.' 
+                                : 'Đơn hàng của bạn đang được hệ thống xử lý. Chúng tôi sẽ sớm liên hệ xác nhận và giao nông sản tươi sạch đến tay bạn trong thời gian sớm nhất.'}
                         </p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6">

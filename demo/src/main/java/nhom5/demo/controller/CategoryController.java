@@ -49,7 +49,7 @@ public class CategoryController {
      */
     @Operation(summary = "Tất cả danh mục (Admin)")
     @SecurityRequirement(name = "bearerAuth")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'view:categories', 'manage:categories')")
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllForAdmin() {
         return ResponseEntity.ok(ApiResponse.success(categoryService.getAllCategories()));
@@ -60,7 +60,7 @@ public class CategoryController {
      */
     @Operation(summary = "Bật/tắt trạng thái danh mục (Admin)")
     @SecurityRequirement(name = "bearerAuth")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:categories')")
     @PatchMapping("/{id}/toggle-status")
     public ResponseEntity<ApiResponse<Void>> toggleStatus(@PathVariable @NonNull Long id) {
         categoryService.toggleCategoryStatus(Objects.requireNonNull(id));
@@ -80,7 +80,7 @@ public class CategoryController {
      * create: Registers a new category in the system.
      */
     @Operation(summary = "Tạo danh mục mới (Admin)")
-    @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:categories')")
     @PostMapping
     public ResponseEntity<ApiResponse<CategoryResponse>> create(
             @Valid @RequestBody @NonNull CategoryRequest request) {
@@ -92,7 +92,7 @@ public class CategoryController {
      * update: Updates metadata (Name, Slug, Description) for a category.
      */
     @Operation(summary = "Cập nhật danh mục (Admin)")
-    @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:categories')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CategoryResponse>> update(
             @PathVariable @NonNull Long id,
@@ -104,7 +104,7 @@ public class CategoryController {
      * delete: Permanently archives or removes a category.
      */
     @Operation(summary = "Xoá danh mục (Admin)")
-    @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:categories')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable @NonNull Long id) {
         categoryService.deleteCategory(Objects.requireNonNull(id));

@@ -41,6 +41,7 @@ public class BatchController {
      * addBatch: Registers a new intake of product inventory.
      */
     @Operation(summary = "Thêm lô hàng mới")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:batches')")
     @PostMapping
     public ResponseEntity<ApiResponse<BatchResponse>> addBatch(
             @Valid @RequestBody BatchRequest request) {
@@ -52,6 +53,7 @@ public class BatchController {
      * getAllBatches: Paginated overview of all registered batches in the system.
      */
     @Operation(summary = "Danh sách tất cả lô hàng (Admin)")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'view:batches', 'manage:batches')")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<BatchResponse>>> getAllBatches(
             @RequestParam(required = false) String query,
@@ -68,6 +70,7 @@ public class BatchController {
      * getById: Direct lookup for a specific intake batch.
      */
     @Operation(summary = "Chi tiết lô hàng theo ID")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'view:batches', 'manage:batches')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BatchResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(batchService.getBatchById(Objects.requireNonNull(id))));
@@ -77,6 +80,7 @@ public class BatchController {
      * getByProduct: Retrieves inventory history for a specific catalog item.
      */
     @Operation(summary = "Danh sách lô hàng theo sản phẩm")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'view:batches', 'manage:batches')")
     @GetMapping("/product/{productId}")
     public ResponseEntity<ApiResponse<Page<BatchResponse>>> getByProduct(
             @PathVariable Long productId,
@@ -94,6 +98,7 @@ public class BatchController {
      * getNearExpiry: Proactive alert system for items reaching their best-before date.
      */
     @Operation(summary = "Danh sách lô hàng sắp hết hạn")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'view:batches', 'manage:batches')")
     @GetMapping("/near-expiry")
     public ResponseEntity<ApiResponse<List<BatchResponse>>> getNearExpiry(
             @RequestParam(defaultValue = "3") int days) {
@@ -105,6 +110,7 @@ public class BatchController {
      * updateBatch: Modifies existing batch data (Quantity, Price, Expiry).
      */
     @Operation(summary = "Cập nhật lô hàng")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:batches')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<BatchResponse>> updateBatch(
             @PathVariable Long id,
@@ -117,6 +123,7 @@ public class BatchController {
      * deleteBatch: Removes an intake record from the database.
      */
     @Operation(summary = "Xóa lô hàng")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:batches')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteBatch(@PathVariable Long id) {
         batchService.deleteBatch(Objects.requireNonNull(id));

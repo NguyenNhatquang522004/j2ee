@@ -142,7 +142,16 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void toggleUserStatus(@NonNull Long id) {
         User user = findById(id);
-        user.setIsActive(!Boolean.TRUE.equals(user.getIsActive()));
+        boolean newStatus = !Boolean.TRUE.equals(user.getIsActive());
+        user.setIsActive(newStatus);
+        
+        if (!newStatus) {
+            user.setTokenVersion(user.getTokenVersion() + 1);
+            auditService.log(nhom5.demo.security.SecurityUtils.getCurrentUsername(), "LOCK_USER", "User", id.toString(), "Account locked and tokens invalidated: " + user.getUsername());
+        } else {
+            auditService.log(nhom5.demo.security.SecurityUtils.getCurrentUsername(), "UNLOCK_USER", "User", id.toString(), "Account unlocked: " + user.getUsername());
+        }
+        
         userRepository.save(user);
     }
 

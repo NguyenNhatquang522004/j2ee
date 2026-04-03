@@ -344,7 +344,7 @@ public class OrderServiceImpl implements OrderService {
         LocalDateTime now = LocalDateTime.now();
         
         switch (status) {
-            case CONFIRMED -> { 
+            case CONFIRMED:
                 if (order.getPaymentMethod() != PaymentMethodEnum.COD && !order.getIsPaid() && order.getConfirmedAt() == null) {
                     log.info("Pre-paid order confirmed. Deducting physical stock for order: {}", order.getOrderCode());
                     for (OrderItem item : order.getOrderItems()) {
@@ -355,8 +355,9 @@ public class OrderServiceImpl implements OrderService {
                 }
                 if (order.getConfirmedAt() == null) order.setConfirmedAt(now); 
                 redisStockReservationService.commit(Objects.requireNonNull(order.getOrderCode()), Objects.requireNonNull(getOrderItemMap(order)));
-            }
-            case PACKAGING -> {
+                break;
+
+            case PACKAGING:
                 if (order.getPaymentMethod() == PaymentMethodEnum.COD && !order.getIsPaid() && order.getPackagingAt() == null) {
                     log.info("COD order packaging. Deducting physical stock for order: {}", order.getOrderCode());
                     for (OrderItem item : order.getOrderItems()) {
@@ -364,39 +365,56 @@ public class OrderServiceImpl implements OrderService {
                     }
                 }
                 if (order.getPackagingAt() == null) order.setPackagingAt(now);
-            }
-            case DELIVERED -> { 
+                break;
+
+            case SHIPPING:
+                if (order.getShippedAt() == null) order.setShippedAt(now);
+                if (order.getTrackingNumber() == null) {
+                    order.setTrackingNumber("FF-" + order.getOrderCode().substring(Math.max(0, order.getOrderCode().length() - 4)));
+                }
+                break;
+
+            case DELIVERED:
                 log.info("Order delivered: {}", order.getOrderCode());
+                if (order.getShippedAt() == null) order.setShippedAt(now.minusMinutes(5));
                 if (order.getDeliveredAt() == null) order.setDeliveredAt(now);
                 if (order.getPaymentMethod() == PaymentMethodEnum.COD && !order.getIsPaid()) {
                     order.setIsPaid(true);
                     order.setPaidAt(now);
                 }
                 redisStockReservationService.commit(Objects.requireNonNull(order.getOrderCode()), Objects.requireNonNull(getOrderItemMap(order)));
-            }
-            case CANCELLED -> { 
+                break;
+
+            case RETURN_REQUESTED:
+                if (order.getReturnRequestedAt() == null) order.setReturnRequestedAt(now);
+                break;
+
+            case CANCELLED:
                 log.warn("Order cancelled: {}. Reverting promo and stock if previously deducted.", order.getOrderCode());
                 if (order.getCancelledAt() == null) order.setCancelledAt(now); 
                 revertCouponUsage(order);
                 revertFlashSaleUsage(order); 
-                
                 boolean wasStockDeducted = order.getIsPaid() || order.getPackagingAt() != null || order.getShippedAt() != null;
                 if (wasStockDeducted) {
                     log.info("Reverting physical stock for cancelled order: {}", order.getOrderCode());
                     revertStock(order);
                 }
                 redisStockReservationService.release(Objects.requireNonNull(order.getOrderCode()), Objects.requireNonNull(getOrderItemMap(order)));
-            }
-            case RETURNED -> {
+                break;
+
+            case RETURNED:
                 log.warn("Order returned: {}. Reverting physical stock.", order.getOrderCode());
                 if (order.getReturnedAt() == null) order.setReturnedAt(now);
                 revertStock(order);
-            }
-            default -> { /* Other statuses as logic-only */ }
+                break;
+
+            default:
+                break;
         }
         
         Order savedOrder = orderRepository.save(order);
-        eventPublisher.publishEvent(Objects.requireNonNull(OrderEvent.builder().order(savedOrder).status(status).type("STATUS_UPDATED").build()));
+        OrderEvent orderEvent = new OrderEvent(savedOrder, status, "STATUS_UPDATED", SecurityUtils.getCurrentUsername());
+        eventPublisher.publishEvent(Objects.requireNonNull(orderEvent));
         return toResponse(savedOrder);
     }
 
@@ -452,7 +470,7 @@ public class OrderServiceImpl implements OrderService {
                 "WARNING",
                 "/orders/code/" + order.getOrderCode());
 
-        auditService.log(username, "CANCEL", "Order", order.getId().toString(), "Cancelled order " + order.getOrderCode());
+        auditService.log(username, "CANCEL", "Order", order.getOrderCode(), "Cancelled order " + order.getOrderCode());
     }
 
     /**
@@ -485,14 +503,14 @@ public class OrderServiceImpl implements OrderService {
         notificationService.createNotification(order.getUser(),
                 "Đơn hàng #" + order.getOrderCode() + " đã được hoàn tiền thành công",
                 "SUCCESS",
-                "/orders/" + order.getId());
+                "/orders/" + order.getOrderCode());
 
         // Send Email for refund
         mailService.sendGenericEmail(order.getUser().getEmail(), 
             "Thông báo hoàn tiền đơn hàng #" + order.getOrderCode(), 
             "Chúc mừng, đơn hàng #" + order.getOrderCode() + " của bạn đã được hoàn lại số tiền " + order.getFinalAmount() + "đ thành công.");
 
-        auditService.log(SecurityUtils.getCurrentUsername(), "MARK_REFUNDED", "Order", id.toString(), 
+        auditService.log(SecurityUtils.getCurrentUsername(), "MARK_REFUNDED", "Order", order.getOrderCode(), 
                 "Marked order " + order.getOrderCode() + " as refunded");
                 
         return toResponse(savedOrder);

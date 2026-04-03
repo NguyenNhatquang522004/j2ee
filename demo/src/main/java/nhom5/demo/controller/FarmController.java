@@ -72,6 +72,7 @@ public class FarmController {
      */
     @Operation(summary = "Tạo trang trại mới (Admin)")
     @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:farms')")
     @PostMapping
     public ResponseEntity<ApiResponse<FarmResponse>> create(
             @Valid @RequestBody @NonNull FarmRequest request) {
@@ -84,6 +85,7 @@ public class FarmController {
      */
     @Operation(summary = "Cập nhật trang trại (Admin)")
     @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:farms')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<FarmResponse>> update(
             @PathVariable @NonNull Long id,
@@ -96,6 +98,7 @@ public class FarmController {
      */
     @Operation(summary = "Xoá trang trại (Admin)")
     @SecurityRequirement(name = "bearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'manage:farms')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable @NonNull Long id) {
         farmService.deleteFarm(Objects.requireNonNull(id));

@@ -13,7 +13,7 @@ import java.util.List;
 public interface ReviewService {
     ReviewResponse addReview(@NonNull String username, @NonNull ReviewRequest request, List<MultipartFile> files) throws IOException;
 
-    Page<ReviewResponse> getReviewsByProduct(@NonNull Long productId, @NonNull Pageable pageable);
+    Page<ReviewResponse> getReviewsByProduct(@NonNull Long productId, Integer rating, String viewerUsername, @NonNull Pageable pageable);
 
     Page<ReviewResponse> getMyReviews(@NonNull String username, @NonNull Pageable pageable);
 
@@ -22,5 +22,7 @@ public interface ReviewService {
     ReviewResponse moderateReview(@NonNull Long id, @NonNull ReviewStatusEnum status, String adminReply);
 
     void deleteReview(@NonNull Long reviewId);
-    boolean canReview(@NonNull String username, @NonNull Long productId);
+    void deleteMyReview(@NonNull String username, @NonNull Long reviewId);
+    ReviewResponse updateReview(@NonNull String username, @NonNull Long reviewId, @NonNull ReviewRequest request, List<MultipartFile> files) throws IOException;
+    String canReview(@NonNull String username, @NonNull Long productId);
 }

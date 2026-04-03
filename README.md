@@ -16,6 +16,7 @@ FreshFood là một nền tảng thương mại điện tử hiện đại, chuy
 - **Flash Sale & Khuyến mãi**: Hiển thị ưu đãi Flash Sale thời gian thực với nhãn giảm giá đỏ rực rỡ và logic ưu tiên giá tốt nhất.
 - **Hệ thống Xác nhận Toàn cầu (Global Confirm)**: Thay thế hoàn toàn các hộp thoại trình duyệt (window.confirm) bằng Promise-based Modal cao cấp, đồng bộ trải nghiệm người dùng toàn hệ thống.
 - **Hệ thống Hội viên (Loyalty 2.0)**: Tích điểm tự động với tỉ lệ tùy chỉnh (`LOYALTY_RATIO`), hỗ trợ đổi điểm lấy giảm giá khi thanh toán, tự động nâng cấp phân hạng (Bronze/Silver/Gold/Platinum) dựa trên Lifetime Points với cơ chế Null-safe tuyệt đối.
+- **Tự quản lý Đánh giá**: Người dùng có thể chủ động **Chỉnh sửa** hoặc **Xóa** các bài đánh giá của chính mình trực tiếp trong tab Lịch sử đánh giá của trang Hồ sơ (Profile).
 - **Định danh & Xác thực Việt Nam**: Hệ thống **Standardized Vietnamese Validation** với Regex chuẩn 10 số di động theo tiền tố nhà mạng VN, hỗ trợ Unicode full-name (không số/ký tự lạ) và tự động chuẩn hóa dữ liệu (`+84` -> `0`, lowercase email) trước khi lưu trữ.
 - **Tìm kiếm nâng cao (Asynchronous)**: Tích hợp **Meilisearch** xử lý bất đồng bộ (@Async), hỗ trợ tìm kiếm Tiếng Việt siêu tốc mà không ảnh hưởng đến hiệu năng giao dịch.
 - **Phục hồi & Hiệu năng (v3.4)**: Đạt trạng thái Zero-Warning, giải quyết triệt để N+1 Query, nén dữ liệu GZIP và tối ưu hóa Timeout cho các dịch vụ phụ trợ.
@@ -44,7 +45,10 @@ Xem thêm các tài liệu chi tiết về hệ thống tại thư mục `/docs`
 - [📜 Nhật ký thay đổi (Changelog)](./docs/CHANGELOG.md)
 - **Giao diện Responsive 100%**: Trải nghiệm quản trị hoàn hảo trên mọi thiết bị với Sidebar trượt và bố cục bảng dữ liệu thông minh.
 - **SePay (VietQR)**: Tự động hóa quy trình thanh toán qua Webhook bảo mật, xác nhận đơn hàng tức thì.
-- **Quản lý Nhân sự & Phân quyền**: Hệ thống RBAC với ma trận quyền hạn chi tiết, quản lý Audit Logs chuyên nghiệp và giao diện quản lý nhân sự ổn định.
+- **Quản lý Nhân sự & Phân quyền (Granular RBAC v3.5)**: 
+    - **Ma trận quyền hạn chi tiết**: Chuyển đổi từ ROLE-based sang Authority-based, cho phép phân tách quyền **"Chỉ xem" (View)** và **"Toàn quyền" (Manage)** cho từng mô-đun (Sản phẩm, Đơn hàng, Kho hàng, Media, Dashboard).
+    - **UI Protection**: Tự động ẩn các nút thao tác (Thêm/Sửa/Xóa) dựa trên quyền hạn thực tế của nhân viên.
+    - **Audit Logs**: Ghi nhận 100% lịch sử truy cập và thay đổi của nhân sự quản trị.
 - **Tùy biến Hồ sơ & Bảo mật**:
     - **Quản trị Avatar**: Hỗ trợ tải lên, thay thế và gỡ bỏ ảnh đại diện (Admin/User) với hệ thống fallback tên viết tắt chuyên nghiệp.
     - **Nhãn địa chỉ tùy chỉnh**: Cho phép đặt tên gợi nhớ cho địa chỉ nhận hàng (Ví dụ: Nhà vườn, Cơ quan, Kho đông lạnh...) thay vì các nhãn cố định.

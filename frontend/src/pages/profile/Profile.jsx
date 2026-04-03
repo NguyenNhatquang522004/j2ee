@@ -28,7 +28,8 @@ import {
     EyeIcon,
     EyeSlashIcon,
     ShoppingBagIcon,
-    CheckBadgeIcon as CheckBadgeIconOutline
+    CheckBadgeIcon as CheckBadgeIconOutline,
+    XMarkIcon
 } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon as CheckBadgeIconSolid } from '@heroicons/react/24/solid';
 import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
@@ -62,9 +63,10 @@ export default function Profile() {
     const [setupMethod, setSetupMethod] = useState('TOTP'); // 'TOTP' or 'EMAIL'
     const [setupStep, setSetupStep] = useState(1); // 1: choose method, 2: setup, 3: verify
 
-    // Reviews state
     const [myReviews, setMyReviews] = useState([]);
     const [reviewsLoading, setReviewsLoading] = useState(false);
+    const [editingReview, setEditingReview] = useState(null);
+    const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
 
     const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'info', onConfirm: () => {} });
 
@@ -208,6 +210,51 @@ export default function Profile() {
             toast.error('Không thể tải danh sách đánh giá');
         } finally {
             setReviewsLoading(false);
+        }
+    };
+
+    const handleDeleteReview = async (id) => {
+        setModal({
+            isOpen: true,
+            title: 'Xóa đánh giá',
+            message: 'Bạn có chắc chắn muốn xóa vĩnh viễn bài đánh giá này? Hành động này không thể hoàn tác.',
+            type: 'danger',
+            onConfirm: async () => {
+                setModal(prev => ({ ...prev, isOpen: false }));
+                try {
+                    await reviewService.deleteMy(id);
+                    toast.success('Đã xóa đánh giá');
+                    loadReviews();
+                } catch (err) {
+                    toast.error('Không thể xóa đánh giá');
+                }
+            }
+        });
+    };
+
+    const handleEditReview = (review) => {
+        setEditingReview(review);
+        setReviewForm({ rating: review.rating, comment: review.comment });
+    };
+
+    const handleUpdateReview = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            const formData = new FormData();
+            formData.append('review', new Blob([JSON.stringify({
+                rating: reviewForm.rating,
+                comment: reviewForm.comment
+            })], { type: 'application/json' }));
+
+            await reviewService.update(editingReview.id, formData);
+            toast.success('Đã cập nhật đánh giá');
+            setEditingReview(null);
+            loadReviews();
+        } catch (err) {
+            toast.error('Không thể cập nhật đánh giá');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -574,7 +621,7 @@ export default function Profile() {
                                     <div>
                                         <div className="flex justify-between text-[9px] font-black uppercase tracking-widest mb-1.5">
                                             <span>Tiến trình hạng</span>
-                                            <span>{user?.points || 0} / {
+                                            <span>{(user?.lifetimePoints || 0).toLocaleString()} / {
                                                 user?.membershipTier === 'SILVER' ? '5.000' :
                                                 user?.membershipTier === 'GOLD' ? '15.000' :
                                                 user?.membershipTier === 'PLATINUM' ? 'MAX' :
@@ -583,12 +630,12 @@ export default function Profile() {
                                         </div>
                                         <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                                             <div className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full" style={{ 
-                                                width: `${Math.min(100, (user?.points || 0) / (
-                                                    user?.membershipTier === 'SILVER' ? 50 : 
-                                                    user?.membershipTier === 'GOLD' ? 150 : 
-                                                    user?.membershipTier === 'PLATINUM' ? 1 : 
-                                                    10
-                                                ))}%` 
+                                                width: `${Math.min(100, (user?.lifetimePoints || 0) / (
+                                                    user?.membershipTier === 'SILVER' ? 5000 : 
+                                                    user?.membershipTier === 'GOLD' ? 15000 : 
+                                                    user?.membershipTier === 'PLATINUM' ? (user?.lifetimePoints || 1) : 
+                                                    1000
+                                                ) * 100)}%` 
                                             }}></div>
                                         </div>
                                     </div>
@@ -1253,10 +1300,30 @@ export default function Profile() {
                                                                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Đánh giá ngày {new Date(review.createdAt).toLocaleDateString('vi-VN')}</p>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center gap-1.5 px-6 py-3 bg-gray-50 rounded-2xl group-hover:bg-green-600 transition-colors">
-                                                            {[1, 2, 3, 4, 5].map(star => (
-                                                                <StarIcon key={star} className={`w-5 h-5 ${star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 group-hover:text-gray-800'}`} />
-                                                            ))}
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex items-center gap-1.5 px-6 py-3 bg-gray-50 rounded-2xl group-hover:bg-green-600 transition-colors">
+                                                                {[1, 2, 3, 4, 5].map(star => (
+                                                                    <StarIcon key={star} className={`w-5 h-5 ${star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 group-hover:text-gray-800'}`} />
+                                                                ))}
+                                                            </div>
+                                                            {review.status !== 'REJECTED' && (
+                                                                <div className="flex gap-2">
+                                                                    <button 
+                                                                        onClick={() => handleEditReview(review)}
+                                                                        className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                                                        title="Chỉnh sửa"
+                                                                    >
+                                                                        <PencilSquareIcon className="w-5 h-5" />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => handleDeleteReview(review.id)}
+                                                                        className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                                                        title="Xóa"
+                                                                    >
+                                                                        <TrashIcon className="w-5 h-5" />
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
 
@@ -1353,6 +1420,60 @@ export default function Profile() {
                     </main>
                 </div>
             </div>
+
+            
+            {/* Edit Review Modal */}
+            {editingReview && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="p-8 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">Chỉnh sửa đánh giá</h3>
+                                <p className="text-xs text-gray-500 font-bold mt-1 uppercase tracking-widest leading-none">Sản phẩm: {editingReview.productName}</p>
+                            </div>
+                            <button onClick={() => setEditingReview(null)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-all">
+                                <XMarkIcon className="w-6 h-6 stroke-[3]" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleUpdateReview} className="p-8 space-y-8">
+                             <div className="space-y-4">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Xếp hạng của bạn</label>
+                                <div className="flex gap-3 justify-center bg-gray-50/50 p-6 rounded-3xl border border-gray-50">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                                            className="transition-transform active:scale-125"
+                                        >
+                                            <StarIcon className={`w-10 h-10 ${star <= reviewForm.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'} hover:scale-110 transition-all`} />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Cảm nhận chi tiết</label>
+                                <textarea
+                                    required
+                                    rows={4}
+                                    value={reviewForm.comment}
+                                    onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                                    className="w-full bg-gray-50 border-none rounded-3xl px-6 py-4 font-bold text-gray-900 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-green-500 resize-none text-sm placeholder:text-gray-300"
+                                    placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
+                                />
+                            </div>
+
+                            <div className="flex gap-4 pt-4">
+                                <button type="button" onClick={() => setEditingReview(null)} className="flex-1 px-8 py-4 bg-white border-2 border-gray-100 rounded-2xl font-black text-gray-400 hover:bg-gray-50 transition-all text-xs uppercase tracking-widest">HỦY BỎ</button>
+                                <button type="submit" disabled={saving} className="flex-1 px-8 py-4 bg-green-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-green-900/20 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50">
+                                    {saving ? '...' : 'CẬP NHẬT NGAY'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             <ConfirmModal 
                 {...modal} 

@@ -1,10 +1,11 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCompare } from '../context/CompareContext';
 import { XMarkIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 
 export default function CompareBar() {
     const { compareItems, removeFromCompare, clearCompare } = useCompare();
+    const navigate = useNavigate();
 
     if (compareItems.length === 0) return null;
 
@@ -49,12 +50,18 @@ export default function CompareBar() {
                     >
                         <span className="text-xs font-bold uppercase tracking-widest">Xóa</span>
                     </button>
-                    <Link 
-                        to="/compare"
-                        className="bg-black text-white px-8 py-3 rounded-2xl font-black text-sm hover:bg-green-600 transition-all shadow-xl shadow-gray-200 hover:shadow-green-100 uppercase tracking-tight"
+                    <button 
+                        onClick={() => {
+                            if (compareItems.length < 2) {
+                                toast.error('Vui lòng chọn ít nhất 2 sản phẩm để so sánh');
+                                return;
+                            }
+                            navigate('/compare');
+                        }}
+                        className={`px-8 py-3 rounded-2xl font-black text-sm transition-all shadow-xl uppercase tracking-tight ${compareItems.length >= 2 ? 'bg-black text-white hover:bg-green-600 shadow-gray-200 hover:shadow-green-100' : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'}`}
                     >
                         So sánh ngay
-                    </Link>
+                    </button>
                 </div>
             </div>
         </div>

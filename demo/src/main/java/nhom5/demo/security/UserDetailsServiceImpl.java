@@ -28,13 +28,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
         authorities.add(new SimpleGrantedAuthority(user.getRole().name()));
         
-        // Add granular permissions from Role
-        user.getRole().getPermissions().forEach(permission -> 
-                authorities.add(new SimpleGrantedAuthority(permission)));
-        
-        // Add custom permissions for Staff/Admin
-        if (user.getCustomPermissions() != null) {
+        // Granular permissions logic:
+        // 1. If customPermissions is NOT empty → use ONLY customPermissions (admin has explicitly configured)
+        // 2. If customPermissions IS empty → fallback to role defaults from RoleEnum
+        // This allows admin to "uncheck" default role permissions
+        if (user.getCustomPermissions() != null && !user.getCustomPermissions().isEmpty()) {
             user.getCustomPermissions().forEach(permission ->
+                    authorities.add(new SimpleGrantedAuthority(permission)));
+        } else {
+            user.getRole().getPermissions().forEach(permission -> 
                     authorities.add(new SimpleGrantedAuthority(permission)));
         }
 

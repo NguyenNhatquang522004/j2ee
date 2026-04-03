@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Layout from '../../components/Layout';
-import { 
-    QuestionMarkCircleIcon, 
+import {
+    QuestionMarkCircleIcon,
     ChevronDownIcon,
     MagnifyingGlassIcon,
     SparklesIcon
@@ -22,7 +22,7 @@ const FAQS = [
             },
             {
                 q: 'Phí vận chuyển được tính như thế nào?',
-                a: 'Phí vận chuyển mặc định là 25.000đ. Với đơn hàng trên 500.000đ, chúng tôi sẽ miễn phí vận chuyển hoàn toàn.'
+                a: 'Phí vận chuyển mặc định là 30.000đ. Với đơn hàng trên 500.000đ, chúng tôi sẽ miễn phí vận chuyển hoàn toàn.'
             }
         ]
     },
@@ -64,8 +64,8 @@ export default function FAQ() {
 
     const filteredFaqs = FAQS.map(cat => ({
         ...cat,
-        questions: cat.questions.filter(q => 
-            q.q.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        questions: cat.questions.filter(q =>
+            q.q.toLowerCase().includes(searchTerm.toLowerCase()) ||
             q.a.toLowerCase().includes(searchTerm.toLowerCase())
         )
     })).filter(cat => cat.questions.length > 0);
@@ -83,9 +83,9 @@ export default function FAQ() {
                 </div>
 
                 <div className="relative mb-16">
-                    <input 
-                        type="text" 
-                        placeholder="Tìm kiếm vấn đề bạn quan tâm..." 
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm vấn đề bạn quan tâm..."
                         className="w-full bg-white border border-gray-100 rounded-[2rem] px-14 py-5 font-bold text-gray-800 outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all shadow-xl shadow-gray-100"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -100,14 +100,14 @@ export default function FAQ() {
                                 <span className="w-2 h-6 bg-green-500 rounded-full"></span>
                                 <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">{cat.category}</h2>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 {cat.questions.map((item, qIdx) => {
                                     const globalIdx = `${catIdx}-${qIdx}`;
                                     const isOpen = openIndex === globalIdx;
                                     return (
                                         <div key={qIdx} className={`bg-white rounded-3xl border transition-all duration-300 overflow-hidden ${isOpen ? 'border-green-500 ring-4 ring-green-500/5' : 'border-gray-50 hover:border-gray-200 shadow-sm'}`}>
-                                            <button 
+                                            <button
                                                 onClick={() => toggle(globalIdx)}
                                                 className="w-full px-8 py-5 flex items-center justify-between text-left group"
                                             >
@@ -116,7 +116,7 @@ export default function FAQ() {
                                                 </span>
                                                 <ChevronDownIcon className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180 text-green-600' : 'text-gray-300 group-hover:text-gray-500'}`} />
                                             </button>
-                                            
+
                                             <div className={`transition-all duration-300 ease-in-out ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
                                                 <div className="px-8 pb-6 text-sm text-gray-500 font-medium leading-relaxed border-t border-gray-50 pt-4">
                                                     {item.a}
@@ -131,8 +131,8 @@ export default function FAQ() {
 
                     {filteredFaqs.length === 0 && (
                         <div className="text-center py-20 bg-gray-50 rounded-[3rem] border border-dashed border-gray-200">
-                           <SparklesIcon className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-                           <p className="text-gray-400 font-bold uppercase tracking-widest text-xs italic">Không tìm thấy câu hỏi phù hợp với "{searchTerm}"</p>
+                            <SparklesIcon className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs italic">Không tìm thấy câu hỏi phù hợp với "{searchTerm}"</p>
                         </div>
                     )}
                 </div>

@@ -19,9 +19,12 @@ public class AuditService {
 
     @Transactional
     public void log(String username, String action, String resourceType, String resourceId, String details) {
+        // Fallback for null username to prevent DB constraint failure
+        String finalUsername = (username != null && !username.isBlank()) ? username : "anonymous";
+        
         // Build the log entity
         AdminAuditLog log = AdminAuditLog.builder()
-                .adminUsername(username)
+                .adminUsername(finalUsername)
                 .action(action)
                 .resourceType(resourceType)
                 .resourceId(resourceId)

@@ -40,9 +40,10 @@ import {
  */
 export default function AdminSettings() {
     const { confirm } = useConfirm();
-    const { user: authUser, setUser } = useAuth();
+    const { user: authUser, setUser, hasPermission } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
-    const activeTab = searchParams.get('tab') || 'system';
+    const canManageSettings = hasPermission('manage:settings') || hasPermission('view:settings');
+    const activeTab = searchParams.get('tab') || (canManageSettings ? 'system' : 'profile');
 
     // --- STATE ---
     const [settings, setSettings] = useState([]);
@@ -61,8 +62,6 @@ export default function AdminSettings() {
         phone: '',
         oldPassword: '',
         password: '',
-        dateOfBirth: '',
-        gender: 'other',
         emailNotifications: true,
         promoNotifications: false
     });
@@ -100,42 +99,44 @@ export default function AdminSettings() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [settingsRes, userRes] = await Promise.all([
-                settingsService.getAll(),
-                userService.me()
+            // Load essential user data first (Me + Addresses)
+            const [userRes, addrRes] = await Promise.all([
+                userService.me(),
+                addressService.getAll()
             ]);
             
-            setSettings(settingsRes.data);
-            
-            // Map settings list to a key-value object for form easy access
-            const sMap = {};
-            settingsRes.data.forEach(s => {
-                sMap[s.settingKey] = s.settingValue;
-            });
-            setSystemForm(sMap);
-
             const data = userRes.data;
             setUserData(data);
+            setAddresses(addrRes.data || []);
             setProfileForm({
                 fullName: data.fullName || '',
                 email: data.email || '',
                 phone: data.phone || '',
-                dateOfBirth: data.dateOfBirth || '',
-                gender: data.gender || 'other',
                 emailNotifications: data.emailNotifications ?? true,
                 promoNotifications: data.promoNotifications ?? false,
                 oldPassword: '',
                 password: ''
             });
 
-            // Load addresses
-            const addrRes = await addressService.getAll();
-            setAddresses(addrRes.data || []);
-            
-            // SYNC: Push fresh user data to AuthContext to update Global UI (Navbar/Sidebar)
+            // SYNC Global UI
             setUser({ ...authUser, fullName: data.fullName, isTwoFactorEnabled: data.isTwoFactorEnabled, avatarUrl: data.avatarUrl });
+
+            // Load Settings ONLY if permitted
+            if (canManageSettings) {
+                try {
+                    const settingsRes = await settingsService.getAll();
+                    setSettings(settingsRes.data);
+                    const sMap = {};
+                    settingsRes.data.forEach(s => {
+                        sMap[s.settingKey] = s.settingValue;
+                    });
+                    setSystemForm(sMap);
+                } catch (sErr) {
+                    console.error("Staff access to settings limited or forbidden", sErr);
+                }
+            }
         } catch (err) {
-            toast.error('Không thể tải dữ liệu');
+            toast.error('Không thể tải dữ liệu hồ sơ');
         } finally {
             setLoading(false);
         }
@@ -343,7 +344,6 @@ export default function AdminSettings() {
         try {
             // Fix: Clean up payload before sending
             const payload = { ...profileForm };
-            if (!payload.dateOfBirth) payload.dateOfBirth = null;
             if (payload.password === '') delete payload.password; // Don't send empty password
 
             const res = await userService.updateMe(payload);
@@ -504,14 +504,18 @@ export default function AdminSettings() {
                                 </div>
                             </div>
                             <h2 className="font-black text-gray-900 leading-tight text-sm px-2">{authUser?.fullName}</h2>
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">Admin đặc quyền</span>
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                {authUser?.role === 'ROLE_ADMIN' ? 'Admin đặc quyền' : 'Nhân viên hệ thống'}
+                            </span>
                         </div>
 
                         <nav className="space-y-1.5 flex-1">
-                            <button onClick={() => setActiveTab('system')} className={`w-full flex items-center gap-3 px-5 py-3 rounded-xl font-black transition-all ${activeTab === 'system' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-400 hover:bg-white hover:text-green-600'}`}>
-                                <CommandLineIcon className="w-5 h-5" />
-                                <span className="text-[11px] uppercase tracking-wider">Cài đặt hệ thống</span>
-                            </button>
+                            {canManageSettings && (
+                                <button onClick={() => setActiveTab('system')} className={`w-full flex items-center gap-3 px-5 py-3 rounded-xl font-black transition-all ${activeTab === 'system' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-400 hover:bg-white hover:text-green-600'}`}>
+                                    <CommandLineIcon className="w-5 h-5" />
+                                    <span className="text-[11px] uppercase tracking-wider">Cài đặt hệ thống</span>
+                                </button>
+                            )}
                             <button onClick={() => setActiveTab('profile')} className={`w-full flex items-center gap-3 px-5 py-3 rounded-xl font-black transition-all ${activeTab === 'profile' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-400 hover:bg-white hover:text-green-600'}`}>
                                 <UserCircleIcon className="w-5 h-5" />
                                 <span className="text-[11px] uppercase tracking-wider">Hồ sơ quản trị</span>
@@ -853,11 +857,15 @@ export default function AdminSettings() {
                                                     <label className="text-[9px] font-black text-gray-600 uppercase tracking-widest ml-3">Họ và tên quản trị</label>
                                                     <input className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold focus:border-green-600 transition-all shadow-sm outline-none" value={profileForm.fullName} onChange={(e) => setProfileForm({...profileForm, fullName: e.target.value})} />
                                                 </div>
-                                                <div className="space-y-1.5 text-gray-400 cursor-not-allowed">
+                                                <div className="space-y-1.5">
                                                     <label className="text-[9px] font-black text-gray-600 uppercase tracking-widest ml-3">Email hệ thống</label>
                                                     <div className="relative">
-                                                        <input className="w-full bg-white/50 border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold italic" value={profileForm.email} readOnly />
-                                                        <LockClosedIcon className="w-4 h-4 absolute right-5 top-1/2 -translate-y-1/2 opacity-30" />
+                                                        <input 
+                                                            className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold focus:border-green-600 transition-all shadow-sm outline-none" 
+                                                            value={profileForm.email} 
+                                                            onChange={(e) => setProfileForm({...profileForm, email: e.target.value})}
+                                                            required
+                                                        />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1.5">
@@ -902,19 +910,7 @@ export default function AdminSettings() {
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <div className="space-y-1.5">
-                                                    <label className="text-[9px] font-black text-gray-600 uppercase tracking-widest ml-3">Ngày sinh</label>
-                                                    <input type="date" className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold focus:border-green-600 transition-all shadow-sm outline-none uppercase" value={profileForm.dateOfBirth} onChange={(e) => setProfileForm({...profileForm, dateOfBirth: e.target.value})} />
                                                 </div>
-                                                <div className="space-y-1.5">
-                                                    <label className="text-[9px] font-black text-gray-600 uppercase tracking-widest ml-3">Giới tính</label>
-                                                    <select className="w-full bg-white border-2 border-transparent rounded-xl px-5 py-3 text-sm font-bold focus:border-green-600 transition-all shadow-sm outline-none appearance-none" value={profileForm.gender} onChange={(e) => setProfileForm({...profileForm, gender: e.target.value})}>
-                                                        <option value="male">Nam</option>
-                                                        <option value="female">Nữ</option>
-                                                        <option value="other">Khác</option>
-                                                    </select>
-                                                </div>
-                                            </div>
                                             <button type="submit" disabled={saving} className="w-full bg-green-600 text-white py-4 rounded-xl font-black uppercase text-[11px] tracking-widest hover:bg-green-700 transition-all shadow-lg active:scale-95 disabled:opacity-50">
                                                 {saving ? 'ĐANG LƯU...' : 'XÁC NHẬN CẬP NHẬT'}
                                             </button>
@@ -1102,11 +1098,11 @@ export default function AdminSettings() {
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <label className="text-[9px] font-black text-gray-400 ml-3 uppercase tracking-widest">Họ tên người nhận</label>
+                                                    <label className="text-[9px] font-black text-gray-400 ml-3 uppercase tracking-widest">Họ tên người phụ trách</label>
                                                     <input className="w-full bg-white border-none rounded-xl px-5 py-3 text-sm font-bold shadow-sm" value={addrForm.fullName} onChange={(e) => setAddrForm({...addrForm, fullName: e.target.value})} required />
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <label className="text-[9px] font-black text-gray-400 ml-3 uppercase tracking-widest">Số điện thoại</label>
+                                                    <label className="text-[9px] font-black text-gray-400 ml-3 uppercase tracking-widest">Điện thoại liên lạc</label>
                                                     <input className="w-full bg-white border-none rounded-xl px-5 py-3 text-sm font-bold shadow-sm" value={addrForm.phone} onChange={(e) => setAddrForm({...addrForm, phone: e.target.value})} required />
                                                 </div>
                                                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -80,7 +80,7 @@ def _label_to_freshness(class_name: str) -> str:
     return "UNKNOWN"
 
 def _build_response(freshness: str, confidence: float, detected_class: str) -> dict:
-    """Tạo object response chuẩn cho frontend."""
+    """Tạo object response chuẩn cho frontend và backend Java."""
     if freshness == "FRESH":
         return {
             "freshness": "FRESH",
@@ -118,64 +118,79 @@ def _build_response(freshness: str, confidence: float, detected_class: str) -> d
 @app.route("/api/predict-freshness", methods=["POST"])
 def predict_freshness():
     if "image" not in request.files:
-        return jsonify({"error": "Thiếu file ảnh."}), 400
+        logger.warning("Request missing 'image' file.")
+        return jsonify({"error": "Thiếu file ảnh (part name must be 'image')."}), 400
 
     file = request.files["image"]
     if file.filename == "":
+        logger.warning("Received empty filename.")
         return jsonify({"error": "File ảnh rỗng."}), 400
 
-    if ROBOFLOW_API_KEY is None:
-        return jsonify({"error": "AI model chưa sẵn sàng. Hãy kiểm tra API key trong .env"}), 503
+    if not ROBOFLOW_API_KEY:
+        logger.error("Roboflow API Key missing.")
+        return jsonify({"error": "AI model chưa sẵn sàng (API key missing)."}), 503
 
     global model
     try:
-        # Save image to temp file
+        # Sử dụng BytesIO để tránh ghi file nếu có thể, nhưng Roboflow SDK thường cần path.
+        # Ta dùng temp file với tên duy nhất (hoặc đơn giản là ghi đè nếu volume thấp)
         temp_path = os.path.join(os.getcwd(), "temp_inference.jpg")
         file.save(temp_path)
 
-        # Nếu model chưa load thì load khẩn cấp (hoặc dùng SDK trực tiếp)
+        # Kiểm tra file có phải là nội dung ảnh hợp lệ không (để tránh lỗi Pillow sau này)
+        try:
+            with Image.open(temp_path) as img:
+                img.verify()
+        except Exception as e:
+            logger.error("Invalid image content: %s", e)
+            if os.path.exists(temp_path): os.remove(temp_path)
+            return jsonify({"error": "Tệp tin không phải là ảnh hợp lệ."}), 400
+
+        # Khởi tạo model nếu cần
         if model is None:
-            logger.info("Model chưa load, đang khởi tạo kết nối...")
+            logger.info("Initializing Roboflow connection on-demand...")
             rf = Roboflow(api_key=ROBOFLOW_API_KEY)
             project = rf.workspace(ROBOFLOW_WORKSPACE).project(ROBOFLOW_PROJECT)
             model = project.version(ROBOFLOW_VERSION).model
         
+        # Thực hiện dự đoán
         prediction = model.predict(temp_path).json()
-        logger.info("Raw Roboflow Response: %s", prediction)
-        print(f">>> DEBUG RAW: {prediction}")
+        logger.info("Prediction successful for image.")
         
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
         predictions = prediction.get("predictions", [])
         if not predictions:
-            # Fallback if no detection
-            return jsonify(_build_response("UNKNOWN", 0, "no_detection")), 200
+            logger.info("No predictions found in image.")
+            return jsonify(_build_response("UNKNOWN", 0.0, "no_detection")), 200
 
+        # Lấy dự đoán có độ tin cậy cao nhất
         best_pred = max(predictions, key=lambda x: x["confidence"])
         best_class = best_pred["class"]
         best_conf = best_pred["confidence"]
 
-        # Nếu độ tin cậy quá thấp
-        if best_conf < 0.25:
+        # Nếu độ tin cậy quá thấp (< 40%)
+        if best_conf < 0.40:
+            logger.info("Confidence too low: %.2f", best_conf)
             return jsonify(_build_response("UNKNOWN", best_conf, best_class)), 200
         
         freshness = _label_to_freshness(best_class)
-        logger.info("Detected: %s (conf=%.2f)", best_class, best_conf)
-        print(f">>> DEBUG AI: Detected='{best_class}', Confidence={best_conf:.2f}, Freshness='{freshness}'")
+        logger.info("Detected class: %s (confidence: %.2f)", best_class, best_conf)
 
         return jsonify(_build_response(freshness, best_conf, best_class)), 200
 
     except Exception as exc:
-        logger.error("Lỗi AI: %s", exc, exc_info=True)
-        return jsonify({"error": f"LỗI AI Server: {str(exc)}"}), 500
+        logger.error("AI Prediction error: %s", exc, exc_info=True)
+        return jsonify({"error": f"Lỗi xử lý AI: {str(exc)}"}), 500
 
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
         "status": "ok",
         "model_loaded": model is not None,
-        "mode": "hosted"
+        "mode": "hosted",
+        "version": ROBOFLOW_VERSION
     })
 
 

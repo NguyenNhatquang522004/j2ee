@@ -26,7 +26,7 @@ export default function AiScan() {
             const formData = new FormData();
             formData.append('image', image);
             const res = await aiService.analyze(formData);
-            setResult(res.data || res); 
+            setResult(res.data || res);
         } catch (err) {
             toast.error(err.response?.data?.message || 'Kiểm tra thất bại');
         } finally {
@@ -51,7 +51,7 @@ export default function AiScan() {
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-green-500/10 rounded-full blur-[100px] -z-10"></div>
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 animate-bounce shadow-sm border border-green-200">
                         <SparklesIcon className="w-4 h-4" />
-                        Trợ lý AI Thông minh v3.0
+                        Trợ lý AI Thông minh
                     </div>
                     <h1 className="text-6xl font-black text-gray-900 tracking-tighter uppercase italic mb-4 leading-none">
                         KIỂM TRA <span className="text-green-600">CHẤT LƯỢNG</span>
@@ -64,24 +64,24 @@ export default function AiScan() {
                     <div className="lg:col-span-3">
                         <form onSubmit={handleSubmit} className="bg-white rounded-[3rem] border border-gray-100 shadow-2xl p-8 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-40 h-40 bg-green-50 rounded-full -mr-20 -mt-20 blur-3xl opacity-50 group-hover:scale-150 transition-transform duration-1000"></div>
-                            
+
                             <div
-                                className={`relative z-10 border-4 border-dashed rounded-[2.5rem] p-4 text-center cursor-pointer transition-all duration-500 min-h-[300px] flex items-center justify-center overflow-hidden
-                                    ${preview ? 'border-green-600 bg-gray-50' : 'border-gray-100 bg-gray-50/50 hover:bg-gray-50 hover:border-green-400'}`}
+                                className={`relative z-10 border-4 border-dashed rounded-[2.5rem] text-center cursor-pointer transition-all duration-500 min-h-[300px] flex items-center justify-center overflow-hidden
+                                    ${preview ? 'border-green-600 bg-gray-50' : 'border-gray-100 bg-gray-50/50 hover:bg-gray-50 hover:border-green-400 p-4'}`}
                                 onClick={() => document.getElementById('ai-image').click()}
                             >
                                 {preview ? (
-                                    <div className="relative w-full h-full overflow-hidden rounded-3xl">
-                                        <img src={preview} alt="Preview" className="max-h-80 mx-auto rounded-3xl object-contain shadow-2xl" />
-                                        
+                                    <div className="absolute inset-0 w-full h-full overflow-hidden rounded-[2.2rem]">
+                                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+
                                         {/* Premium Scanning Animation Line */}
                                         {loading && (
-                                            <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden rounded-3xl">
-                                                <div className="w-full h-1 bg-gradient-to-r from-transparent via-green-500 to-transparent shadow-[0_0_20px_#22c55e] absolute top-0 animate-scan"></div>
+                                            <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+                                                <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-green-500 to-transparent shadow-[0_0_15px_#22c55e] absolute top-0 animate-scan"></div>
                                                 <div className="absolute inset-0 bg-green-500/10 opacity-30 animate-pulse"></div>
                                             </div>
                                         )}
-                                        
+
                                         <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center rounded-3xl">
                                             <p className="text-white font-black uppercase text-xs tracking-widest">Thay đổi ảnh</p>
                                         </div>
@@ -116,9 +116,9 @@ export default function AiScan() {
                                         Hủy ảnh
                                     </button>
                                 )}
-                                <button 
-                                    type="submit" 
-                                    disabled={loading || !image} 
+                                <button
+                                    type="submit"
+                                    disabled={loading || !image}
                                     className="flex-[2] py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-green-100 hover:bg-black transition-all flex items-center justify-center gap-3 disabled:bg-gray-200 disabled:shadow-none overflow-hidden group/btn"
                                 >
                                     {loading ? (

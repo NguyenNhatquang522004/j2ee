@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { farmService } from '../../api/services';
+import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../context/ModalContext';
@@ -27,6 +28,8 @@ const EMPTY = {
 };
 
 export default function AdminFarms() {
+    const { hasPermission } = useAuth();
+    const canManage = hasPermission('manage:farms');
     const { confirm } = useConfirm();
     const [farms, setFarms] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -53,8 +56,13 @@ export default function AdminFarms() {
     useEffect(() => { fetchFarms(); }, [fetchFarms]);
 
     const filteredFarms = farms.filter(f => {
-        const matchesSearch = f.name?.toLowerCase().includes(search.toLowerCase()) || 
-                             f.province?.toLowerCase().includes(search.toLowerCase());
+        const s = search.toLowerCase();
+        const matchesSearch = 
+            f.name?.toLowerCase().includes(s) || 
+            f.province?.toLowerCase().includes(s) ||
+            f.ownerName?.toLowerCase().includes(s) ||
+            f.contactPhone?.includes(s) ||
+            f.certificationCode?.toLowerCase().includes(s);
         const matchesCert = certFilter === '' || f.certification === certFilter;
         return matchesSearch && matchesCert;
     });
@@ -139,15 +147,17 @@ export default function AdminFarms() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight italic uppercase leading-tight">Trang trại</h1>
-                    <p className="text-xs sm:text-sm text-gray-500 font-medium tracking-tight">Quản lý mạng lưới nông sản sạch của RawFood.</p>
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium tracking-tight">Quản lý mạng lưới nông sản sạch của FreshFood.</p>
                 </div>
-                <button 
-                    onClick={openCreate} 
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black px-5 py-3 rounded-xl shadow-lg shadow-green-100 transition-all active:scale-95 text-sm"
-                >
-                    <PlusIcon className="w-5 h-5 stroke-[3]" />
-                    <span>Thêm trang trại</span>
-                </button>
+                {canManage && (
+                    <button 
+                        onClick={openCreate} 
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black px-5 py-3 rounded-xl shadow-lg shadow-green-100 transition-all active:scale-95 text-sm"
+                    >
+                        <PlusIcon className="w-5 h-5 stroke-[3]" />
+                        <span>Thêm trang trại</span>
+                    </button>
+                )}
             </div>
 
             <div className="flex flex-col md:flex-row gap-3 mb-6">
@@ -236,8 +246,12 @@ export default function AdminFarms() {
                                             >
                                                 <InformationCircleIcon className="w-5 h-5" />
                                             </button>
-                                            <button onClick={() => openEdit(f)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Chỉnh sửa"><PencilSquareIcon className="w-5 h-5" /></button>
-                                            <button onClick={() => handleDelete(f.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Xóa"><TrashIcon className="w-5 h-5" /></button>
+                                            {canManage && (
+                                                <>
+                                                    <button onClick={() => openEdit(f)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Chỉnh sửa"><PencilSquareIcon className="w-5 h-5" /></button>
+                                                    <button onClick={() => handleDelete(f.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Xóa"><TrashIcon className="w-5 h-5" /></button>
+                                                </>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

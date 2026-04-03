@@ -1,6 +1,18 @@
 # 📜 Nhật ký thay đổi (Changelog) - FreshFood
 
 Tất cả các cập nhật quan trọng cho dự án FreshFood sẽ được liệt kê tại đây.
+ 
++## [v3.5.0] - 2026-04-03
++### 🛡️ Phân quyền Nhân sự (Fine-grained Permissions)
++- **Granular Access Strategy**: Chuyển đổi toàn bộ mô hình bảo mật sang Authority-based, hỗ trợ nhân viên (Staff) với hai chế độ `view:*` (Chỉ xem) và `manage:*` (Quản lý) cho từng mô-đun.
++- **UI Action Hardening**: Triển khai hệ thống ẩn nút thao tác (Thêm/Sửa/Xóa) động trên toàn bộ dashboard Admin (Sản phẩm, Danh mục, Lô hàng, Trang trại, Media).
++- **Route Enforcement**: Đồng bộ hóa quyền truy cập trực tiếp qua URL trong `App.jsx` với bộ lọc Sidebar.
++- **Controller Hardening**: Mở rộng quyền truy cập dữ liệu cho nhân sự tại `OrderController`, `CategoryController`, `MediaController` và `DashboardController`.
++
++### ✨ Trải nghiệm Người dùng (Self-service Reviews)
++- **Review Self-management**: Cho phép người dùng trực tiếp **Chỉnh sửa** nội dung/xếp hạng hoặc **Xóa** bài đánh giá của chính mình trong trang Hồ sơ.
++- **Edit Review Interface**: Bổ sung Modal chỉnh sửa chuyên nghiệp với xác thực trạng thái đánh giá (Duyệt/Chờ duyệt).
++
 
 ## [v3.4.0] - 2026-04-01
 ### 🛡️ Quan sát & Bảo mật (Observability & Hardening)

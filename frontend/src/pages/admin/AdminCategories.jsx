@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { categoryService } from '../../api/services';
+import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../context/ModalContext';
@@ -18,6 +19,8 @@ import {
 const EMPTY = { name: '', description: '', imageUrl: '', isActive: true };
 
 export default function AdminCategories() {
+    const { hasPermission } = useAuth();
+    const canManage = hasPermission('manage:categories');
     const { confirm } = useConfirm();
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -110,20 +113,43 @@ export default function AdminCategories() {
         }
     };
 
+    const [search, setSearch] = useState('');
+
+    const filteredCategories = categories.filter(c => 
+        (c.name || '').toLowerCase().includes(search.toLowerCase()) ||
+        (c.description || '').toLowerCase().includes(search.toLowerCase())
+    );
+
     return (
-        <AdminLayout>
+        <AdminLayout title="Danh mục FRESHFOOD | Admin">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Danh mục</h1>
-                    <p className="text-sm text-gray-500 font-medium tracking-tight">Phân loại sản phẩm của cửa hàng.</p>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight italic uppercase flex items-center gap-3">
+                        <div className="w-2.5 h-10 bg-emerald-600 rounded-full"></div>
+                        Danh mục <span className="text-emerald-600">FRESHFOOD</span>
+                    </h1>
+                    <p className="text-sm text-gray-500 font-medium tracking-tight mt-1">Phân loại sản phẩm xanh của cộng đồng.</p>
                 </div>
-                <button 
-                    onClick={openCreate} 
-                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black px-5 py-3 rounded-xl shadow-sm transition-all active:scale-95 text-sm"
-                >
-                    <PlusIcon className="w-5 h-5 stroke-[3]" />
-                    <span>Thêm danh mục</span>
-                </button>
+                <div className="flex flex-col sm:flex-row items-center gap-4 flex-1 justify-end">
+                    <div className="relative w-full sm:w-64 group">
+                        <TagIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
+                        <input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Tìm kiếm danh mục..."
+                            className="w-full pl-11 pr-5 py-2.5 bg-white border border-gray-100 rounded-xl shadow-sm outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium text-sm"
+                        />
+                    </div>
+                    {canManage && (
+                        <button 
+                            onClick={openCreate} 
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-3 rounded-xl shadow-lg shadow-emerald-100 transition-all active:scale-95 text-sm"
+                        >
+                            <PlusIcon className="w-5 h-5 stroke-[3]" />
+                            <span>Thêm danh mục</span>
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl shadow-sm overflow-hidden">
@@ -144,11 +170,11 @@ export default function AdminCategories() {
                                         <td colSpan={4} className="px-6 py-8"><div className="h-12 bg-gray-100 rounded-xl w-full"></div></td>
                                     </tr>
                                 ))
-                            ) : categories.length === 0 ? (
+                            ) : filteredCategories.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-20 text-center text-gray-400 font-black italic uppercase tracking-widest">Chưa có danh mục nào</td>
+                                    <td colSpan={4} className="px-6 py-20 text-center text-gray-400 font-black italic uppercase tracking-widest">Không tìm thấy danh mục</td>
                                 </tr>
-                            ) : categories.map((c) => (
+                            ) : filteredCategories.map((c) => (
                                 <tr key={c.id} className="hover:bg-green-50/30 transition-colors group">
                                     <td className="px-5 py-2.5 pl-8">
                                         <div className="flex items-center gap-4">
@@ -188,27 +214,31 @@ export default function AdminCategories() {
                                             >
                                                 <InformationCircleIcon className="w-5 h-5" />
                                             </button>
-                                            <button 
-                                                onClick={() => handleToggle(c.id)} 
-                                                className={`p-1.5 rounded-lg transition-all ${c.isActive ? 'text-gray-400 hover:bg-gray-50' : 'text-green-600 hover:bg-green-50'}`}
-                                                title={c.isActive ? 'Ẩn danh mục' : 'Hiện danh mục'}
-                                            >
-                                                {c.isActive ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
-                                            </button>
-                                            <button 
-                                                onClick={() => openEdit(c)} 
-                                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                title="Chỉnh sửa"
-                                            >
-                                                <PencilSquareIcon className="w-5 h-5" />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleDelete(c.id)} 
-                                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                                title="Xóa"
-                                            >
-                                                <TrashIcon className="w-5 h-5" />
-                                            </button>
+                                            {canManage && (
+                                                <>
+                                                    <button 
+                                                        onClick={() => handleToggle(c.id)} 
+                                                        className={`p-1.5 rounded-lg transition-all ${c.isActive ? 'text-gray-400 hover:bg-gray-50' : 'text-green-600 hover:bg-green-50'}`}
+                                                        title={c.isActive ? 'Ẩn danh mục' : 'Hiện danh mục'}
+                                                    >
+                                                        {c.isActive ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => openEdit(c)} 
+                                                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                        title="Chỉnh sửa"
+                                                    >
+                                                        <PencilSquareIcon className="w-5 h-5" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDelete(c.id)} 
+                                                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                        title="Xóa"
+                                                    >
+                                                        <TrashIcon className="w-5 h-5" />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

@@ -5,14 +5,26 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import nhom5.demo.enums.ReviewStatusEnum;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    Page<Review> findByProductIdAndStatusOrderByCreatedAtDesc(Long productId, nhom5.demo.enums.ReviewStatusEnum status, Pageable pageable);
+    @Query("SELECT r FROM Review r LEFT JOIN FETCH r.user " +
+           "WHERE r.product.id = :productId " +
+           "AND (:rating IS NULL OR r.rating = :rating) " +
+           "AND (r.status = :status OR (r.user.username = :viewerUsername AND r.status != 'REJECTED')) " +
+           "ORDER BY r.createdAt DESC")
+    Page<Review> findByProductIdAndRating(
+            @Param("productId") Long productId, 
+            @Param("status") ReviewStatusEnum status, 
+            @Param("viewerUsername") String viewerUsername,
+            @Param("rating") Integer rating, 
+            Pageable pageable);
 
+    @Query("SELECT r FROM Review r LEFT JOIN FETCH r.user LEFT JOIN FETCH r.product ORDER BY r.createdAt DESC")
     Page<Review> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     Page<Review> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);

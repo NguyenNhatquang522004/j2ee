@@ -178,8 +178,9 @@ function CartItem({ item, onUpdate, onRemove }) {
                     </button>
                     <span className="px-3 py-1 font-black text-gray-800 min-w-[40px] text-center text-sm">{item.quantity}</span>
                     <button
-                        onClick={() => { if (item.quantity < item.availableStock) onUpdate(item.cartItemId, item.quantity + 1); }}
-                        className="p-2 hover:bg-gray-50 text-gray-500 transition-colors"
+                        onClick={() => { if (item.quantity < Math.min(10, item.availableStock)) onUpdate(item.cartItemId, item.quantity + 1); }}
+                        className="p-2 hover:bg-gray-50 text-gray-500 transition-colors disabled:opacity-20"
+                        disabled={item.quantity >= 10 || item.quantity >= item.availableStock}
                     >
                         <PlusIcon className="w-4 h-4" />
                     </button>

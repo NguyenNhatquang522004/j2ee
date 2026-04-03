@@ -23,7 +23,7 @@ public class ReviewResponse {
     private String username;
     private String userFullName;
     private String userAvatarUrl;
-    private java.util.List<String> mediaUrls;
+    private java.util.List<MediaResponse> media;
     private String adminReply;
     private nhom5.demo.enums.ReviewStatusEnum status;
     private LocalDateTime createdAt;

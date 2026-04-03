@@ -14,8 +14,18 @@ export function AdminRoute({ children, permission }) {
     if (!isManagement) return <Navigate to="/" replace />;
     
     // Check specific permission if required
-    if (permission && !hasPermission(permission)) {
-        return <Navigate to="/" replace />;
+    if (permission) {
+        let allowed = hasPermission(permission);
+        // If route needs view:X, also accept manage:X
+        if (!allowed && permission.startsWith('view:')) {
+            const domain = permission.split(':')[1];
+            allowed = hasPermission(`manage:${domain}`);
+        }
+        if (!allowed) {
+            // Avoid infinite loop if failing at /admin
+            if (pathname === '/admin') return <Navigate to="/" replace />;
+            return <Navigate to="/admin" replace />;
+        }
     }
 
     // Enforce 2FA for admins if required but not enabled

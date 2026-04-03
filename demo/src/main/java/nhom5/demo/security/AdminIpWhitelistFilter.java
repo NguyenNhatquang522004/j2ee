@@ -36,15 +36,19 @@ public class AdminIpWhitelistFilter extends OncePerRequestFilter {
         // 1. Lấy thông tin xác thực hiện tại (Nếu filter này chạy sau JwtAuthenticationFilter)
         org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         
-        // 2. Kiểm tra nếu là ADMIN/STAFF hoặc đang truy cập các path nhạy cảm
-        boolean isHighPrivilege = auth != null && auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_STAFF"));
-        
         boolean isSensitivePath = path.startsWith("/api/v1/dashboard") || 
                                  path.startsWith("/api/v1/batches") ||
-                                 path.startsWith("/api/v1/settings");
+                                 path.startsWith("/api/v1/settings") ||
+                                 path.startsWith("/api/v1/users");
 
-        if (isHighPrivilege || isSensitivePath) {
+        // 2. Check if user has high-privilege authorities
+        boolean hasAdminAccess = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || 
+                              a.getAuthority().equals("manage:settings") ||
+                              a.getAuthority().equals("manage:users"));
+
+        // Only enforce IP whitelist for SENSITIVE paths AND users with ADMIN-level access
+        if (hasAdminAccess && isSensitivePath) {
             String whitelist = settingService.getSettingValue("ADMIN_IP_WHITELIST", "*");
             
             if (!whitelist.equals("*")) {

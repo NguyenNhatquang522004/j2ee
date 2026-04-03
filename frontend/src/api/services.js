@@ -115,11 +115,15 @@ export const reviewService = {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),
     myReviews: (params) => api.get('/reviews/my-reviews', { params }),
-    delete: (id) => api.delete(`/reviews/${id}`),
+    update: (id, formData) => api.put(`/reviews/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+    deleteMy: (id) => api.delete(`/reviews/my/${id}`),
     // Admin
     getAll: (params) => api.get('/reviews/admin/all', { params }),
     moderate: (id, data) => api.put(`/reviews/admin/${id}/moderate`, data),
     canReview: (productId) => api.get(`/reviews/can-review/${productId}`),
+    adminDelete: (id) => api.delete(`/reviews/${id}`),
 };
 
 /**
@@ -169,6 +173,7 @@ export const userService = {
     removeAvatar: () => api.delete('/users/me/avatar'),
     getAll: (params) => api.get('/users', { params }),
     toggleActive: (id) => api.patch(`/users/${id}/toggle-status`),
+    delete: (id) => api.delete(`/users/${id}`),
 };
 
 /**
@@ -288,4 +293,22 @@ export const flashSaleService = {
  */
 export const paymentService = {
     createVnPayUrl: (orderCode) => api.post(`/payment/vnpay/create`, null, { params: { orderCode } }),
+};
+
+/**
+ * AUDIT LOGGING SERVICE:
+ * Accesses system-wide administrative activity history.
+ */
+export const auditService = {
+    getAll: (params) => api.get('/audit/logs', { params }),
+    getById: (id) => api.get(`/audit/logs/${id}`),
+};
+
+/**
+ * SECURITY AUDIT SERVICE:
+ * Accesses critical security event logs.
+ */
+export const securityLogService = {
+    getAll: (params) => api.get('/admin/security/logs', { params }),
+    getByIp: (ip, params) => api.get(`/admin/security/logs/ip/${ip}`, { params }),
 };

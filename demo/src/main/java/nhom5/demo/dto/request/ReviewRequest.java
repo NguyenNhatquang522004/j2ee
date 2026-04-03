@@ -18,4 +18,6 @@ public class ReviewRequest {
 
     @Size(max = 1000, message = "Bình luận tối đa 1000 ký tự")
     private String comment;
+
+    private java.util.List<Long> removeMediaIds;
 }
