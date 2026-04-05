@@ -458,18 +458,18 @@ function ProductCard({ product }) {
 
                 <button 
                     onClick={toggleWishlist}
-                    className={`absolute top-2 right-2 sm:top-14 sm:right-4 w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 ${isLiked ? 'bg-white text-red-500' : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500'}`}
+                    className={`absolute top-2 right-2 sm:top-14 sm:right-4 w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 scale-100 sm:scale-90 opacity-100 sm:opacity-0 group-hover:opacity-100 group-hover:scale-100 ${isLiked ? 'bg-white text-red-500' : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500'}`}
                     title={isLiked ? "Xoá khỏi yêu thích" : "Thêm vào yêu thích"}
                 >
-                    {isLiked ? <HeartIconSolid className="w-3 h-3 sm:w-5 sm:h-5 transition-transform active:scale-110" /> : <HeartIcon className="w-3 h-3 sm:w-5 sm:h-5 transition-transform active:scale-110" />}
+                    {isLiked ? <HeartIconSolid className="w-3.5 h-3.5 sm:w-5 sm:h-5 transition-transform active:scale-110" /> : <HeartIcon className="w-3.5 h-3.5 sm:w-5 sm:h-5 transition-transform active:scale-110" />}
                 </button>
 
                 <button 
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCompare(product); }}
-                    className="absolute top-2 right-2 sm:top-4 sm:right-4 w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl bg-white/80 backdrop-blur-sm text-gray-400 hover:text-blue-500 shadow-lg transition-all z-10 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100"
+                    className="absolute top-2 right-10 sm:top-4 sm:right-4 w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl bg-white/80 backdrop-blur-sm text-gray-400 hover:text-blue-500 shadow-lg transition-all z-10 scale-100 sm:scale-90 opacity-100 sm:opacity-0 group-hover:opacity-100 group-hover:scale-100"
                     title="So sánh giá"
                 >
-                    <ArrowsRightLeftIcon className="w-3 h-3 sm:w-5 sm:h-5 transition-transform active:scale-110" />
+                    <ArrowsRightLeftIcon className="w-3.5 h-3.5 sm:w-5 sm:h-5 transition-transform active:scale-110" />
                 </button>
             </Link>
             

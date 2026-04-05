@@ -275,9 +275,14 @@ export default function Navbar() {
                                             )}
                                         </Link>
                                         
-                                        <div className="sm:hidden">
-                                            <Link to="/wishlist" className="relative p-2 text-gray-600 hover:text-red-500 transition-colors">
+                                        <div className="sm:hidden flex items-center">
+                                            <Link to="/wishlist" className="relative inline-flex p-2 text-gray-600 hover:text-red-500 transition-colors">
                                                 {wishlistCount > 0 ? <HeartIconSolid className="w-6 h-6 text-red-500" /> : <HeartIcon className="w-6 h-6" />}
+                                                {wishlistCount > 0 && (
+                                                    <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-white leading-none">
+                                                        {wishlistCount}
+                                                    </span>
+                                                )}
                                             </Link>
                                         </div>
 

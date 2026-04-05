@@ -352,56 +352,63 @@ export default function ProductDetail() {
                         </span>
                     </div>
 
-                    {product.totalStock > 0 && product.isActive && (
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center border border-gray-200 bg-white rounded-2xl overflow-hidden shadow-sm">
+                    <div className="flex flex-wrap items-center gap-4">
+                        {product.totalStock > 0 && product.isActive ? (
+                            <>
+                                <div className="flex items-center border border-gray-200 bg-white rounded-2xl overflow-hidden shadow-sm">
+                                    <button 
+                                        onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+                                        className="p-4 hover:bg-gray-50 text-gray-500 transition-colors"
+                                    >
+                                        <MinusIcon className="w-5 h-5" />
+                                    </button>
+                                    <span className="px-6 py-2 font-black text-gray-800 text-xl min-w-[60px] text-center">{quantity}</span>
+                                    <button 
+                                        onClick={() => setQuantity(q => Math.min(product.totalStock, 10, q + 1))} 
+                                        className="p-4 hover:bg-gray-50 text-gray-500 transition-colors disabled:opacity-30"
+                                        disabled={quantity >= 10}
+                                    >
+                                        <PlusIcon className="w-5 h-5" />
+                                    </button>
+                                </div>
                                 <button 
-                                    onClick={() => setQuantity(q => Math.max(1, q - 1))} 
-                                    className="p-4 hover:bg-gray-50 text-gray-500 transition-colors"
+                                    onClick={handleAddToCart} 
+                                    disabled={addingToCart}
+                                    className="btn-primary flex-1 py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-green-100 shadow-xl disabled:opacity-75 transition-all"
                                 >
-                                    <MinusIcon className="w-5 h-5" />
+                                    {addingToCart ? (
+                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <ShoppingCartIcon className="w-6 h-6 text-white/90" />
+                                    )}
+                                    {addingToCart ? 'Đang thêm...' : 'Thêm vào giỏ'}
                                 </button>
-                                <span className="px-6 py-2 font-black text-gray-800 text-xl min-w-[60px] text-center">{quantity}</span>
-                                <button 
-                                    onClick={() => setQuantity(q => Math.min(product.totalStock, 10, q + 1))} 
-                                    className="p-4 hover:bg-gray-50 text-gray-500 transition-colors disabled:opacity-30"
-                                    disabled={quantity >= 10}
-                                >
-                                    <PlusIcon className="w-5 h-5" />
-                                </button>
+                            </>
+                        ) : (
+                            <div className="flex-1 py-4 bg-gray-100 text-gray-400 rounded-2xl font-bold flex items-center justify-center gap-2 border border-gray-200 cursor-not-allowed">
+                                <CubeIcon className="w-6 h-6" />
+                                {product.isActive ? 'Tạm hết hàng' : 'Ngừng kinh doanh'}
                             </div>
-                            <button 
-                                onClick={handleAddToCart} 
-                                disabled={addingToCart}
-                                className="btn-primary flex-1 py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-green-100 shadow-xl disabled:opacity-75 transition-all"
-                            >
-                                {addingToCart ? (
-                                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                ) : (
-                                    <ShoppingCartIcon className="w-6 h-6 text-white/90" />
-                                )}
-                                {addingToCart ? 'Đang thêm...' : 'Thêm vào giỏ'}
-                            </button>
-                            <button 
-                                onClick={toggleWishlist}
-                                className={`w-14 h-14 aspect-square rounded-2xl border-2 transition-all inline-grid place-items-center shrink-0 ${isLiked ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-100 text-gray-300 hover:text-red-500 hover:border-red-100 hover:bg-red-50/30 shadow-sm'}`}
-                                title={isLiked ? "Xoá khỏi yêu thích" : "Thêm vào yêu thích"}
-                            >
-                                <div className="w-8 h-8 flex items-center justify-center">
-                                    {isLiked ? <HeartIconSolid className="w-full h-full" /> : <HeartIconOutline className="w-full h-full" />}
-                                </div>
-                            </button>
-                            <button 
-                                onClick={() => addToCompare(product)}
-                                className="w-14 h-14 aspect-square rounded-2xl border-2 border-gray-100 bg-white text-gray-300 hover:text-blue-500 hover:border-blue-100 hover:bg-blue-50/30 transition-all inline-grid place-items-center shrink-0 shadow-sm hover:shadow-md"
-                                title="So sánh giá"
-                            >
-                                <div className="w-8 h-8 flex items-center justify-center">
-                                    <ArrowsRightLeftIcon className="w-full h-full" />
-                                </div>
-                            </button>
-                        </div>
-                    )}
+                        )}
+                        <button 
+                            onClick={toggleWishlist}
+                            className={`w-14 h-14 aspect-square rounded-2xl border-2 transition-all inline-grid place-items-center shrink-0 ${isLiked ? 'bg-red-50 border-red-200 text-red-500 shadow-inner' : 'bg-white border-gray-100 text-gray-300 hover:text-red-500 hover:border-red-100 hover:bg-red-50/30 shadow-sm'}`}
+                            title={isLiked ? "Xoá khỏi yêu thích" : "Thêm vào yêu thích"}
+                        >
+                            <div className="w-8 h-8 flex items-center justify-center">
+                                {isLiked ? <HeartIconSolid className="w-full h-full" /> : <HeartIconOutline className="w-full h-full" />}
+                            </div>
+                        </button>
+                        <button 
+                            onClick={() => addToCompare(product)}
+                            className="w-14 h-14 aspect-square rounded-2xl border-2 border-gray-100 bg-white text-gray-300 hover:text-blue-500 hover:border-blue-100 hover:bg-blue-50/30 transition-all inline-grid place-items-center shrink-0 shadow-sm hover:shadow-md"
+                            title="So sánh giá"
+                        >
+                            <div className="w-8 h-8 flex items-center justify-center">
+                                <ArrowsRightLeftIcon className="w-full h-full" />
+                            </div>
+                        </button>
+                    </div>
 
                     {product.certificationDescription && (
                         <div className="mt-4 p-3 bg-green-50 rounded-lg text-sm text-green-800">

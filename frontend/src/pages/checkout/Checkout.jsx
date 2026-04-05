@@ -552,7 +552,7 @@ export default function Checkout() {
                                     <div className="bg-gray-50 rounded-3xl p-6 mb-8 border border-dashed border-gray-200 relative group">
                                         {createdOrder && (
                                                 <img 
-                                                    src={`https://qr.sepay.vn/img?acc=${settings.BANK_ACCOUNT_NO}&bank=${settings.BANK_ID}&amount=${createdOrder.finalAmount}&des=${createdOrder.orderCode}&template=compact`} 
+                                                    src={`https://qr.sepay.vn/img?acc=96924888888&bank=TPBank&amount=${createdOrder.finalAmount}&des=${createdOrder.orderCode}&template=compact`} 
                                                     alt="SePay QR Code" 
                                                     className="w-full aspect-square object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
                                                 />
@@ -560,23 +560,36 @@ export default function Checkout() {
                                         <div className="absolute bottom-2 right-2 bg-white/80 backdrop-blur px-2 py-1 rounded-lg text-[8px] font-black text-blue-500 uppercase tracking-tighter shadow-sm border border-blue-100">SePay Powered</div>
                                     </div>
 
-                                    <div className="space-y-4 text-left mb-8 bg-blue-50/30 p-6 rounded-3xl border border-blue-50">
-                                        <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    <div className="space-y-4 text-left mb-8 bg-blue-50/30 p-6 rounded-3xl border border-blue-50 shadow-sm relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 -mr-8 -mt-8 rounded-full blur-2xl"></div>
+                                        <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-3 mb-1">
                                             <span>Số tiền</span>
-                                            <span className="text-blue-600 font-black text-sm">{(createdOrder?.finalAmount || 0).toLocaleString('vi-VN')} {settings.CURRENCY}</span>
+                                            <span className="text-blue-600">{(createdOrder?.finalAmount || 0).toLocaleString('vi-VN')} {settings.CURRENCY}</span>
                                         </div>
-                                        <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                        <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-3 mb-1">
+                                            <span>Ngân hàng</span>
+                                            <span className="text-gray-900">TP Bank</span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-3 mb-1">
+                                            <span>Số tài khoản</span>
+                                            <span className="text-gray-900">96924888888</span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-3 mb-1">
+                                            <span>Chủ tài khoản</span>
+                                            <span className="text-gray-900">DANG THANH TOAN</span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest">
                                             <span>Nội dung</span>
-                                            <span className="text-gray-900 font-black text-sm uppercase">{createdOrder?.orderCode}</span>
+                                            <span className="text-blue-600 animate-pulse">{createdOrder?.orderCode}</span>
                                         </div>
                                     </div>
 
                                     <button
                                         onClick={() => navigate(`/success?orderCode=${createdOrder?.orderCode}`)}
-                                        className="w-full py-4 bg-black text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
+                                        className="w-full py-4 bg-black text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-900 transition-all flex items-center justify-center gap-2 group/btn"
                                     >
                                         Tôi đã chuyển khoản
-                                        <ArrowRightIcon className="w-4 h-4" />
+                                        <ArrowRightIcon className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                     </button>
                                     
                                     <p className="mt-6 text-[10px] text-gray-400 font-medium italic">
