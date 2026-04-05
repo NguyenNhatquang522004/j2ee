@@ -619,26 +619,27 @@ export default function AdminSettings() {
                                                     {saving ? 'ĐANG LƯU...' : 'LƯU ĐIỂM THƯỞNG'}
                                                 </button>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-3">
                                                 {['LOYALTY_RATIO', 'LOYALTY_POINTS_VALUE'].map(key => {
                                                     const s = settings.find(st => st.settingKey === key);
                                                     const isMissing = !s;
                                                     const currentVal = systemForm[key] !== undefined ? systemForm[key] : '';
                                                     return (
-                                                        <div key={key} className="bg-amber-50/20 p-4 rounded-xl border border-amber-100 hover:border-amber-500 transition-all group">
-                                                            <div className="flex justify-between items-start mb-1">
-                                                                 <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">
-                                                                     {key === 'LOYALTY_RATIO' ? 'Tỉ giá tích điểm (VNĐ = 1 điểm)' : 'Giá trị 1 điểm quy đổi (VNĐ)'}
-                                                                 </label>
-                                                                 {isMissing && <span className="text-amber-300 font-bold text-[8px] uppercase tracking-tighter">(CHƯA KHỞI TẠO)</span>}
+                                                        <div key={key} className="bg-amber-50/20 p-5 rounded-2xl border border-amber-100 flex items-center justify-between group hover:border-amber-500 transition-all">
+                                                            <div className="flex-1">
+                                                                <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest block mb-1">
+                                                                    {key === 'LOYALTY_RATIO' ? 'Tỉ giá tích điểm (VNĐ = 1 điểm)' : 'Giá trị 1 điểm quy đổi (VNĐ)'}
+                                                                </label>
+                                                                {isMissing && <span className="text-amber-300 font-bold text-[8px] uppercase tracking-tighter">(CHƯA KHỞI TẠO)</span>}
                                                             </div>
-                                                            <div className="flex items-center gap-2">
+                                                            <div className="flex items-center gap-3 bg-white px-5 py-3 rounded-xl border border-amber-200 focus-within:border-amber-600 transition-all min-w-[300px]">
                                                                 <input 
                                                                     type="number" 
                                                                     value={currentVal} 
-                                                                    className="w-full text-lg font-black text-gray-900 bg-transparent border-none p-0 focus:ring-0" 
+                                                                    className="w-full text-lg font-black text-gray-900 bg-transparent border-none p-0 focus:ring-0 text-right" 
                                                                     onChange={(e) => handleSettingValueChange(key, e.target.value)}
                                                                 />
+                                                                <span className="text-amber-400 font-black text-xs">VNĐ</span>
                                                             </div>
                                                         </div>
                                                     );
@@ -654,37 +655,44 @@ export default function AdminSettings() {
                                                     <h4 className="text-base font-black text-gray-900 uppercase tracking-tighter">Tài chính & Thanh toán</h4>
                                                 </div>
                                                 <button 
-                                                    onClick={() => saveSection(['TAX', 'CURRENCY', 'SHIPPING_FEE', 'FREE_SHIPPING_THRESHOLD'])}
+                                                    onClick={() => saveSection(['TAX', 'CURRENCY', 'SHIPPING_FEE', 'FREE_SHIPPING_THRESHOLD', 'BANK_ID', 'BANK_ACCOUNT_NO', 'BANK_ACCOUNT_NAME'])}
                                                     disabled={saving}
                                                     className="px-4 py-2 bg-green-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all disabled:opacity-50"
                                                 >
                                                     {saving ? 'ĐANG LƯU...' : 'LƯU TÀI CHÍNH'}
                                                 </button>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
-                                                {['TAX', 'CURRENCY', 'SHIPPING_FEE', 'FREE_SHIPPING_THRESHOLD'].map(key => {
+                                            <div className="space-y-3">
+                                                {['TAX', 'CURRENCY', 'SHIPPING_FEE', 'FREE_SHIPPING_THRESHOLD', 'BANK_ID', 'BANK_ACCOUNT_NO', 'BANK_ACCOUNT_NAME'].map(key => {
                                                     const s = settings.find(st => st.settingKey === key);
                                                     const isMissing = !s;
                                                     const currentVal = systemForm[key] !== undefined ? systemForm[key] : '';
+                                                    const isBank = key.includes('BANK');
+                                                    
                                                     return (
-                                                        <div key={key} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:border-green-100 transition-all flex flex-col items-center justify-center text-center space-y-4 min-h-[160px] group">
-                                                            <label className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] group-hover:text-green-600 transition-colors">
-                                                                {key.replace(/_/g, ' ')} {isMissing && <span className="text-red-300 ml-1">(?)</span>}
-                                                            </label>
-                                                            <div className="flex items-center justify-center gap-2 w-full max-w-[220px]">
+                                                        <div key={key} className={`flex items-center justify-between p-5 rounded-[1.5rem] border transition-all group ${isBank ? 'bg-green-50/20 border-green-100 hover:border-green-600' : 'bg-gray-50/30 border-gray-100 hover:border-green-500'}`}>
+                                                            <div className="flex-1">
+                                                                <label className={`text-[10px] font-black uppercase tracking-widest block mb-1 group-hover:text-green-600 transition-colors ${isBank ? 'text-green-600' : 'text-gray-400'}`}>
+                                                                    {key.replace(/_/g, ' ')}
+                                                                </label>
+                                                                {isMissing && <span className="text-red-300 font-bold text-[8px] uppercase tracking-tighter">(CHƯA KHỞI TẠO)</span>}
+                                                            </div>
+                                                            <div className={`flex items-center gap-3 bg-white px-5 py-3 rounded-xl border transition-all min-w-[300px] ${isBank ? 'border-green-200 focus-within:border-green-600 shadow-sm' : 'border-gray-200 focus-within:border-green-500'}`}>
                                                                 <input 
                                                                     type="text"
                                                                     value={currentVal} 
-                                                                    placeholder="0"
-                                                                    className="w-full text-3xl font-black text-gray-900 border-none p-0 focus:ring-0 bg-transparent text-center tabular-nums leading-none tracking-tighter" 
+                                                                    placeholder={key.includes('NAME') ? 'NGUYEN VAN A' : '0'}
+                                                                    className={`w-full font-black text-gray-900 border-none p-0 focus:ring-0 bg-transparent text-right tabular-nums tracking-tight ${isBank ? 'text-base' : 'text-lg'}`} 
                                                                     onChange={(e) => {
-                                                                        const val = e.target.value.replace(/[^0-9.]/g, '');
+                                                                        const val = isBank ? e.target.value.toUpperCase() : e.target.value.replace(/[^0-9.]/g, '');
                                                                         handleSettingValueChange(key, val);
                                                                     }}
                                                                 />
-                                                                <span className="text-gray-300 font-black text-xs uppercase shrink-0 pt-2">
-                                                                    {key.includes('TAX') ? '%' : key.includes('CURRENCY') ? '' : 'VNĐ'}
-                                                                </span>
+                                                                {!isBank && key !== 'CURRENCY' && (
+                                                                    <span className="text-gray-400 font-black text-[10px] uppercase shrink-0 pt-0.5">
+                                                                        {key.includes('TAX') ? '%' : 'VNĐ'}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     );

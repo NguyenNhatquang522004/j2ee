@@ -28,7 +28,14 @@ export default function CouponList() {
                 const validOnes = finalData.filter(c => {
                     const isActive = c.isActive ?? c.is_active ?? true;
                     const isPrivate = c.isPrivate ?? c.is_private ?? false;
-                    const isExpired = new Date(c.expiryDate).getTime() < new Date().setHours(0,0,0,0);
+                    
+                    // Robust expiry check
+                    if (!c.expiryDate) return isActive && !isPrivate;
+                    
+                    const expiryTime = new Date(c.expiryDate).getTime();
+                    if (isNaN(expiryTime)) return isActive && !isPrivate;
+                    
+                    const isExpired = expiryTime < new Date().setHours(0,0,0,0);
                     return isActive && !isPrivate && !isExpired;
                 });
                 setCoupons(validOnes);

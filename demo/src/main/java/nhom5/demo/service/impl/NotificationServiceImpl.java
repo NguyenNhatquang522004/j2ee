@@ -114,6 +114,27 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.deleteAllByUserId(user.getId());
     }
 
+    @Override
+    public void broadcastFlashSaleUpdate(Long productId, int soldQuantity, int quantityLimit) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("type", "FLASH_SALE_UPDATE");
+        payload.put("productId", productId);
+        payload.put("soldQuantity", soldQuantity);
+        payload.put("quantityLimit", quantityLimit);
+        payload.put("updatedAt", java.time.LocalDateTime.now().toString());
+
+        redisTemplate.convertAndSend(notificationTopic.getTopic(), payload);
+    }
+
+    @Override
+    public void broadcastFlashSaleRefresh() {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("type", "FLASH_SALE_REFRESH");
+        payload.put("updatedAt", java.time.LocalDateTime.now().toString());
+
+        redisTemplate.convertAndSend(notificationTopic.getTopic(), payload);
+    }
+
     private User getCurrentUser() {
         String username = SecurityUtils.getCurrentUsername();
         if (username == null || "anonymousUser".equals(username)) {

@@ -24,25 +24,32 @@ public class NewsletterServiceImpl implements NewsletterService {
     @Override
     @Transactional
     public void subscribe(@NonNull String email) {
-        if (newsletterRepository.existsByEmail(email)) {
+        String normalized = email.trim().toLowerCase();
+        if (normalized.contains("mailinator.com") || normalized.contains("temp-mail.org") || 
+            normalized.contains("guerrillamail.com") || normalized.contains("10minutemail.com")) {
+            throw new BusinessException("Hệ thống không chấp nhận các địa chỉ email tạm thời.");
+        }
+
+        if (newsletterRepository.existsByEmail(normalized)) {
             throw new BusinessException("Email này đã đăng ký bản tin trước đó.");
         }
 
         NewsletterSubscriber subscriber = NewsletterSubscriber.builder()
-                .email(email)
+                .email(normalized)
                 .isActive(true)
                 .build();
         
         newsletterRepository.save(Objects.requireNonNull(subscriber));
         
         // Send welcome email
-        mailService.sendNewsletterWelcome(email);
+        mailService.sendNewsletterWelcome(normalized);
     }
 
     @Override
     @Transactional
     public void unsubscribe(@NonNull String email) {
-        NewsletterSubscriber subscriber = newsletterRepository.findByEmail(email)
+        String normalized = email.trim().toLowerCase();
+        NewsletterSubscriber subscriber = newsletterRepository.findByEmail(normalized)
                 .orElseThrow(() -> new BusinessException("Email chưa đăng ký bản tin."));
         
         subscriber.setIsActive(false);

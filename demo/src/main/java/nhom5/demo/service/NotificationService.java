@@ -16,4 +16,6 @@ public interface NotificationService {
     void markAllAsRead();
     void delete(Long id);
     void deleteAll();
+    void broadcastFlashSaleUpdate(Long productId, int soldQuantity, int quantityLimit);
+    void broadcastFlashSaleRefresh();
 }

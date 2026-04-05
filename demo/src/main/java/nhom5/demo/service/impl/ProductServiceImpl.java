@@ -90,8 +90,10 @@ public class ProductServiceImpl implements ProductService {
         ProductResponse response = toResponse(savedProduct);
         
         try {
-            // Sync index to Meilisearch
-            searchService.indexProduct(response);
+            // Sync index to Meilisearch ONLY if active
+            if (savedProduct.getIsActive()) {
+                searchService.indexProduct(response);
+            }
         } catch (Exception e) {
             log.error("Failed to sync new product {} to Meilisearch: {}", savedProduct.getId(), e.getMessage());
         }
@@ -141,8 +143,12 @@ public class ProductServiceImpl implements ProductService {
         ProductResponse response = toResponse(savedProduct);
 
         try {
-            // Sync to Meilisearch - wrapped in try-catch to prevent 500 if search service is down
-            searchService.indexProduct(response);
+            // Sync to Meilisearch - delete if inactive, index if active
+            if (savedProduct.getIsActive()) {
+                searchService.indexProduct(response);
+            } else {
+                searchService.deleteProduct(id);
+            }
         } catch (Exception e) {
             log.error("Failed to sync updated product {} to Meilisearch: {}", savedProduct.getId(), e.getMessage());
         }
@@ -176,10 +182,12 @@ public class ProductServiceImpl implements ProductService {
         Product product = findById(id);
         
         if (!product.getIsActive()) {
-            boolean isAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null &&
+            boolean isStaffOrAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null &&
                     org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-            if (!isAdmin) {
+                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || 
+                                          a.getAuthority().equals("view:products") || 
+                                          a.getAuthority().equals("manage:products"));
+            if (!isStaffOrAdmin) {
                 throw new ResourceNotFoundException("Product", "id", id);
             }
         }
@@ -195,10 +203,12 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "slug", slug));
 
         if (!product.getIsActive()) {
-            boolean isAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null &&
+            boolean isStaffOrAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null &&
                     org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-            if (!isAdmin) {
+                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || 
+                                          a.getAuthority().equals("view:products") || 
+                                          a.getAuthority().equals("manage:products"));
+            if (!isStaffOrAdmin) {
                 throw new ResourceNotFoundException("Product", "slug", slug);
             }
         }

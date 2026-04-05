@@ -102,6 +102,7 @@ export const orderService = {
     },
     confirmReturn: (id) => api.post(`/orders/${id}/confirm-return`),
     rejectReturn: (id, reason) => api.post(`/orders/${id}/reject-return?reason=${encodeURIComponent(reason)}`),
+    confirmPayment: (code, note, proof) => api.post(`/orders/code/${code}/confirm-payment`, null, { params: { note, proof } }),
     getRefundRequests: (params) => api.get('/orders/refund-requests', { params }),
 };
 
@@ -172,6 +173,7 @@ export const userService = {
     }),
     removeAvatar: () => api.delete('/users/me/avatar'),
     getAll: (params) => api.get('/users', { params }),
+    adminUpdate: (id, data) => api.put(`/users/${id}/admin`, data),
     toggleActive: (id) => api.patch(`/users/${id}/toggle-status`),
     delete: (id) => api.delete(`/users/${id}`),
 };

@@ -61,6 +61,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else if (uri.contains("/api/v1/auth/forgot-password")) {
             limit = 3;
             window = 60;
+        } else if (uri.contains("/api/v1/media/upload")) {
+            limit = 5; 
+            window = 60;
         }
         
         String key = ip + ":" + uri;

@@ -10,6 +10,9 @@ public enum RoleEnum {
             "view:products",
             "view:categories",
             "view:farms",
+            "view:coupons",
+            "view:notifications",
+            "manage:notifications",
             "manage:cart",
             "manage:profile"
     )),
@@ -23,7 +26,11 @@ public enum RoleEnum {
             "manage:batches",
             "manage:reviews",
             "view:reports",
-            "manage:newsletters"
+            "manage:newsletters",
+            "view:coupons",
+            "manage:coupons",
+            "view:notifications",
+            "manage:notifications"
     )),
     ROLE_STAFF(Set.of(
             "view:products",
@@ -32,7 +39,10 @@ public enum RoleEnum {
             "view:batches",
             "manage:orders",
             "manage:newsletters",
-            "manage:profile"
+            "manage:profile",
+            "view:coupons",
+            "view:notifications",
+            "manage:notifications"
     ));
 
     private final Set<String> permissions;

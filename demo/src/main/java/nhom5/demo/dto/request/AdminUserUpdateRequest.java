@@ -13,6 +13,11 @@ import java.util.Set;
 @Getter
 @Setter
 public class AdminUserUpdateRequest {
+    @NotBlank(message = "Tên đăng nhập không được để trống")
+    @Size(min = 4, max = 20, message = "Tên đăng nhập phải từ 4-20 ký tự")
+    @Pattern(regexp = RegexConstants.USERNAME, message = "Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới")
+    private String username;
+
     @NotBlank(message = "Họ tên không được để trống")
     @Size(min = 2, max = 50, message = "Họ tên phải từ 2-50 ký tự")
     @Pattern(regexp = RegexConstants.FULL_NAME, message = "Họ tên chỉ được chứa chữ cái và khoảng trắng")

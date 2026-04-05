@@ -27,7 +27,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Page<Order> findByStatusOrderByCreatedAtDesc(OrderStatusEnum status, Pageable pageable);
 
-    Optional<Order> findByOrderCode(String orderCode);
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.coupon LEFT JOIN FETCH o.user WHERE o.orderCode = :orderCode")
+    Optional<Order> findByOrderCode(@Param("orderCode") String orderCode);
 
     Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
 

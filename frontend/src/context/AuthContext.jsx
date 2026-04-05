@@ -57,10 +57,22 @@ export function AuthProvider({ children }) {
     const isStaff = user?.role === 'ROLE_STAFF' || user?.role === 'STAFF';
     const isManagement = isAdmin || isStaff;
 
-    const hasPermission = (permission) => {
+    const hasPermission = (p) => {
         if (isAdmin) return true;
         if (!user?.permissions || !Array.isArray(user.permissions)) return false;
-        return user.permissions.includes(permission);
+
+        const check = (perm) => {
+            if (user.permissions.includes(perm)) return true;
+            // If checking for view:X, also accept manage:X
+            if (perm.startsWith('view:')) {
+                const domain = perm.split(':')[1];
+                return user.permissions.includes(`manage:${domain}`);
+            }
+            return false;
+        };
+
+        if (Array.isArray(p)) return p.some(check);
+        return check(p);
     };
 
     return (

@@ -195,7 +195,7 @@ export default function Notifications() {
                                             
                                             <div className="flex items-center gap-4 mt-3">
                                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                                    {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi })}
+                                                    {n.createdAt ? formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: vi }) : 'Vừa xong'}
                                                 </p>
                                                 {!n.isRead && (
                                                     <button 

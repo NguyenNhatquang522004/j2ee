@@ -26,7 +26,7 @@ CREATE TABLE `addresses` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `details` varchar(255) DEFAULT NULL,
   `full_name` varchar(100) DEFAULT NULL,
-  `is_default` bit(1) DEFAULT NULL,
+  `is_default` tinyint(1) DEFAULT '0',
   `label` varchar(50) NOT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `address_detail` varchar(255) NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE `addresses` (
 
 LOCK TABLES `addresses` WRITE;
 /*!40000 ALTER TABLE `addresses` DISABLE KEYS */;
-INSERT INTO `addresses` VALUES (1,'Số 12, Ngõ 34, Đường Láng, Quận Đống Đa, Hà Nội','Nguyễn Văn Khách',_binary '','Nhà','0912345678','Số 12, Ngõ 34, Đường Láng, Quận Đống Đa, Hà Nội',NULL,NULL,NULL,3),(2,'Tầng 15, Keangnam Landmark 72, Phạm Hùng, Nam Từ Liêm, Hà Nội','Nguyễn Văn Khách',_binary '\0','Công ty','0912345678','Tầng 15, Keangnam Landmark 72, Phạm Hùng, Nam Từ Liêm, Hà Nội',NULL,NULL,NULL,3),(3,'123 ABC, Xuan Thoi Son, Hoc Mon, Ho Chi Minh','DANG THANH TOAN',_binary '','Nhà','0869426904','123 ABC','Xuan Thoi Son','Hoc Mon','Ho Chi Minh',1),(4,'321 ABC, HCM, Binh Thanh, Ho Chi Minh','DANG THANH TOAN',_binary '\0','Công ty','0869426904','321 ABC','HCM','Binh Thanh','Ho Chi Minh',1);
+INSERT INTO `addresses` VALUES (1,'Số 12, Ngõ 34, Đường Láng, Quận Đống Đa, Hà Nội','Nguyễn Văn Khách',1,'Nhà','0912345678','Số 12, Ngõ 34, Đường Láng, Quận Đống Đa, Hà Nội',NULL,NULL,NULL,3),(2,'Tầng 15, Keangnam Landmark 72, Phạm Hùng, Nam Từ Liêm, Hà Nội','Nguyễn Văn Khách',0,'Công ty','0912345678','Tầng 15, Keangnam Landmark 72, Phạm Hùng, Nam Từ Liêm, Hà Nội',NULL,NULL,NULL,3),(3,'123 ABC, Xuan Thoi Son, Hoc Mon, Ho Chi Minh','DANG THANH TOAN',1,'Nhà','0869426904','123 ABC','Xuan Thoi Son','Hoc Mon','Ho Chi Minh',1),(4,'321 ABC, HCM, Binh Thanh, Ho Chi Minh','DANG THANH TOAN',0,'Công ty','0869426904','321 ABC','HCM','Binh Thanh','Ho Chi Minh',1);
 /*!40000 ALTER TABLE `addresses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -414,7 +414,7 @@ CREATE TABLE `ip_blocklist` (
   `blocked_until` datetime(6) DEFAULT NULL,
   `created_at` datetime(6) DEFAULT NULL,
   `ip_address` varchar(45) NOT NULL,
-  `is_permanent` bit(1) DEFAULT NULL,
+  `is_permanent` tinyint(1) DEFAULT '0',
   `reason` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UKehsswfsbyqxi4oc7f0cgr8wv` (`ip_address`),
@@ -589,7 +589,7 @@ CREATE TABLE `orders` (
   `address_detail` varchar(300) DEFAULT NULL,
   `district` varchar(100) DEFAULT NULL,
   `estimated_arrival` datetime(6) DEFAULT NULL,
-  `is_refunded` bit(1) NOT NULL,
+  `is_refunded` tinyint(1) NOT NULL DEFAULT '0',
   `packaging_at` datetime(6) DEFAULT NULL,
   `paid_at` datetime(6) DEFAULT NULL,
   `province` varchar(100) DEFAULT NULL,
@@ -623,7 +623,7 @@ CREATE TABLE `orders` (
 
 LOCK TABLES `orders` WRITE;
 /*!40000 ALTER TABLE `orders` DISABLE KEYS */;
-INSERT INTO `orders` VALUES (1,'2026-03-25 22:16:52.385165',0.00,25000.00,1,'ok','ORD-20260325221652-E8AA','COD','0123456789','TTN14','DELIVERED',25000.00,'2026-03-26 15:20:29.513323',NULL,1,NULL,'2026-03-26 15:19:30.894093','2026-03-26 15:20:29.497610','2026-03-26 15:20:06.027163',NULL,NULL,NULL,_binary '\0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),(2,'2026-03-26 22:19:21.157593',50000.00,100000.00,0,'OK','ORD-20260326221921-EEE6','COD','0869426904','123 ABC, HCM','CANCELLED',150000.00,'2026-03-26 22:19:38.370866',1,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,_binary '\0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),(3,'2026-03-26 22:24:13.094252',50000.00,100000.00,0,'OKKKK','ORD-20260326222413-41F2','BANK_TRANSFER','0869426904','123 ABC, HCM','CANCELLED',150000.00,'2026-03-26 22:38:25.101822',1,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,_binary '\0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),(4,'2026-04-02 23:09:00.637165',NULL,55000.00,1,'ok | Đã hoàn tiền cho khách','ORD-20260402230900-124F','COD','0869426904','123 ABC, Xuan Thoi Son, Hoc Mon, Ho Chi Minh','RETURNED',25000.00,'2026-04-02 23:33:58.405317',NULL,1,NULL,'2026-04-02 23:18:35.415521','2026-04-02 23:19:08.635286',NULL,'123 ABC','Hoc Mon',NULL,_binary '','2026-04-02 23:18:38.099988','2026-04-02 23:19:08.635286','Ho Chi Minh','DANG THANH TOAN','2026-04-02 23:33:58.346487',NULL,'https://res.cloudinary.com/dgl4gge37/image/upload/v1775147564/hnf0rwqi3fwai9kw3poa.jpg','lỗi',NULL,'2026-04-02 23:33:19.798871',30000.00,NULL,'Xuan Thoi Son',NULL),(5,'2026-04-02 23:10:13.396056',NULL,95000.00,1,NULL,'ORD-20260402231013-0E61','COD','0869426904','123 ABC, Xuan Thoi Son, Hoc Mon, Ho Chi Minh','RETURN_REJECTED',65000.00,'2026-04-02 23:30:15.724027',NULL,1,NULL,'2026-04-02 23:18:32.727905','2026-04-02 23:18:49.516873',NULL,'123 ABC','Hoc Mon',NULL,_binary '\0',NULL,'2026-04-02 23:18:49.516873','Ho Chi Minh','DANG THANH TOAN',NULL,'không đủ điều kiện','https://res.cloudinary.com/dgl4gge37/image/upload/v1775147347/xmdmzfj4s0iw5cchgzji.jpg','lỗi',NULL,NULL,30000.00,NULL,'Xuan Thoi Son',NULL);
+INSERT INTO `orders` VALUES (1,'2026-03-25 22:16:52.385165',0.00,25000.00,1,'ok','ORD-20260325221652-E8AA','COD','0123456789','TTN14','DELIVERED',25000.00,'2026-03-26 15:20:29.513323',NULL,1,NULL,'2026-03-26 15:19:30.894093','2026-03-26 15:20:29.497610','2026-03-26 15:20:06.027163',NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),(2,'2026-03-26 22:19:21.157593',50000.00,100000.00,0,'OK','ORD-20260326221921-EEE6','COD','0869426904','123 ABC, HCM','CANCELLED',150000.00,'2026-03-26 22:19:38.370866',1,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),(3,'2026-03-26 22:24:13.094252',50000.00,100000.00,0,'OKKKK','ORD-20260326222413-41F2','BANK_TRANSFER','0869426904','123 ABC, HCM','CANCELLED',150000.00,'2026-03-26 22:38:25.101822',1,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),(4,'2026-04-02 23:09:00.637165',NULL,55000.00,1,'ok | Đã hoàn tiền cho khách','ORD-20260402230900-124F','COD','0869426904','123 ABC, Xuan Thoi Son, Hoc Mon, Ho Chi Minh','RETURNED',25000.00,'2026-04-02 23:33:58.405317',NULL,1,NULL,'2026-04-02 23:18:35.415521','2026-04-02 23:19:08.635286',NULL,'123 ABC','Hoc Mon',NULL,1,'2026-04-02 23:18:38.099988','2026-04-02 23:19:08.635286','Ho Chi Minh','DANG THANH TOAN','2026-04-02 23:33:58.346487',NULL,'https://res.cloudinary.com/dgl4gge37/image/upload/v1775147564/hnf0rwqi3fwai9kw3poa.jpg','lỗi',NULL,'2026-04-02 23:33:19.798871',30000.00,NULL,'Xuan Thoi Son',NULL),(5,'2026-04-02 23:10:13.396056',NULL,95000.00,1,NULL,'ORD-20260402231013-0E61','COD','0869426904','123 ABC, Xuan Thoi Son, Hoc Mon, Ho Chi Minh','RETURN_REJECTED',65000.00,'2026-04-02 23:30:15.724027',NULL,1,NULL,'2026-04-02 23:18:32.727905','2026-04-02 23:18:49.516873',NULL,'123 ABC','Hoc Mon',NULL,0,NULL,'2026-04-02 23:18:49.516873','Ho Chi Minh','DANG THANH TOAN',NULL,'không đủ điều kiện','https://res.cloudinary.com/dgl4gge37/image/upload/v1775147347/xmdmzfj4s0iw5cchgzji.jpg','lỗi',NULL,NULL,30000.00,NULL,'Xuan Thoi Son',NULL);
 /*!40000 ALTER TABLE `orders` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -922,13 +922,13 @@ CREATE TABLE `users` (
   `provider_id` varchar(100) DEFAULT NULL,
   `reset_token` varchar(100) DEFAULT NULL,
   `reset_token_expiry` datetime(6) DEFAULT NULL,
-  `is_two_factor_enabled` bit(1) NOT NULL,
+  `is_two_factor_enabled` tinyint(1) NOT NULL DEFAULT '0',
   `two_factor_secret` varchar(32) DEFAULT NULL,
   `date_of_birth` date DEFAULT NULL,
-  `email_notifications` bit(1) DEFAULT NULL,
+  `email_notifications` tinyint(1) DEFAULT '1',
   `gender` varchar(10) DEFAULT NULL,
   `membership_tier` varchar(20) DEFAULT NULL,
-  `promo_notifications` bit(1) DEFAULT NULL,
+  `promo_notifications` tinyint(1) DEFAULT '1',
   `email_2fa_code` varchar(6) DEFAULT NULL,
   `email_2fa_code_expiry` datetime(6) DEFAULT NULL,
   `two_factor_method` varchar(10) DEFAULT NULL,
@@ -956,7 +956,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'2026-03-25 17:24:08.905543','thanhtoan06092004@gmail.com','DANG THANH TOAN',1,'$2a$10$0aGpnIutBKGE/8jw62Ikq.7.DKoY2ybsbh1BHISCiXvkMaedd9Gq6','0869426904','ROLE_USER','2026-04-02 23:19:08.727325','thanhtoan',NULL,NULL,NULL,NULL,_binary '\0',NULL,'2004-09-06',_binary '','male','bronze',_binary '',NULL,NULL,NULL,'https://res.cloudinary.com/dgl4gge37/image/upload/v1774593893/avatars/aoalwgs5evubwhqzs9bd.jpg',2,0,150,150,NULL,NULL,NULL),(2,'2026-03-25 20:53:56.184969','admin@cleanfood.com','Quản trị viên Hệ thống',1,'$2a$10$R0SnAmWD1UrFwFQZawrnRut1x.Mb7IeF0eh0sZOlcdJ6/plGviwsC','0988888888','ROLE_ADMIN','2026-03-28 00:11:50.563149','admin',NULL,NULL,NULL,NULL,_binary '\0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,0,0,0,NULL,NULL,NULL),(3,'2026-03-25 20:53:56.301090','user@gmail.com','Nguyễn Văn Khách',1,'$2a$10$2Pdc7csa5LYukVNvzxXEsOsnAcREOrrDRfpqUE2nYLBoObDcVKLlS','0912345678','ROLE_USER','2026-04-02 18:55:53.267631','user',NULL,NULL,NULL,NULL,_binary '\0',NULL,NULL,NULL,NULL,'bronze',NULL,NULL,NULL,NULL,NULL,0,0,0,0,NULL,NULL,NULL),(4,'2026-04-02 08:11:31.135545','manage@freshfood.com','Quản lý',1,'$2a$10$CE50Cpz95CZPiTmG1eozmO6SFH1IxVcsFkXNMHlxEPu9b2MfS6XsK','0879321697','ROLE_ADMIN','2026-04-02 08:41:36.704384','manage','LOCAL',NULL,NULL,NULL,_binary '\0',NULL,NULL,_binary '',NULL,'bronze',_binary '\0',NULL,NULL,'TOTP',NULL,1,0,0,0,NULL,NULL,'2026-04-02 08:41:40.000000'),(8,'2026-04-03 20:18:44.286652','nguyennhatquang522004@gmail.com','Quang',1,'$2a$10$gesco2mda1QcyF0Ux6OpmuiZiWiBmnOIimVFOOuqWCOe7.1diLuim','0999999999','ROLE_STAFF','2026-04-03 20:18:44.287290','nhanvien1','LOCAL',NULL,NULL,NULL,_binary '\0',NULL,NULL,_binary '',NULL,'bronze',_binary '\0',NULL,NULL,'TOTP',NULL,1,0,0,0,NULL,NULL,NULL);
+INSERT INTO `users` VALUES (1,'2026-03-25 17:24:08.905543','thanhtoan06092004@gmail.com','DANG THANH TOAN',1,'$2a$10$0aGpnIutBKGE/8jw62Ikq.7.DKoY2ybsbh1BHISCiXvkMaedd9Gq6','0869426904','ROLE_USER','2026-04-02 23:19:08.727325','thanhtoan',NULL,NULL,NULL,NULL,0,NULL,'2004-09-06',1,'male','bronze',1,NULL,NULL,NULL,'https://res.cloudinary.com/dgl4gge37/image/upload/v1774593893/avatars/aoalwgs5evubwhqzs9bd.jpg',2,0,150,150,NULL,NULL,NULL),(2,'2026-03-25 20:53:56.184969','admin@cleanfood.com','Quản trị viên Hệ thống',1,'$2a$10$R0SnAmWD1UrFwFQZawrnRut1x.Mb7IeF0eh0sZOlcdJ6/plGviwsC','0988888888','ROLE_ADMIN','2026-03-28 00:11:50.563149','admin',NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,0,0,0,NULL,NULL,NULL),(3,'2026-03-25 20:53:56.301090','user@gmail.com','Nguyễn Văn Khách',1,'$2a$10$2Pdc7csa5LYukVNvzxXEsOsnAcREOrrDRfpqUE2nYLBoObDcVKLlS','0912345678','ROLE_USER','2026-04-02 18:55:53.267631','user',NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,'bronze',NULL,NULL,NULL,NULL,NULL,0,0,0,0,NULL,NULL,NULL),(4,'2026-04-02 08:11:31.135545','manage@freshfood.com','Quản lý',1,'$2a$10$CE50Cpz95CZPiTmG1eozmO6SFH1IxVcsFkXNMHlxEPu9b2MfS6XsK','0879321697','ROLE_ADMIN','2026-04-02 08:41:36.704384','manage','LOCAL',NULL,NULL,NULL,0,NULL,NULL,1,NULL,'bronze',0,NULL,NULL,'TOTP',NULL,1,0,0,0,NULL,NULL,'2026-04-02 08:41:40.000000'),(8,'2026-04-03 20:18:44.286652','nguyennhatquang522004@gmail.com','Quang',1,'$2a$10$gesco2mda1QcyF0Ux6OpmuiZiWiBmnOIimVFOOuqWCOe7.1diLuim','0999999999','ROLE_STAFF','2026-04-03 20:18:44.287290','nhanvien1','LOCAL',NULL,NULL,NULL,0,NULL,NULL,1,NULL,'bronze',0,NULL,NULL,'TOTP',NULL,1,0,0,0,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -998,4 +998,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-03 23:18:44
+-- Dump completed on 2026-04-04  7:39:54

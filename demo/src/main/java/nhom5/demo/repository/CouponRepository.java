@@ -17,6 +17,9 @@ import org.springframework.data.repository.query.Param;
 public interface CouponRepository extends JpaRepository<Coupon, Long> {
 
     Optional<Coupon> findByCode(String code);
+
+    @Query("SELECT DISTINCT c FROM Coupon c LEFT JOIN FETCH c.assignedUsers")
+    List<Coupon> findAllWithUsers();
     
     Optional<Coupon> findByCodeAndIsActiveTrue(String code);
     

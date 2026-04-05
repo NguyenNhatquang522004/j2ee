@@ -39,6 +39,9 @@ public class AdminIpWhitelistFilter extends OncePerRequestFilter {
         boolean isSensitivePath = path.startsWith("/api/v1/dashboard") || 
                                  path.startsWith("/api/v1/batches") ||
                                  path.startsWith("/api/v1/settings") ||
+                                 path.startsWith("/api/v1/admin/security") ||
+                                 path.startsWith("/api/v1/audit") ||
+                                 path.startsWith("/api/v1/newsletters") ||
                                  path.startsWith("/api/v1/users");
 
         // 2. Check if user has high-privilege authorities

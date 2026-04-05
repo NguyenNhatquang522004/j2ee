@@ -38,7 +38,7 @@ public class AuditController {
      * Useful for identifying unauthorized access or system errors caused by manual updates.
      */
     @Operation(summary = "Xem nhật ký hệ thống (Admin)")
-    @PreAuthorize("hasAuthority('view:reports')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/logs")
     public ResponseEntity<ApiResponse<Page<AdminAuditLog>>> getLogs(
             @RequestParam(defaultValue = "0") int page,
@@ -51,7 +51,7 @@ public class AuditController {
      * deleteLogsByUsername: Targeted removal of logs for a specific account.
      */
     @Operation(summary = "Xoá nhật ký theo username (Admin)")
-    @PreAuthorize("hasAuthority('manage:users')")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/logs/user/{username}")
     public ResponseEntity<ApiResponse<Void>> deleteLogsByUsername(@PathVariable String username) {
         auditService.deleteLogsByUsername(Objects.requireNonNull(username));
@@ -62,7 +62,7 @@ public class AuditController {
      * deleteLog: Removes a single specific audit record by ID.
      */
     @Operation(summary = "Xoá một dòng nhật ký (Admin)")
-    @PreAuthorize("hasAuthority('manage:users')")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/logs/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteLog(@PathVariable Long id) {
         auditService.deleteLog(Objects.requireNonNull(id));

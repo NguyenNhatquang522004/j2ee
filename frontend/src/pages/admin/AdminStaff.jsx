@@ -14,8 +14,7 @@ import {
     ArrowPathIcon,
     XMarkIcon,
     TrashIcon,
-    EyeIcon,
-    EyeSlashIcon
+    EyeIcon
 } from '@heroicons/react/24/outline';
 
 const ALL_PERMISSIONS = [
@@ -34,7 +33,8 @@ const ALL_PERMISSIONS = [
     { key: 'view:reports', name: 'Xem báo cáo', group: 'Báo cáo' },
     { key: 'manage:newsletters', name: 'Quản lý bản tin', group: 'Bản tin' },
     { key: 'manage:promotions', name: 'Quản lý khuyến mãi', group: 'Hệ thống' },
-    { key: 'manage:settings', name: 'Cài đặt hệ thống', group: 'Hệ thống' },
+    { key: 'view:media', name: 'Xem thư viện Media', group: 'Media' },
+    { key: 'manage:media', name: 'Quản lý Media', group: 'Media' },
 ];
 
 const ROLES = [
@@ -61,7 +61,7 @@ const ROLES = [
 
 export default function AdminStaff() {
     const { confirm } = useConfirm();
-    const { hasPermission, isAdmin } = useAuth();
+    const { user: currentUser, hasPermission } = useAuth();
     const [staff, setStaff] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -91,7 +91,7 @@ export default function AdminStaff() {
             setStaff(res.data.content || []);
         } catch (error) {
             console.error('Fetch staff error:', error);
-            toast.error(error.response?.data?.message || 'Không thể tải danh sách nhân sự: ' + error.message);
+            toast.error(error.response?.data?.message || 'Không thể tải danh sách nhân sự');
         } finally {
             setLoading(false);
         }
@@ -116,7 +116,7 @@ export default function AdminStaff() {
         setFormData({
             username: user.username || '',
             email: user.email || '',
-            password: '', // Password stays empty on edit
+            password: '',
             fullName: user.fullName || '',
             phone: user.phone || '',
             role: user.role,
@@ -132,6 +132,12 @@ export default function AdminStaff() {
     };
 
     const handleToggleStatus = async (user) => {
+        // Prevent locking self
+        if (user.username === currentUser?.username) {
+            toast.error("Bạn không thể tự khóa tài khoản của chính mình");
+            return;
+        }
+
         const action = user.isActive === false ? 'mở khóa' : 'khóa';
         const ok = await confirm({
             title: `Xác nhận ${action}`,
@@ -142,11 +148,7 @@ export default function AdminStaff() {
 
         try {
             await axios.put(`/users/${user.id}/admin`, {
-                fullName: user.fullName,
-                email: user.email,
-                phone: user.phone,
-                role: user.role,
-                customPermissions: user.customPermissions,
+                ...user,
                 isActive: !(user.isActive !== false)
             });
             toast.success(`Đã ${action} tài khoản`);
@@ -157,6 +159,9 @@ export default function AdminStaff() {
     };
 
     const handleTogglePermission = (perm) => {
+        // Prevent editing self perms
+        if (selectedUser?.username === currentUser?.username) return;
+
         setFormData(prev => {
             const current = [...prev.customPermissions];
             if (current.includes(perm)) {
@@ -187,8 +192,17 @@ export default function AdminStaff() {
 
     const handleEditSubmit = async (e) => {
         e.preventDefault();
+        
+        // Final guard against self-edit submitting
+        if (selectedUser?.username === currentUser?.username) {
+            toast.error("Vui lòng sử dụng trang Hồ Sơ để chỉnh sửa thông tin bản thân");
+            setIsEditModalOpen(false);
+            return;
+        }
+
         try {
             await axios.put(`/users/${selectedUser.id}/admin`, {
+                username: formData.username,
                 fullName: formData.fullName,
                 email: formData.email,
                 phone: formData.phone,
@@ -205,6 +219,11 @@ export default function AdminStaff() {
     };
 
     const handleDelete = async (user) => {
+        if (user.username === currentUser?.username) {
+            toast.error("Bạn không thể tự xóa tài khoản của chính mình");
+            return;
+        }
+
         const ok = await confirm({
             title: 'Xoá nhân sự',
             message: `Bạn có chắc muốn xoá nhân sự ${user.fullName}? Hành động này không thể hoàn tác.`,
@@ -226,7 +245,6 @@ export default function AdminStaff() {
         if (!search) return true;
         return (u.fullName || '').toLowerCase().includes(search) ||
                (u.username || '').toLowerCase().includes(search) ||
-               (u.phone || '').includes(search) ||
                (u.email || '').toLowerCase().includes(search);
     });
 
@@ -235,14 +253,14 @@ export default function AdminStaff() {
             <div className="p-4 sm:p-8 max-w-[1440px] mx-auto">
                 <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                     <div>
-                        <h1 className="text-4xl font-black text-gray-900 tracking-tighter mb-2">QUẢN TRỊ NHÂN SỰ</h1>
-                        <p className="text-gray-500 font-medium tracking-tight">Quản lý đội ngũ quản trị viên và nhân viên hỗ trợ hệ thống</p>
+                        <h1 className="text-4xl font-black text-gray-900 tracking-tighter mb-2 uppercase italic">Nhân Sự Hệ Thống</h1>
+                        <p className="text-gray-500 font-medium tracking-tight">Quản trị và phân quyền cho đội ngũ vận hành FreshFood</p>
                     </div>
                     <button 
-                        onClick={() => setIsAddModalOpen(true)}
+                        onClick={() => { resetForm(); setIsAddModalOpen(true); }}
                         className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl shadow-green-100 flex items-center justify-center gap-3 transition-all active:scale-95 whitespace-nowrap"
                     >
-                        <PlusIcon className="w-6 h-6" /> Thêm nhân sự mới
+                        <PlusIcon className="w-6 h-6" /> Thêm nhân sự
                     </button>
                 </div>
 
@@ -252,121 +270,69 @@ export default function AdminStaff() {
                             <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <input 
                                 type="text"
-                                placeholder="Tìm theo tên, username hoặc email..."
+                                placeholder="Tìm kiếm nhân sự..."
                                 className="w-full bg-gray-50 border-none rounded-xl pl-12 pr-4 py-3 text-sm font-medium focus:ring-2 focus:ring-green-500/10 transition-all outline-none"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <button 
-                            onClick={fetchStaff}
-                            className="p-2.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
-                        >
-                            <ArrowPathIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                        </button>
                     </div>
 
                     <div className="overflow-x-auto scrollbar-hide">
-                        <table className="w-full min-w-[900px]">
+                        <table className="w-full">
                             <thead>
-                                <tr className="bg-gray-50/50">
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Thành viên</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Vai trò</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Quyền hạn</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Trạng thái</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Thao tác</th>
+                                <tr className="bg-gray-50/50 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    <th className="px-6 py-4 text-left">Thành viên</th>
+                                    <th className="px-6 py-4 text-left">Vai trò</th>
+                                    <th className="px-6 py-4 text-left">Trạng thái</th>
+                                    <th className="px-6 py-4 text-right">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {loading ? (
-                                    <tr>
-                                        <td colSpan="5" className="px-8 py-10 text-center text-gray-400 font-medium">Đang tải dữ liệu...</td>
+                                    <tr><td colSpan="4" className="p-10 text-center text-gray-400 font-medium">Đang tải...</td></tr>
+                                ) : filteredStaff.map((user) => (
+                                    <tr key={user.id} className="hover:bg-gray-50/50 transition-colors group">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 overflow-hidden">
+                                                    {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : <EyeIcon className="w-5 h-5" />}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-sm text-gray-900 group-hover:text-green-600 transition-colors uppercase">{user.fullName}</div>
+                                                    <div className="text-[10px] text-gray-400 font-medium tracking-tight">@{user.username}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded text-[9px] font-bold ${user.role === 'ROLE_ADMIN' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
+                                                {user.role === 'ROLE_ADMIN' ? 'QUẢN TRỊ' : 'NHÂN VIÊN'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <button 
+                                                disabled={user.username === currentUser?.username}
+                                                onClick={() => handleToggleStatus(user)}
+                                                className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${
+                                                    user.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                } ${user.username === currentUser?.username ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
+                                            >
+                                                {user.isActive !== false ? 'ACTIVE' : 'LOCKED'}
+                                            </button>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-1">
+                                                <button onClick={() => handleView(user)} className="p-2 text-gray-400 hover:text-green-600 rounded-xl hover:bg-green-50 transition-all"><EyeIcon className="w-5 h-5" /></button>
+                                                {user.username !== currentUser?.username && (
+                                                    <>
+                                                        <button onClick={() => handleEdit(user)} className="p-2 text-gray-400 hover:text-green-600 rounded-xl hover:bg-green-50 transition-all"><PencilSquareIcon className="w-5 h-5" /></button>
+                                                        <button onClick={() => handleDelete(user)} className="p-2 text-gray-400 hover:text-red-500 rounded-xl hover:bg-red-50 transition-all"><TrashIcon className="w-5 h-5" /></button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
                                     </tr>
-                                ) : filteredStaff.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="5" className="px-8 py-10 text-center text-gray-400 font-medium">Không tìm thấy nhân sự phù hợp</td>
-                                    </tr>
-                                ) : (
-                                    filteredStaff.map((user) => (
-                                        <tr key={user.id} className="hover:bg-gray-50/80 transition-colors group">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center text-green-600 overflow-hidden shadow-inner border border-green-200/50">
-                                                        {user.avatarUrl ? (
-                                                            <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <ShieldCheckIcon className="w-5 h-5" />
-                                                        )}
-                                                    </div>
-                                                    <div className="whitespace-nowrap min-w-[200px]">
-                                                        <div className="font-bold text-sm text-gray-900 group-hover:text-green-600 transition-colors uppercase tracking-tight">{user.fullName}</div>
-                                                        <div className="text-[10px] text-gray-400 font-medium tracking-tight">@{user.username} • {user.email}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap inline-block ${
-                                                    user.role === 'ROLE_ADMIN' 
-                                                    ? 'bg-amber-50 text-amber-600 ring-1 ring-amber-100' 
-                                                    : 'bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100'
-                                                }`}>
-                                                    {user.role === 'ROLE_ADMIN' ? 'QUẢN TRỊ' : 'NHÂN VIÊN'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 max-w-xs">
-                                                <div className="flex flex-wrap items-center gap-1 min-w-[180px]">
-                                                    {user.permissions?.slice(0, 2).map(p => (
-                                                        <span key={p} className="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-bold whitespace-nowrap">{p}</span>
-                                                    ))}
-                                                    {(user.permissions?.length || 0) > 2 && (
-                                                        <span className="text-[9px] text-gray-300 font-bold whitespace-nowrap">+{user.permissions.length - 2}</span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <button 
-                                                    onClick={() => user.role !== 'ROLE_ADMIN' && handleToggleStatus(user)}
-                                                    disabled={user.role === 'ROLE_ADMIN'}
-                                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all whitespace-nowrap ${
-                                                        user.isActive !== false 
-                                                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                                                        : 'bg-red-100 text-red-700 hover:bg-red-200 animate-pulse'
-                                                    } ${user.role === 'ROLE_ADMIN' ? 'cursor-default opacity-90' : 'cursor-pointer'}`}
-                                                >
-                                                    {user.isActive !== false ? <CheckCircleIcon className="w-4 h-4" /> : <XCircleIcon className="w-4 h-4" />}
-                                                    {user.isActive !== false ? 'ACTIVE' : 'LOCKED'}
-                                                </button>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex justify-end gap-1 text-gray-400 whitespace-nowrap">
-                                                    <button 
-                                                        onClick={() => handleView(user)}
-                                                        className="p-2 hover:text-blue-500 hover:bg-blue-50 transition-all rounded-xl"
-                                                        title="Xem chi tiết"
-                                                    >
-                                                        <EyeIcon className="w-5 h-5" />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleEdit(user)}
-                                                        className="p-2 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
-                                                        title="Chỉnh sửa"
-                                                    >
-                                                        <PencilSquareIcon className="w-5 h-5" />
-                                                    </button>
-                                                    {user.role !== 'ROLE_ADMIN' && (
-                                                        <button 
-                                                            onClick={() => handleDelete(user)}
-                                                            className="p-2 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                                            title="Xoá"
-                                                        >
-                                                            <TrashIcon className="w-5 h-5" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -375,353 +341,110 @@ export default function AdminStaff() {
 
             {/* View Modal */}
             {isViewModalOpen && selectedUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsViewModalOpen(false)}></div>
-                    <div className="relative bg-white rounded-3xl w-full max-w-2xl shadow-2xl animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto scrollbar-hide">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl">
+                        <div className="p-8 border-b border-gray-50 flex justify-between items-center">
+                            <h2 className="text-2xl font-black italic tracking-tighter">Thông tin nhân sự</h2>
+                            <button onClick={() => setIsViewModalOpen(false)}><XMarkIcon className="w-6 h-6 text-gray-400" /></button>
+                        </div>
                         <div className="p-8">
-                            <div className="flex justify-between items-start mb-8">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center text-green-600 overflow-hidden shadow-inner border border-green-200/50">
-                                        {selectedUser.avatarUrl ? (
-                                            <img src={selectedUser.avatarUrl} alt="" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <ShieldCheckIcon className="w-10 h-10" />
-                                        )}
-                                    </div>
-                                    <div>
-                                        <h2 className="text-3xl font-black text-gray-900 tracking-tighter">{selectedUser.fullName}</h2>
-                                        <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mt-1">@{selectedUser.username} • {selectedUser.role === 'ROLE_ADMIN' ? 'Quản trị viên' : 'Nhân viên'}</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => setIsViewModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                    <XMarkIcon className="w-6 h-6 text-gray-400" />
-                                </button>
+                            <div className="grid grid-cols-2 gap-4 mb-8">
+                                <div className="p-4 bg-gray-50 rounded-2xl"><div className="text-[10px] font-bold text-gray-400 uppercase">Họ tên</div><div className="font-bold">{selectedUser.fullName}</div></div>
+                                <div className="p-4 bg-gray-50 rounded-2xl"><div className="text-[10px] font-bold text-gray-400 uppercase">Username</div><div className="font-bold">@{selectedUser.username}</div></div>
+                                <div className="p-4 bg-gray-50 rounded-2xl"><div className="text-[10px] font-bold text-gray-400 uppercase">Email</div><div className="font-bold">{selectedUser.email}</div></div>
+                                <div className="p-4 bg-gray-50 rounded-2xl"><div className="text-[10px] font-bold text-gray-400 uppercase">Role</div><div className="font-bold">{selectedUser.role}</div></div>
                             </div>
-
-                            <div className="grid grid-cols-2 gap-8 mb-10">
-                                <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100">
-                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Email</div>
-                                    <div className="text-gray-900 font-bold">{selectedUser.email}</div>
-                                </div>
-                                <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100">
-                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Số điện thoại</div>
-                                    <div className="text-gray-900 font-bold">{selectedUser.phone || 'Chưa cập nhật'}</div>
-                                </div>
-                                <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100">
-                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Ngày tham gia</div>
-                                    <div className="text-gray-900 font-bold">{new Date(selectedUser.createdAt).toLocaleDateString('vi-VN')}</div>
-                                </div>
-                                <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100">
-                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Trạng thái</div>
-                                    <div className={`font-bold flex items-center gap-1.5 ${selectedUser.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                                        {selectedUser.isActive ? <CheckCircleIcon className="w-4 h-4" /> : <XCircleIcon className="w-4 h-4" />}
-                                        {selectedUser.isActive ? 'Đang hoạt động' : 'Đã khóa'}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">Danh sách quyền hạn</h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                    {selectedUser.permissions?.map(p => (
-                                        <div key={p} className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-xl border border-green-100 italic font-medium text-xs">
-                                            <ShieldCheckIcon className="w-3 h-3" /> {p}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="mt-10 flex gap-4">
-                                <button 
-                                    onClick={() => { setIsViewModalOpen(false); handleEdit(selectedUser); }}
-                                    className="flex-1 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-xl shadow-green-100 transition-all flex items-center justify-center gap-2"
-                                >
-                                    <PencilSquareIcon className="w-5 h-5" /> Chỉnh sửa
-                                </button>
-                                <button 
-                                    onClick={() => setIsViewModalOpen(false)}
-                                    className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-2xl transition-all"
-                                >
-                                    Đóng
-                                </button>
+                            <div className="flex gap-4">
+                                {selectedUser.username !== currentUser?.username && (
+                                    <button onClick={() => { setIsViewModalOpen(false); handleEdit(selectedUser); }} className="flex-1 py-4 bg-green-600 text-white font-bold rounded-2xl">Chỉnh sửa</button>
+                                )}
+                                <button onClick={() => setIsViewModalOpen(false)} className="flex-1 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl">Đóng</button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Add Modal */}
-            {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)}></div>
-                    <div className="relative bg-white rounded-3xl w-full max-w-2xl shadow-2xl animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto scrollbar-hide">
-                        <form onSubmit={handleAddSubmit} className="p-8">
+            {/* Add/Edit Modal */}
+            {(isAddModalOpen || isEditModalOpen) && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
+                    <div className="bg-white rounded-[32px] w-full max-w-2xl my-auto shadow-2xl">
+                        <form onSubmit={isAddModalOpen ? handleAddSubmit : handleEditSubmit} className="p-8 sm:p-10">
                             <div className="flex justify-between items-center mb-8">
-                                <div>
-                                    <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Thêm Nhân Sự Mới</h2>
-                                    <p className="text-gray-500 font-medium tracking-tight">Đăng ký tài khoản hệ thống cho thành viên mới</p>
-                                </div>
-                                <button type="button" onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                    <XMarkIcon className="w-6 h-6 text-gray-400" />
-                                </button>
+                                <h2 className="text-3xl font-black italic tracking-tighter uppercase">{isAddModalOpen ? 'Thêm nhân sự' : 'Cấu hình nhân sự'}</h2>
+                                <button type="button" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}><XMarkIcon className="w-6 h-6 text-gray-400" /></button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                <div className="md:col-span-2">
-                                    <label htmlFor="add_username" className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Tên đăng nhập</label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+                                <div className="sm:col-span-2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Username</label>
                                     <input 
-                                        id="add_username"
-                                        name="username"
-                                        type="text"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none"
-                                        value={formData.username}
-                                        onChange={(e) => setFormData({...formData, username: e.target.value})}
-                                        required
-                                        placeholder="Ví dụ: nva_staff"
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-bold outline-none ring-green-600/10 focus:ring-2 disabled:opacity-50" 
+                                        value={formData.username} 
+                                        onChange={e => setFormData({...formData, username: e.target.value})} 
+                                        required 
+                                        disabled={isEditModalOpen && selectedUser?.username === currentUser?.username}
+                                        placeholder="User đăng nhập" 
                                     />
+                                    {isEditModalOpen && selectedUser?.username === currentUser?.username && (
+                                        <p className="text-[9px] text-amber-600 font-bold ml-2 mt-1 italic">* Sử dụng trang Hồ Sơ để đổi Username cá nhân</p>
+                                    )}
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Họ và tên</label>
+                                    <input className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-bold outline-none ring-green-600/10 focus:ring-2" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} required placeholder="Họ tên thật" />
                                 </div>
                                 <div>
-                                    <label htmlFor="add_fullName" className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Họ tên đầy đủ</label>
-                                    <input 
-                                        id="add_fullName"
-                                        name="fullName"
-                                        type="text"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none"
-                                        value={formData.fullName}
-                                        onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                                        required
-                                        placeholder="Nguyễn Văn A"
-                                    />
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Email</label>
+                                    <input type="email" className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-bold outline-none ring-green-600/10 focus:ring-2" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
                                 </div>
                                 <div>
-                                    <label htmlFor="add_phone" className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Số điện thoại</label>
-                                    <input 
-                                        id="add_phone"
-                                        name="phone"
-                                        type="tel"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none"
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                                        required
-                                        placeholder="0xxxxxxxxx"
-                                    />
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Số điện thoại</label>
+                                    <input className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-bold outline-none ring-green-600/10 focus:ring-2" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required />
                                 </div>
-                                <div>
-                                    <label htmlFor="add_email" className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Email</label>
-                                    <input 
-                                        id="add_email"
-                                        name="email"
-                                        type="email"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                        required
-                                        placeholder="email@freshfood.com"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="add_password" className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Mật khẩu</label>
-                                    <input 
-                                        id="add_password"
-                                        name="password"
-                                        type="password"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none"
-                                        value={formData.password}
-                                        onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                        required
-                                    />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label htmlFor="add_role" className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Vai trò hệ thống</label>
+                                {isAddModalOpen && (
+                                    <div className="sm:col-span-2">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Mật khẩu ban đầu</label>
+                                        <input type="password" className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-bold outline-none ring-green-600/10 focus:ring-2" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
+                                    </div>
+                                )}
+                                <div className="sm:col-span-2">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Vai trò hệ thống</label>
                                     <select 
-                                        id="add_role"
-                                        name="role"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none appearance-none"
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-bold outline-none ring-green-600/10 focus:ring-2 appearance-none"
                                         value={formData.role}
-                                        onChange={(e) => {
-                                            const newRole = e.target.value;
-                                            const roleDefaults = ROLES.find(r => r.value === newRole)?.permissions || [];
-                                            setFormData({
-                                                ...formData, 
-                                                role: newRole,
-                                                customPermissions: roleDefaults // Template logic for new staff
-                                            });
-                                        }}
+                                        onChange={e => setFormData({...formData, role: e.target.value, customPermissions: ROLES.find(r => r.value === e.target.value)?.permissions || []})}
                                     >
-                                        {ROLES.filter(r => r.value !== 'ROLE_ADMIN').map(r => <option key={r.value} value={r.value}>{r.name}</option>)}
+                                        <option value="ROLE_STAFF">NHÂN VIÊN</option>
+                                        <option value="ROLE_ADMIN">QUẢN TRỊ VIÊN</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <div className="flex gap-4">
-                                <button 
-                                    type="button"
-                                    onClick={() => setIsAddModalOpen(false)}
-                                    className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-2xl transition-all"
-                                >
-                                    Hủy bỏ
-                                </button>
-                                <button 
-                                    type="submit"
-                                    className="flex-[2] py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-xl shadow-green-100 transition-all active:scale-95"
-                                >
-                                    Tạo tài khoản
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Edit Modal */}
-            {isEditModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)}></div>
-                    <div className="relative bg-white rounded-[32px] w-full max-w-4xl shadow-2xl animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto scrollbar-hide">
-                        <form onSubmit={handleEditSubmit} className="p-8 sm:p-12">
-                            <div className="flex justify-between items-start mb-10">
-                                <div>
-                                    <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Cấu Hình Nhân Sự</h2>
-                                    <p className="text-gray-500 font-medium tracking-tight">Thiết lập thông tin và quyền hạn cụ thể cho {selectedUser?.fullName}</p>
-                                </div>
-                                <button type="button" onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                    <XMarkIcon className="w-6 h-6 text-gray-400" />
-                                </button>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                                <div>
-                                    <label htmlFor="edit_fullName" className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Họ tên đầy đủ</label>
-                                    <input 
-                                        id="edit_fullName"
-                                        name="fullName"
-                                        type="text"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none"
-                                        value={formData.fullName}
-                                        onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="edit_phone" className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Số điện thoại</label>
-                                    <input 
-                                        id="edit_phone"
-                                        name="phone"
-                                        type="tel"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none"
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="edit_email" className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Email</label>
-                                    <input 
-                                        id="edit_email"
-                                        name="email"
-                                        type="email"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="edit_role" className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Vai trò chính</label>
-                                    <select 
-                                        id="edit_role"
-                                        name="role"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-900 font-bold transition-all outline-none appearance-none"
-                                        value={formData.role}
-                                        onChange={(e) => {
-                                            const newRole = e.target.value;
-                                            const roleDefaults = ROLES.find(r => r.value === newRole)?.permissions || [];
-                                            setFormData({
-                                                ...formData, 
-                                                role: newRole,
-                                                customPermissions: roleDefaults // Suggest perms based on template
-                                            });
-                                        }}
-                                    >
-                                        {ROLES.map(r => <option key={r.value} value={r.value}>{r.name}</option>)}
-                                    </select>
+                            {/* Self-edit shield for permissions */}
+                            <div className="mb-8">
+                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-4 block">Đặc quyền chi tiết</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {ALL_PERMISSIONS.map(p => (
+                                        <label key={p.key} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-all">
+                                            <input 
+                                                type="checkbox" 
+                                                className="w-5 h-5 rounded border-gray-200 text-green-600"
+                                                checked={formData.customPermissions.includes(p.key)}
+                                                onChange={() => handleTogglePermission(p.key)}
+                                                disabled={selectedUser?.username === currentUser?.username}
+                                            />
+                                            <span className="text-xs font-bold text-gray-600">{p.name}</span>
+                                        </label>
+                                    ))}
                                 </div>
                             </div>
-
-                            {hasPermission('manage:users') && (
-                                <div className="mb-12">
-                                    <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Phân quyền chi tiết (Custom Permissions)</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {Object.entries(ALL_PERMISSIONS.reduce((acc, curr) => {
-                                            if(!acc[curr.group]) acc[curr.group] = [];
-                                            acc[curr.group].push(curr);
-                                            return acc;
-                                        }, {})).map(([group, perms]) => (
-                                            <div key={group} className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
-                                                <h4 className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-5">{group}</h4>
-                                                <div className="space-y-4">
-                                                    {perms.map(p => {
-                                                        const isRoleDefault = ROLES.find(r => r.value === formData.role)?.permissions?.includes(p.key);
-                                                        const isChecked = formData.customPermissions.includes(p.key);
-                                                        
-                                                        return (
-                                                            <label key={p.key} className="flex items-center gap-3 group cursor-pointer">
-                                                                <input 
-                                                                    type="checkbox"
-                                                                    className="w-5 h-5 rounded-lg border-gray-200 text-green-600 focus:ring-green-500/20 transition-all cursor-pointer"
-                                                                    checked={!!isChecked}
-                                                                    onChange={() => handleTogglePermission(p.key)}
-                                                                />
-                                                                <div className="flex flex-col">
-                                                                    <span className={`text-sm font-semibold transition-colors ${isChecked ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-600'}`}>
-                                                                        {p.name}
-                                                                    </span>
-                                                                    {isRoleDefault && (
-                                                                        <span className="text-[9px] text-green-500 font-bold uppercase tracking-tighter opacity-60">Nên có cho {ROLES.find(r => r.value === formData.role)?.name}</span>
-                                                                    )}
-                                                                </div>
-                                                            </label>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {formData.role === 'ROLE_STAFF' && (
-                                <div className="flex items-center justify-between p-8 bg-gray-50 rounded-[28px] mb-12 border border-gray-100">
-                                    <div>
-                                        <div className="font-bold text-lg text-gray-900">Trạng thái tài khoản</div>
-                                        <div className="text-xs text-gray-500 font-medium">Khóa tài khoản nếu nhân viên nghỉ việc hoặc có dấu hiệu bất thường</div>
-                                    </div>
-                                    <label className="relative inline-flex items-center cursor-pointer scale-110">
-                                        <input 
-                                            type="checkbox" 
-                                            className="sr-only peer"
-                                            checked={formData.isActive}
-                                            onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-                                        />
-                                        <div className="w-14 h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
-                                    </label>
-                                </div>
-                            )}
 
                             <div className="flex gap-4">
-                                <button 
-                                    type="button"
-                                    onClick={() => setIsEditModalOpen(false)}
-                                    className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-2xl transition-all"
-                                >
-                                    Hủy bỏ
-                                </button>
-                                <button 
-                                    type="submit"
-                                    className="flex-[2] py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-xl shadow-green-100 transition-all active:scale-95"
-                                >
-                                    Lưu thay đổi
-                                </button>
+                                <button type="button" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }} className="flex-1 py-4 bg-gray-100 text-gray-400 font-bold rounded-2xl">Hủy</button>
+                                {(!isEditModalOpen || selectedUser?.username !== currentUser?.username) && (
+                                    <button type="submit" className="flex-[2] py-4 bg-green-600 text-white font-bold rounded-2xl shadow-xl shadow-green-100">{isAddModalOpen ? 'Tạo mới' : 'Lưu thay đổi'}</button>
+                                )}
                             </div>
                         </form>
                     </div>

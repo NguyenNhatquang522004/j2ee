@@ -40,7 +40,7 @@ public class CouponServiceImpl implements CouponService {
             User user = userRepository.findByUsername(username).orElse(null);
             // Nếu là Admin, trả về toàn bộ mã để quản lý
             if (user != null && user.getRole() != null && "ROLE_ADMIN".equals(user.getRole().name())) {
-                return couponRepository.findAll();
+                return couponRepository.findAllWithUsers();
             }
         }
         // Khách hàng hoặc người dùng thường chỉ thấy mã công khai
@@ -63,19 +63,42 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     @Transactional
-    public Coupon createCoupon(@NonNull Coupon coupon) {
-        String code = Objects.requireNonNull(coupon.getCode());
+    public Coupon createCoupon(@NonNull Coupon couponRequest) {
+        String code = Objects.requireNonNull(couponRequest.getCode()).trim().toUpperCase();
+        
+        // 1. Uniqueness check
         if (couponRepository.findByCode(code).isPresent()) {
             throw new BusinessException("Mã giảm giá '" + code + "' đã tồn tại");
         }
-        if (coupon.getExpiryDate() != null) {
-            if (coupon.getExpiryDate().getYear() > 2099) {
+
+        // 2. Build a fresh Clean entity to avoid frontend data noise
+        Coupon coupon = Coupon.builder()
+                .code(code)
+                .description(couponRequest.getDescription())
+                .discountPercent(couponRequest.getDiscountPercent() != null ? couponRequest.getDiscountPercent() : 0)
+                .maxDiscountAmount(couponRequest.getMaxDiscountAmount())
+                .minOrderAmount(couponRequest.getMinOrderAmount() != null ? couponRequest.getMinOrderAmount() : BigDecimal.ZERO)
+                .usageLimit(couponRequest.getUsageLimit())
+                .usedCount(0)
+                .isActive(Boolean.TRUE.equals(couponRequest.getIsActive()))
+                .isPrivate(Boolean.TRUE.equals(couponRequest.getIsPrivate()))
+                .build();
+
+        // 3. Date validation
+        if (couponRequest.getExpiryDate() != null) {
+            if (couponRequest.getExpiryDate().getYear() > 2099) {
                 throw new BusinessException("Năm hết hạn không hợp lệ (tối đa 2099)");
             }
-            if (coupon.getExpiryDate().isBefore(LocalDate.now())) {
+            if (couponRequest.getExpiryDate().isBefore(LocalDate.now())) {
                 throw new BusinessException("Ngày hết hạn không được ở trong quá khứ");
             }
+            coupon.setExpiryDate(couponRequest.getExpiryDate());
+        } else {
+            // Default expiry to 30 days if blank
+            coupon.setExpiryDate(LocalDate.now().plusDays(30));
         }
+
+        // 4. Save and audit
         Coupon saved = couponRepository.save(coupon);
         Long savedId = Objects.requireNonNull(saved.getId());
         auditService.log(SecurityUtils.getCurrentUsername(), "CREATE", "COUPON", savedId.toString(), "Created: " + saved.getCode());
@@ -86,22 +109,55 @@ public class CouponServiceImpl implements CouponService {
     @Transactional
     public Coupon updateCoupon(@NonNull Long id, @NonNull Coupon couponDetails) {
         Coupon coupon = getCouponById(id);
+        
+        // 1. Update Code with uniqueness check
         if (couponDetails.getCode() != null && !couponDetails.getCode().isBlank()) {
-            if (!coupon.getCode().equals(couponDetails.getCode()) && 
-                couponRepository.findByCode(couponDetails.getCode()).isPresent()) {
-                throw new BusinessException("Mã giảm giá '" + couponDetails.getCode() + "' đã tồn tại");
+            String newCode = couponDetails.getCode().trim().toUpperCase();
+            if (!coupon.getCode().equals(newCode) && 
+                couponRepository.findByCode(newCode).isPresent()) {
+                throw new BusinessException("Mã giảm giá '" + newCode + "' đã tồn tại");
             }
-            coupon.setCode(couponDetails.getCode().toUpperCase());
+            coupon.setCode(newCode);
         }
         
-        coupon.setDescription(couponDetails.getDescription());
-        coupon.setDiscountPercent(couponDetails.getDiscountPercent() != null ? couponDetails.getDiscountPercent() : 0);
+        // 2. Update basic info
+        if (couponDetails.getDescription() != null) {
+            coupon.setDescription(couponDetails.getDescription());
+        }
+        
+        if (couponDetails.getDiscountPercent() != null) {
+            int pct = couponDetails.getDiscountPercent();
+            if (pct < 0 || pct > 100) throw new BusinessException("Phần trăm giảm giá từ 0-100");
+            coupon.setDiscountPercent(pct);
+        }
+        
         coupon.setMaxDiscountAmount(couponDetails.getMaxDiscountAmount());
-        coupon.setMinOrderAmount(couponDetails.getMinOrderAmount() != null ? couponDetails.getMinOrderAmount() : java.math.BigDecimal.ZERO);
-        coupon.setExpiryDate(couponDetails.getExpiryDate() != null ? couponDetails.getExpiryDate() : coupon.getExpiryDate());
+        
+        if (couponDetails.getMinOrderAmount() != null) {
+            coupon.setMinOrderAmount(couponDetails.getMinOrderAmount());
+        }
+        
+        // 3. Update date with validation
+        if (couponDetails.getExpiryDate() != null) {
+            if (couponDetails.getExpiryDate().isBefore(LocalDate.now())) {
+                throw new BusinessException("Ngày hết hạn không được ở trong quá khứ");
+            }
+            coupon.setExpiryDate(couponDetails.getExpiryDate());
+        }
+        
         coupon.setUsageLimit(couponDetails.getUsageLimit());
-        coupon.setIsActive(Boolean.TRUE.equals(couponDetails.getIsActive()));
-        coupon.setIsPrivate(Boolean.TRUE.equals(couponDetails.getIsPrivate()));
+        
+        // 4. Update status flags (only if explicitly provided)
+        if (couponDetails.getIsActive() != null) {
+            coupon.setIsActive(couponDetails.getIsActive());
+        }
+        
+        if (couponDetails.getIsPrivate() != null) {
+            coupon.setIsPrivate(couponDetails.getIsPrivate());
+        }
+        
+        // IMPORTANT: We do NOT update assignedUsers here to avoid Hibernate conflicts and accidental data loss.
+        // Users should be managed via giftCoupon API.
         
         Coupon updated = couponRepository.save(coupon);
         String currentUsername = SecurityUtils.getCurrentUsername();

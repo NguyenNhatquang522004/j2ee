@@ -60,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
     private final ApplicationEventPublisher eventPublisher;
     private final nhom5.demo.security.OrderStateMachine orderStateMachine;
     private final nhom5.demo.service.MailService mailService;
+    private final nhom5.demo.service.SecurityLogService securityLogService;
 
     /**
      * Tạo đơn hàng mới.
@@ -123,6 +124,9 @@ public class OrderServiceImpl implements OrderService {
                     unitPrice = flashSaleItem.getFlashSalePrice();
                     flashSaleItem.setSoldQuantity(flashSaleItem.getSoldQuantity() + itemReq.getQuantity());
                     flashSaleItemRepository.save(flashSaleItem);
+                    
+                    // Broadcast real-time update to all clients
+                    notificationService.broadcastFlashSaleUpdate(product.getId(), flashSaleItem.getSoldQuantity(), flashSaleItem.getQuantityLimit());
                 } else if (flashSaleItem.getSoldQuantity() < flashSaleItem.getQuantityLimit()) {
                     // PARTIAL Flash Sale
                     unitPrice = product.getPrice(); 
@@ -283,6 +287,8 @@ public class OrderServiceImpl implements OrderService {
                                requester.getRole().getPermissions().contains("manage:orders") ||
                                requester.getCustomPermissions().contains("manage:orders");
             if (!canManage) {
+                securityLogService.log("UNAUTHORIZED_ORDER_VIEW", "CRITICAL", 
+                    "User '" + username + "' attempted to VIEW unauthorized order", "INTERNAL", username);
                 throw new BusinessException("Bạn không có quyền xem đơn hàng này");
             }
         }
@@ -295,14 +301,18 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "code", orderCode));
 
-        // Admin can see any order; user can only see their own
+        // Admin/Staff can see any order; user can only see their own
         if (!order.getUser().getUsername().equals(username)) {
             User requester = userRepository.findByUsername(username)
                     .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
-            boolean canManage = requester.getRole().name().equals("ROLE_ADMIN") || 
-                               requester.getRole().getPermissions().contains("manage:orders") ||
-                               requester.getCustomPermissions().contains("manage:orders");
-            if (!canManage) {
+            
+            boolean isAdmin = requester.getRole() != null && "ROLE_ADMIN".equals(requester.getRole().name());
+            boolean hasPermission = (requester.getRole() != null && requester.getRole().getPermissions() != null && 
+                                    requester.getRole().getPermissions().contains("manage:orders"));
+            
+            if (!isAdmin && !hasPermission) {
+                securityLogService.log("UNAUTHORIZED_ORDER_VIEW", "CRITICAL", 
+                    "User '" + username + "' attempted to VIEW unauthorized order", "INTERNAL", username);
                 throw new BusinessException("Bạn không có quyền xem đơn hàng này");
             }
         }
@@ -460,6 +470,8 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "code", orderCode));
 
         if (!order.getUser().getUsername().equals(username)) {
+            securityLogService.log("UNAUTHORIZED_ORDER_CANCEL", "CRITICAL", 
+                "User " + username + " attempted to CANCEL unauthorized order: " + orderCode, "IDOR_ATTEMPT");
             throw new BusinessException("Bạn không có quyền hủy đơn hàng này");
         }
         
@@ -572,16 +584,16 @@ public class OrderServiceImpl implements OrderService {
                         item.getProductImageUrl() != null ? item.getProductImageUrl() : 
                                        (item.getProduct() != null ? item.getProduct().getImageUrl() : null),
                         item.getQuantity(),
-                        item.getUnitPrice(),
-                        item.getSubtotal()
+                        item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO,
+                        item.getSubtotal() != null ? item.getSubtotal() : BigDecimal.ZERO
                 ))
                 .toList();
 
         return OrderResponse.builder()
                 .id(order.getId())
                 .orderCode(order.getOrderCode())
-                .userId(order.getUser().getId())
-                .username(order.getUser().getUsername())
+                .userId(order.getUser() != null ? order.getUser().getId() : null)
+                .username(order.getUser() != null ? order.getUser().getUsername() : "N/A")
                 .shippingAddress(order.getShippingAddress())
                 .addressDetail(order.getAddressDetail())
                 .ward(order.getWard())
@@ -595,15 +607,19 @@ public class OrderServiceImpl implements OrderService {
                 .returnReason(order.getReturnReason())
                 .returnMedia(order.getReturnMedia())
                 .rejectReason(order.getRejectReason())
-                .totalAmount(order.getTotalAmount())
-                .discountAmount(order.getDiscountAmount())
-                .shippingFee(order.getShippingFee())
-                .finalAmount(order.getFinalAmount())
+                .totalAmount(order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO)
+                .discountAmount(order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO)
+                .shippingFee(order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO)
+                .finalAmount(order.getFinalAmount() != null ? order.getFinalAmount() : BigDecimal.ZERO)
                 .status(order.getStatus())
-                .statusDisplayName(order.getStatus() != null ? order.getStatus().getDisplayName() : null)
+                .statusDisplayName(order.getStatus() != null ? order.getStatus().getDisplayName() : "N/A")
                 .paymentMethod(order.getPaymentMethod())
-                .isPaid(order.getIsPaid())
+                .isPaid(order.getIsPaid() != null ? order.getIsPaid() : false)
                 .isRefunded(order.getIsRefunded() != null ? order.getIsRefunded() : false)
+                .notifiedPayment(order.getNotifiedPayment() != null ? order.getNotifiedPayment() : false)
+                .notifiedAt(order.getNotifiedAt())
+                .paymentProof(order.getPaymentProof())
+                .paymentNote(order.getPaymentNote())
                 .couponCode(order.getCoupon() != null ? order.getCoupon().getCode() : null)
                 .orderItems(items)
                 .createdAt(order.getCreatedAt())
@@ -619,4 +635,33 @@ public class OrderServiceImpl implements OrderService {
                 .refundedAt(order.getRefundedAt())
                 .build();
     }
+
+    @Override
+    @Transactional
+    public OrderResponse confirmPayment(@NonNull String orderCode, String note, String proof, @NonNull String username) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "code", orderCode));
+
+        if (!order.getUser().getUsername().equals(username)) {
+            throw new BusinessException("Bạn không có quyền thực hiện thao tác này trên đơn hàng này");
+        }
+
+        if (order.getIsPaid()) {
+            throw new BusinessException("Đơn hàng này đã được thanh toán");
+        }
+
+        order.setNotifiedPayment(true);
+        order.setNotifiedAt(LocalDateTime.now());
+        order.setPaymentNote(note);
+        order.setPaymentProof(proof);
+
+        Order savedOrder = orderRepository.save(order);
+        
+        // Notify admin (Optional: add notification logic here)
+        log.info("User {} notified payment for order {}", username, orderCode);
+        
+        return toResponse(savedOrder);
+    }
+
+
 }

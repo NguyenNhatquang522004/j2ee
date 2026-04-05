@@ -27,16 +27,17 @@ public class TwoFactorServiceImpl implements TwoFactorService {
 
     @Override
     public String getQrCodeUrl(String secret, String username) {
-        String issuer = "TOAN_STORE";
+        String issuer = "FRESHFOOD";
         try {
-            // Standard format: otpauth://totp/Issuer:AccountName?secret=SECRET&issuer=ISSUER
+            // Standard format:
+            // otpauth://totp/Issuer:AccountName?secret=SECRET&issuer=ISSUER
             String label = issuer + ":" + username;
             String encodedLabel = URLEncoder.encode(label, StandardCharsets.UTF_8).replace("+", "%20");
             String encodedIssuer = URLEncoder.encode(issuer, StandardCharsets.UTF_8).replace("+", "%20");
-            
-            return String.format("otpauth://totp/%s?secret=%s&issuer=%s", 
-                    encodedLabel, 
-                    secret, 
+
+            return String.format("otpauth://totp/%s?secret=%s&issuer=%s",
+                    encodedLabel,
+                    secret,
                     encodedIssuer);
         } catch (Exception e) {
             return "";
@@ -48,11 +49,11 @@ public class TwoFactorServiceImpl implements TwoFactorService {
         try {
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
             BitMatrix bitMatrix = qrCodeWriter.encode(qrCodeUrl, BarcodeFormat.QR_CODE, 250, 250);
-            
+
             ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
             byte[] pngData = pngOutputStream.toByteArray();
-            
+
             return "data:image/png;base64," + Base64.getEncoder().encodeToString(pngData);
         } catch (Exception e) {
             return "";

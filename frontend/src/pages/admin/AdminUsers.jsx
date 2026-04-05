@@ -1,8 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { userService } from '../../api/services';
 import AdminLayout from '../../components/AdminLayout';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { 
+    PencilSquareIcon,
+    XMarkIcon,
     MagnifyingGlassIcon, 
     UserIcon, 
     LockClosedIcon, 
@@ -15,6 +18,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function AdminUsers() {
+    const { user: currentUser } = useAuth();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [togglingId, setTogglingId] = useState(null);
@@ -26,6 +30,9 @@ export default function AdminUsers() {
     const [statusFilter, setStatusFilter] = useState('');
     const [sortBy, setSortBy] = useState('createdAt');
     const [direction, setDirection] = useState('desc');
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', role: '' });
 
     useEffect(() => {
         const handler = setTimeout(() => setDebouncedSearch(search), 500);
@@ -58,10 +65,6 @@ export default function AdminUsers() {
     }, [page, debouncedSearch, roleFilter, statusFilter, sortBy, direction, fetchUsers]);
 
     const handleDelete = async (user) => {
-        if (user.role?.includes('ADMIN') || user.role?.includes('STAFF')) {
-            toast.error('Không thể xóa tài khoản quản trị hoặc nhân viên tại đây');
-            return;
-        }
         
         if (!window.confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản ${user.fullName}? Hành động này không thể hoàn tác.`)) return;
 
@@ -71,6 +74,30 @@ export default function AdminUsers() {
             fetchUsers(page);
         } catch (err) {
             toast.error(err.response?.data?.message || 'Xóa thất bại');
+        }
+    };
+    
+    const handleEdit = (u) => {
+        setSelectedUser(u);
+        setFormData({ 
+            fullName: u.fullName || '', 
+            email: u.email || '', 
+            phone: u.phone || '', 
+            role: u.role || 'ROLE_USER' 
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            // Sử dụng API cập nhật đặc quyền của Admin
+            await userService.adminUpdate(selectedUser.id, formData);
+            toast.success('Cập nhật nhân sự thành công');
+            setIsEditModalOpen(false);
+            fetchUsers(page);
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Cập nhật thất bại');
         }
     };
 
@@ -93,7 +120,8 @@ export default function AdminUsers() {
 
     return (
         <AdminLayout>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">Người dùng</h1>
                     <p className="text-gray-500 font-medium text-sm tracking-tight">Quản lý tài khoản khách hàng và phân quyền.</p>
@@ -220,7 +248,7 @@ export default function AdminUsers() {
                                     </td>
                                     <td className="px-5 py-3 text-center">
                                         <div className="flex items-center justify-center gap-1">
-                                            {!u.role?.includes('ADMIN') && !u.role?.includes('STAFF') && (
+                                            {u.username !== currentUser?.username && (
                                                 <button
                                                     disabled={togglingId === u.id}
                                                     onClick={() => handleToggle(u.id)}
@@ -241,7 +269,17 @@ export default function AdminUsers() {
                                                 </button>
                                             )}
 
-                                            {!u.role?.includes('ADMIN') && !u.role?.includes('STAFF') && (
+                                            {u.role?.includes('STAFF') && u.username !== currentUser?.username && (
+                                                <button
+                                                    onClick={() => handleEdit(u)}
+                                                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
+                                                    title="Chỉnh sửa tài khoản nhân viên"
+                                                >
+                                                    <PencilSquareIcon className="w-5 h-5" />
+                                                </button>
+                                            )}
+
+                                            {u.username !== currentUser?.username && (
                                                 <button
                                                     onClick={() => handleDelete(u)}
                                                     className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
@@ -279,6 +317,69 @@ export default function AdminUsers() {
                     </div>
                 )}
             </div>
+
+            {/* Edit Modal */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-[32px] w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <form onSubmit={handleEditSubmit} className="p-8">
+                            <div className="flex justify-between items-center mb-8">
+                                <h2 className="text-2xl font-black italic tracking-tighter uppercase">Cấu hình người dùng</h2>
+                                <button type="button" onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
+                                    <XMarkIcon className="w-6 h-6 text-gray-400" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-5 mb-8">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Họ và tên</label>
+                                    <input 
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-bold outline-none ring-green-600/10 focus:ring-4 transition-all" 
+                                        value={formData.fullName} 
+                                        onChange={e => setFormData({...formData, fullName: e.target.value})} 
+                                        required 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Email</label>
+                                    <input 
+                                        type="email"
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-bold outline-none ring-green-600/10 focus:ring-4 transition-all" 
+                                        value={formData.email} 
+                                        onChange={e => setFormData({...formData, email: e.target.value})} 
+                                        required 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Số điện thoại</label>
+                                    <input 
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-bold outline-none ring-green-600/10 focus:ring-4 transition-all" 
+                                        value={formData.phone} 
+                                        onChange={e => setFormData({...formData, phone: e.target.value})} 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-1 block">Vai trò hệ thống</label>
+                                    <select 
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-bold outline-none ring-green-600/10 focus:ring-4 transition-all appearance-none"
+                                        value={formData.role}
+                                        onChange={e => setFormData({...formData, role: e.target.value})}
+                                    >
+                                        <option value="ROLE_USER">KHÁCH HÀNG (USER)</option>
+                                        <option value="ROLE_STAFF">NHÂN VIÊN (STAFF)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4">
+                                <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-4 bg-gray-100 text-gray-400 font-bold rounded-2xl">Hủy</button>
+                                <button type="submit" className="flex-[2] py-4 bg-green-600 text-white font-bold rounded-2xl shadow-xl shadow-green-100 active:scale-95 transition-all">Lưu thay đổi</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            </>
         </AdminLayout>
     );
 }

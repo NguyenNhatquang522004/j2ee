@@ -15,6 +15,39 @@ export default function FlashSaleSection() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const handleUpdate = (event) => {
+            const { productId, soldQuantity, quantityLimit } = event.detail;
+            setFlashSale(prev => {
+                if (!prev || !prev.items) return prev;
+                const updatedItems = prev.items.map(item => {
+                    if (item.product && item.product.id === productId) {
+                        return { ...item, soldQuantity, quantityLimit };
+                    }
+                    return item;
+                });
+                return { ...prev, items: updatedItems };
+            });
+        };
+
+        window.addEventListener('flash-sale-updated', handleUpdate);
+        
+        const handleRefresh = () => {
+            flashSaleService.getActive()
+                .then(res => {
+                    if (res.data) setFlashSale(res.data);
+                    else setFlashSale(null);
+                })
+                .catch(() => {});
+        };
+        window.addEventListener('flash-sale-refresh', handleRefresh);
+
+        return () => {
+            window.removeEventListener('flash-sale-updated', handleUpdate);
+            window.removeEventListener('flash-sale-refresh', handleRefresh);
+        };
+    }, []);
+
+    useEffect(() => {
         flashSaleService.getActive()
             .then(res => {
                 if (res.data) setFlashSale(res.data);

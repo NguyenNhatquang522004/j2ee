@@ -52,6 +52,19 @@ export function NotificationProvider({ children }) {
                      handleNewNotification(notification);
                 }
             });
+
+            // Subscribe to flash sale updates (Public)
+            client.subscribe('/topic/flash-sales', (message) => {
+                const data = JSON.parse(message.body);
+                console.log('STOMP: Flash Sale Update Received', data);
+                
+                if (data.type === 'FLASH_SALE_REFRESH') {
+                    window.dispatchEvent(new CustomEvent('flash-sale-refresh', { detail: data }));
+                } else {
+                    // Default to update event for quantity changes
+                    window.dispatchEvent(new CustomEvent('flash-sale-updated', { detail: data }));
+                }
+            });
         };
 
         client.onStompError = (frame) => {

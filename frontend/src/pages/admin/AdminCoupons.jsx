@@ -110,16 +110,16 @@ export default function AdminCoupons() {
 
         setSaving(true);
         try {
+            // Filter and sanitize payload to only include fields in Coupon entity
             const payload = {
-                ...form,
+                code: form.code.toUpperCase(),
+                description: form.description || '',
                 discountPercent: Number(form.discountPercent),
                 maxDiscountAmount: form.maxDiscountAmount ? Number(form.maxDiscountAmount) : null,
                 minOrderAmount: Number(form.minOrderAmount),
+                expiryDate: form.expiryDate,
                 usageLimit: form.usageLimit ? Number(form.usageLimit) : null,
-                // Ensure both naming conventions are sent to support various backend mappings
-                is_private: !!form.isPrivate,
                 isPrivate: !!form.isPrivate,
-                is_active: !!form.isActive,
                 isActive: !!form.isActive
             };
             const result = editing ? await couponService.update(editing.id, payload) : await couponService.create(payload);
@@ -272,6 +272,13 @@ export default function AdminCoupons() {
                                                     )}
                                                 </div>
                                                 <p className="text-[11px] text-gray-400 font-bold mt-1 line-clamp-1">{c.description || 'Không có mô tả'}</p>
+                                                {((c.isPrivate ?? c.is_private) && c.assignedEmails?.length > 0) && (
+                                                    <div className="flex flex-wrap gap-1 mt-1.5 max-w-[250px]">
+                                                        {c.assignedEmails.map((email, i) => (
+                                                            <span key={i} className="px-1.5 py-0.5 bg-purple-50 text-purple-600 border border-purple-100 rounded-md text-[9px] font-black">{email}</span>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </td>
@@ -449,17 +456,37 @@ export default function AdminCoupons() {
                             </div>
 
                             {form.isPrivate && (
-                                <div className="space-y-3 p-6 bg-purple-50/50 rounded-3xl border border-purple-100/50 animate-in slide-in-from-top-2 duration-300">
-                                    <label className="flex items-center gap-2 text-[11px] font-black text-purple-600 uppercase tracking-widest pl-1 font-vietnam">
-                                        <EnvelopeIcon className="w-5 h-5" /> Gửi trực tiếp cho khách hàng (Email)
-                                    </label>
+                                <div className="space-y-4 p-6 bg-purple-50/50 rounded-3xl border border-purple-100/50 animate-in slide-in-from-top-2 duration-300">
+                                    <div className="flex items-center justify-between">
+                                        <label className="flex items-center gap-2 text-[11px] font-black text-purple-600 uppercase tracking-widest pl-1 font-vietnam">
+                                            <EnvelopeIcon className="w-5 h-5" /> Gửi trực tiếp cho khách hàng (Email)
+                                        </label>
+                                        {(form.assignedEmails?.length > 0) && (
+                                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">
+                                                Đã sở hữu: {form.assignedEmails.length} người
+                                            </span>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Display existing owner emails if any */}
+                                    {form.assignedEmails?.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mb-2">
+                                            {form.assignedEmails.map((email, idx) => (
+                                                <div key={idx} className="px-3 py-1.5 bg-white border border-purple-100 rounded-xl text-[11px] font-bold text-gray-700 shadow-sm flex items-center gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                                    {email}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     <input 
                                         type="email"
                                         value={form.recipientEmail} 
                                         onChange={(e) => setForm({ ...form, recipientEmail: e.target.value })} 
                                         disabled={isViewOnly}
                                         className="w-full px-6 py-4 bg-white border-none rounded-2xl font-bold text-gray-900 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none font-vietnam disabled:opacity-75"
-                                        placeholder="customer@example.com (Nếu muốn gửi ngay)"
+                                        placeholder={form.assignedEmails?.length > 0 ? "Thêm email người nhận mới..." : "customer@example.com (Nếu muốn gửi ngay)"}
                                     />
                                 </div>
                             )}

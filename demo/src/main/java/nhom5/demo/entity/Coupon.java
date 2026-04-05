@@ -111,6 +111,15 @@ public class Coupon {
     private java.util.Set<User> assignedUsers = new java.util.HashSet<>();
 
     @JsonIgnore
+    public List<String> getAssignedEmails() {
+        if (assignedUsers == null) return new java.util.ArrayList<>();
+        return assignedUsers.stream()
+                .map(User::getEmail)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @JsonIgnore
     @OneToMany(mappedBy = "coupon", fetch = FetchType.LAZY)
     @Builder.Default
     private List<Order> orders = new ArrayList<>();

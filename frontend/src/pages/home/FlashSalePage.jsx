@@ -11,6 +11,42 @@ export default function FlashSalePage() {
     const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
     useEffect(() => {
+        const handleFlashSaleUpdate = (event) => {
+            const { productId, soldQuantity, quantityLimit } = event.detail;
+            setFlashSale(prev => {
+                if (!prev || !prev.items) return prev;
+                const updatedItems = prev.items.map(item => {
+                    if (item.product && item.product.id === productId) {
+                        return { ...item, soldQuantity, quantityLimit };
+                    }
+                    return item;
+                });
+                return { ...prev, items: updatedItems };
+            });
+        };
+
+        window.addEventListener('flash-sale-updated', handleFlashSaleUpdate);
+        
+        const handleRefresh = () => {
+            setLoading(true);
+            Promise.all([flashSaleService.getActive(), flashSaleService.getUpcoming()])
+                .then(([active, up]) => {
+                    if (active.data) setFlashSale(active.data);
+                    else setFlashSale(null);
+                    setUpcoming(up.data || []);
+                })
+                .catch(() => {})
+                .finally(() => setLoading(false));
+        };
+        window.addEventListener('flash-sale-refresh', handleRefresh);
+
+        return () => {
+            window.removeEventListener('flash-sale-updated', handleFlashSaleUpdate);
+            window.removeEventListener('flash-sale-refresh', handleRefresh);
+        };
+    }, []);
+
+    useEffect(() => {
         Promise.all([flashSaleService.getActive(), flashSaleService.getUpcoming()])
             .then(([active, up]) => {
                 if (active.data) setFlashSale(active.data);

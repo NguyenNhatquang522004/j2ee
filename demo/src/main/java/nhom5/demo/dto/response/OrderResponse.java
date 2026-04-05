@@ -39,6 +39,11 @@ public class OrderResponse {
     private PaymentMethodEnum paymentMethod;
     @JsonProperty("isPaid")
     private Boolean isPaid;
+    @JsonProperty("isNotifiedPayment")
+    private Boolean notifiedPayment;
+    private LocalDateTime notifiedAt;
+    private String paymentProof;
+    private String paymentNote;
     private Long userId;
     private String username;
     private String couponCode;

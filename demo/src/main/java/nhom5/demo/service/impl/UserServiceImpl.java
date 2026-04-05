@@ -188,6 +188,16 @@ public class UserServiceImpl implements UserService {
     public UserResponse adminUpdateUser(@NonNull Long id, @NonNull nhom5.demo.dto.request.AdminUserUpdateRequest request) {
         User user = findById(id);
         
+        if (request.getUsername() != null && !request.getUsername().isBlank()) {
+            String newUsername = request.getUsername().trim();
+            if (!user.getUsername().equalsIgnoreCase(newUsername)) {
+                if (userRepository.existsByUsername(newUsername)) {
+                    throw new BusinessException("Tên đăng nhập '" + newUsername + "' đã tồn tại");
+                }
+                user.setUsername(newUsername);
+            }
+        }
+        
         if (request.getFullName() != null) user.setFullName(request.getFullName().trim());
         if (request.getEmail() != null) {
             String email = request.getEmail().trim().toLowerCase();

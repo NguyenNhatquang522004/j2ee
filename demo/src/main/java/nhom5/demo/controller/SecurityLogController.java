@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
  * Cho phép giám sát các sự kiện như đăng nhập thất bại, IP bị chặn, v.v.
  */
 @RestController
-@RequestMapping("/api/admin/security/logs")
+@RequestMapping(nhom5.demo.constant.AppConstants.API_BASE + "/admin/security/logs")
 @RequiredArgsConstructor
 @Tag(name = "Security Audit", description = "Endpoints for monitoring security events and logs.")
 @PreAuthorize("hasRole('ADMIN')")
@@ -29,17 +29,17 @@ public class SecurityLogController {
 
     @GetMapping
     @Operation(summary = "Lấy danh sách nhật ký bảo mật (Phân trang)")
-    public ResponseEntity<Page<SecurityLog>> getAllLogs(
+    public ResponseEntity<nhom5.demo.dto.response.ApiResponse<Page<SecurityLog>>> getAllLogs(
             @PageableDefault(size = 20, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(securityLogService.getAllLogs(pageable));
+        return ResponseEntity.ok(nhom5.demo.dto.response.ApiResponse.success(securityLogService.getAllLogs(pageable)));
     }
 
     @GetMapping("/ip/{ip}")
     @Operation(summary = "Lấy nhật ký bảo mật theo địa chỉ IP")
-    public ResponseEntity<Page<SecurityLog>> getLogsByIp(
+    public ResponseEntity<nhom5.demo.dto.response.ApiResponse<Page<SecurityLog>>> getLogsByIp(
             @PathVariable String ip,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(securityLogService.getLogsByIp(ip, pageable));
+        return ResponseEntity.ok(nhom5.demo.dto.response.ApiResponse.success(securityLogService.getLogsByIp(ip, pageable)));
     }
 
     @DeleteMapping("/cleanup")

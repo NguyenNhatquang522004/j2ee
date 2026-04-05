@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 
+
 public interface OrderService {
     OrderResponse createOrder(@NonNull String username, @NonNull OrderRequest request);
 
@@ -25,5 +26,6 @@ public interface OrderService {
     OrderResponse requestReturn(@NonNull String orderCode, String reason, String returnMedia, @NonNull String username);
     OrderResponse confirmReturn(@NonNull Long id);
     OrderResponse rejectReturn(@NonNull Long id, String reason);
+    OrderResponse confirmPayment(@NonNull String orderCode, String note, String proof, @NonNull String username);
     Page<OrderResponse> getRefundRequests(String query, @NonNull Pageable pageable);
 }

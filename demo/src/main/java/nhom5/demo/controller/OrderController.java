@@ -210,6 +210,17 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success("Gửi yêu cầu trả hàng thành công", data));
     }
 
+    @Operation(summary = "Xác nhận đã chuyển khoản (theo mã đơn)")
+    @PostMapping("/code/{orderCode}/confirm-payment")
+    public ResponseEntity<ApiResponse<OrderResponse>> confirmPaymentByCode(
+            @PathVariable @NonNull String orderCode,
+            @RequestParam(required = false) String note,
+            @RequestParam(required = false) String proof,
+            @AuthenticationPrincipal @NonNull UserDetails userDetails) {
+        OrderResponse data = orderService.confirmPayment(Objects.requireNonNull(orderCode), note, proof, Objects.requireNonNull(userDetails.getUsername()));
+        return ResponseEntity.ok(ApiResponse.success("Thông báo chuyển khoản thành công. Đang chờ xác nhận từ Admin.", data));
+    }
+
     /**
      * confirmReturn: Administrative approval of a return request after verifying item status.
      */

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { orderService, cartService, mediaService } from '../../api/services';
+import { orderService, cartService, mediaService, settingsService } from '../../api/services';
 import Layout from '../../components/Layout';
 import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -67,6 +67,14 @@ export default function OrderDetail() {
     const [selectedImage, setSelectedImage] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [updating, setUpdating] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentNote, setPaymentNote] = useState('');
+    const [bankInfo, setBankInfo] = useState({
+        bankId: '',
+        accountNo: '',
+        accountName: ''
+    });
+    const [paymentStatus, setPaymentStatus] = useState('UNPAID'); // Internal state for UI sync
 
     // --- DATA FETCHING ---
     useEffect(() => {
@@ -87,8 +95,48 @@ export default function OrderDetail() {
             }
         };
 
-        if (id) fetchOrder();
-    }, [id]);
+        const fetchBankSettings = async () => {
+            try {
+                const res = await settingsService.getPublic();
+                const data = res.data || [];
+                setBankInfo({
+                    bankId: data.find(s => s.settingKey === 'BANK_ID')?.settingValue || '',
+                    accountNo: data.find(s => s.settingKey === 'BANK_ACCOUNT_NO')?.settingValue || '',
+                    accountName: data.find(s => s.settingKey === 'BANK_ACCOUNT_NAME')?.settingValue || ''
+                });
+            } catch (err) {
+                console.warn("Failed to fetch bank info", err);
+            }
+        };
+
+        if (id) {
+            fetchOrder();
+            fetchBankSettings();
+        }
+
+        // --- POLLING LOGIC (Payment Auto-Confirm) ---
+        let pollInterval = null;
+        if (order && !order.isPaid && order.paymentMethod === 'BANK_TRANSFER') {
+            pollInterval = setInterval(async () => {
+                try {
+                    const isNumericId = /^\d+$/.test(id);
+                    const res = isNumericId 
+                        ? await orderService.getById(id)
+                        : await orderService.getByCode(id);
+                    if (res.data.isPaid) {
+                        setOrder(res.data);
+                        toast.success('Thanh toán đã được xác nhận tự động!');
+                    }
+                } catch (err) {
+                    // Silently ignore polling errors
+                }
+            }, 10000); // Check every 10s
+        }
+
+        return () => {
+            if (pollInterval) clearInterval(pollInterval);
+        };
+    }, [id, order?.isPaid]);
 
     // --- ACTION HANDLERS ---
 
@@ -192,6 +240,33 @@ export default function OrderDetail() {
             toast.success('Yêu cầu trả hàng đã được gửi thành công. Chúng tôi sẽ xử lý sớm nhất có thể.', { id: loadingToast, duration: 5000 });
         } catch (err) {
             toast.error(err.response?.data?.message || 'Không thể gửi yêu cầu trả hàng', { id: loadingToast });
+        }
+    };
+
+    /**
+     * handleConfirmPayment:
+     * Logic for user to notify bank transfer by uploading proof.
+     */
+    const handleConfirmPayment = async () => {
+        const loadingToast = toast.loading('Đang gửi thông báo thanh toán...');
+        try {
+            let proofUrl = null;
+            if (selectedImage) {
+                const formData = new FormData();
+                formData.append('file', selectedImage);
+                const uploadRes = await mediaService.upload(formData);
+                proofUrl = uploadRes.data.url;
+            }
+
+            const res = await orderService.confirmPayment(order.orderCode, paymentNote, proofUrl);
+            setOrder(res.data);
+            setShowPaymentModal(false);
+            setPaymentNote('');
+            setSelectedImage(null);
+            setPreviewUrl(null);
+            toast.success('Đã gửi thông báo thanh toán. Vui lòng chờ Admin xác nhận.', { id: loadingToast });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Không thể gửi thông báo', { id: loadingToast });
         }
     };
 
@@ -659,12 +734,111 @@ export default function OrderDetail() {
                                                 <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-2.5 text-center sm:text-left">
                                                     <span className="text-gray-500 text-[11px] sm:text-xs font-medium whitespace-nowrap shrink-0">Trạng thái:</span>
                                                     <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border whitespace-nowrap shrink-0 ${
-                                                        order.isPaid ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-100'
+                                                        order.isPaid ? 'bg-green-100 text-green-700 border-green-200' : 
+                                                        (order.isNotifiedPayment ? 'bg-orange-100 text-orange-700 border-orange-200 animate-pulse' : 'bg-red-50 text-red-600 border-red-100')
                                                     }`}>
-                                                        {order.isPaid ? 'ĐÃ QUYẾT TOÁN' : 'CHƯA TRẢ'}
+                                                        {order.isPaid ? 'ĐÃ QUYẾT TOÁN' : (order.isNotifiedPayment ? 'CHỜ CẬP NHẬT' : 'CHƯA TRẢ')}
                                                     </span>
                                                 </div>
                                             </div>
+
+                                            {order.paymentMethod === 'BANK_TRANSFER' && !order.isPaid && !order.isNotifiedPayment && order.status === 'PENDING' && bankInfo.accountNo && bankInfo.bankId && (
+                                                <div className="mt-8 flex flex-col items-center bg-white p-8 rounded-[2.5rem] border-2 border-dashed border-blue-100 group/qr hover:border-blue-300 transition-all shadow-xl shadow-blue-50/20 relative overflow-hidden">
+                                                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-400 via-sky-400 to-indigo-400"></div>
+                                                    <div className="relative p-6 bg-white rounded-3xl shadow-2xl border border-gray-100 group-hover/qr:scale-105 transition-transform duration-500">
+                                                        <img 
+                                                            src={`https://qr.sepay.vn/img?acc=96924888888&bank=TPBank&amount=${order.finalAmount}&des=${order.orderCode}&template=compact`}
+                                                            alt="SePay QR Code"
+                                                            className="w-48 h-48 sm:w-64 sm:h-64 object-contain mix-blend-multiply"
+                                                        />
+                                                        <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[8px] font-black text-blue-500 uppercase tracking-tighter shadow-sm border border-blue-50">SePay Powered</div>
+                                                        <div className="absolute -top-3 -right-3 w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg animate-bounce">
+                                                            <CheckCircleIcon className="w-6 h-6 text-white" />
+                                                        </div>
+                                                    </div>
+ 
+                                                    <div className="mt-8 w-full space-y-4">
+                                                        <div className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100 group/item hover:bg-white hover:shadow-sm transition-all">
+                                                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Ngân hàng</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs sm:text-sm font-black text-blue-600 uppercase tabular-nums">TPBank</span>
+                                                                <button 
+                                                                    onClick={() => { navigator.clipboard.writeText('TPBank'); toast.success('Đã sao chép tên ngân hàng'); }}
+                                                                    className="p-1.5 bg-white rounded-lg hover:bg-blue-50 transition-colors border border-gray-100"
+                                                                >
+                                                                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100 group/item hover:bg-white hover:shadow-sm transition-all">
+                                                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Số tài khoản</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs sm:text-sm font-black text-gray-900 uppercase">96924888888</span>
+                                                                <button 
+                                                                    onClick={() => { navigator.clipboard.writeText('96924888888'); toast.success('Đã sao chép STK'); }}
+                                                                    className="p-1.5 bg-white rounded-lg hover:bg-blue-50 transition-colors border border-gray-100"
+                                                                >
+                                                                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100 group/item hover:bg-white hover:shadow-sm transition-all">
+                                                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Tên tài khoản</span>
+                                                            <span className="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-tighter">DANG THANH TOAN</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100 group/item hover:bg-white hover:shadow-sm transition-all">
+                                                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Nội dung CK</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs sm:text-sm font-black text-indigo-600 tracking-tighter uppercase">{order.orderCode}</span>
+                                                                <button 
+                                                                    onClick={() => { navigator.clipboard.writeText(order.orderCode); toast.success('Đã sao chép nội dung'); }}
+                                                                    className="p-1.5 bg-white rounded-lg hover:bg-blue-50 transition-colors border border-gray-100"
+                                                                >
+                                                                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {order.paymentProof && (
+                                                <div className="mt-6 p-4 bg-gray-50 rounded-3xl border border-gray-100 flex flex-col gap-3 group/proof animate-in zoom-in-95 duration-300">
+                                                    <div className="flex items-center justify-between px-1">
+                                                        <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Biên lai chuyển khoản</span>
+                                                        <a href={order.paymentProof} target="_blank" rel="noreferrer" className="text-[9px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-tighter transition-colors">Xem ảnh gốc</a>
+                                                    </div>
+                                                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-white shadow-sm border border-gray-100/50">
+                                                        <img 
+                                                            src={order.paymentProof} 
+                                                            alt="Payment Proof" 
+                                                            className="w-full h-full object-cover group-hover/proof:scale-110 transition-transform duration-700 cursor-zoom-in"
+                                                            onClick={() => window.open(order.paymentProof, '_blank')}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {order.paymentMethod === 'BANK_TRANSFER' && !order.isPaid && !order.isNotifiedPayment && !isManagement && (
+                                                <button 
+                                                    onClick={() => {
+                                                        setSelectedImage(null);
+                                                        setPreviewUrl(null);
+                                                        setShowPaymentModal(true);
+                                                    }}
+                                                    className="w-full mt-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <CheckCircleIcon className="w-4 h-4" />
+                                                    Xác nhận Đã Chuyển Khoản
+                                                </button>
+                                            )}
+
+                                            {order.isNotifiedPayment && order.paymentNote && (
+                                                <div className="mt-4 p-4 bg-gray-50 rounded-2xl border-l-4 border-orange-400">
+                                                    <p className="text-[10px] text-gray-400 font-black uppercase mb-1">Lời nhắn thanh toán</p>
+                                                    <p className="text-gray-600 text-xs italic">"{order.paymentNote}"</p>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="mt-8 flex items-center gap-3 p-4 bg-green-50/30 rounded-2xl text-green-700 border border-green-100/50">
@@ -806,6 +980,62 @@ export default function OrderDetail() {
                             <div className="grid grid-cols-2 gap-4">
                                 <button onClick={() => setShowReturnModal(false)} className="w-full py-5 rounded-2xl text-gray-500 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 transition-colors">Hủy</button>
                                 <button onClick={handleRequestReturn} className="w-full py-5 bg-orange-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl transition-transform active:scale-95">Gửi yêu cầu</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Payment Confirmation Modal */}
+            {showPaymentModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+                    <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-md" onClick={() => setShowPaymentModal(false)}></div>
+                    <div className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-10 overflow-hidden text-center">
+                        <div className="w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                            <CreditCardIcon className="w-10 h-10 text-blue-600" />
+                        </div>
+                        <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Xác nhận chuyển khoản</h3>
+                        <p className="text-gray-400 text-xs font-bold mb-8 italic uppercase tracking-wider">Cung cấp minh chứng để chúng tôi duyệt đơn nhanh hơn</p>
+
+                        <div className="space-y-6 text-left">
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest ml-2">Mã giao dịch / Ghi chú (nếu có)</label>
+                                <input 
+                                    type="text"
+                                    value={paymentNote}
+                                    onChange={(e) => setPaymentNote(e.target.value)}
+                                    placeholder="Nhập mã giao dịch ví dụ: FT2021..."
+                                    className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none text-gray-700 font-bold text-sm shadow-inner focus:border-blue-200 transition-all"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest ml-2">Biên lai chuyển khoản</label>
+                                <label className={`relative flex flex-col items-center justify-center h-40 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${previewUrl ? 'border-transparent' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/30'}`}>
+                                    <input type="file" accept="image/*" className="hidden" onChange={handleMediaChange} />
+                                    {previewUrl ? (
+                                        <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-md">
+                                            <img src={previewUrl} className="w-full h-full object-cover" alt="Proof" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                                <PlusIcon className="w-8 h-8 text-white" />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-3">
+                                            <PhotoIcon className="w-8 h-8 text-gray-300" />
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Tải lên ảnh biên lai</p>
+                                        </div>
+                                    )}
+                                </label>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 pt-4">
+                                <button onClick={() => setShowPaymentModal(false)} className="w-full py-4 rounded-2xl text-gray-500 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 transition-colors">Để sau</button>
+                                <button 
+                                    onClick={handleConfirmPayment} 
+                                    className="w-full py-4 bg-blue-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-blue-100 hover:scale-[1.02] active:scale-95 transition-all"
+                                >
+                                    Gửi thông báo
+                                </button>
                             </div>
                         </div>
                     </div>

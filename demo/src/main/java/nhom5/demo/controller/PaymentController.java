@@ -84,12 +84,18 @@ public class PaymentController {
 
         try {
             OrderResponse orderResponse = paymentService.processVnPayCallback(params);
+            String code = (orderResponse != null && orderResponse.getOrderCode() != null) 
+                         ? orderResponse.getOrderCode() : params.get("vnp_TxnRef");
+            
             // Redirect về frontend trang "Thanh toán thành công"
-            response.sendRedirect(frontendUrl + "/success?orderCode=" + orderResponse.getOrderCode());
+            response.sendRedirect(frontendUrl + "/success?orderCode=" + code);
         } catch (Exception e) {
-            log.error("VNPay callback processing failed: {}", e.getMessage());
-            // Redirect về frontend trang "Thanh toán thất bại" (có thể dùng trang checkout kèm lỗi)
-            response.sendRedirect(frontendUrl + "/checkout?error=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8));
+            log.error("VNPay callback processing failed CRITICAL: {}", e.getMessage());
+            String fallbackCode = params.get("vnp_TxnRef");
+            String errorMsg = java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+            
+            // Redirect về frontend kèm lỗi và mã đơn hàng dự phòng để khách tra cứu
+            response.sendRedirect(frontendUrl + "/checkout?error=" + errorMsg + (fallbackCode != null ? "&orderCode=" + fallbackCode : ""));
         }
     }
 
@@ -103,9 +109,11 @@ public class PaymentController {
             @RequestBody Map<String, Object> payload,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
-        String token = null;
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
+        String token = authHeader;
+        if (authHeader != null) {
+            if (authHeader.startsWith("Bearer ") || authHeader.startsWith("Apikey ")) {
+                token = authHeader.substring(7);
+            }
         }
 
         boolean success = paymentService.processSepayWebhook(payload, token);

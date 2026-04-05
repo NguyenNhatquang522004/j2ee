@@ -18,7 +18,7 @@ public class ProductRequest {
     private String description;
 
     @NotNull(message = "Giá không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Giá phải lớn hơn 0")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Giá phải từ 0 trở lên")
     private BigDecimal price;
 
     private String unit;

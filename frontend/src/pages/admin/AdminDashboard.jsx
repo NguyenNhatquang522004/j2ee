@@ -75,7 +75,8 @@ export default function AdminDashboard() {
     // Initial data hydration
     useEffect(() => {
         // AUTO REDIRECT for staff without dashboard access (to Settings)
-        if (!canViewStats && !hasPermission('view:dashboard')) {
+        if (!canViewStats) {
+            setLoading(false);
             navigate('/admin/settings', { replace: true });
             return;
         }
@@ -83,26 +84,21 @@ export default function AdminDashboard() {
         const load = async () => {
             try {
                 // Batch fetch key metrics based on permissions
-                const tasks = [];
-                if (canViewStats) tasks.push(dashboardService.get());
-                else tasks.push(Promise.resolve({ data: null }));
-
-                if (canManageOrders) tasks.push(orderService.getAll({ page: 0, size: 5 }));
-                else tasks.push(Promise.resolve({ data: { content: [] } }));
-
-                const [dashRes, ordersRes] = await Promise.all(tasks);
+                const [dashRes, ordersRes] = await Promise.all([
+                    dashboardService.get(),
+                    canManageOrders ? orderService.getAll({ page: 0, size: 5 }) : Promise.resolve({ data: { content: [] } })
+                ]);
                 
                 if (dashRes.data) setStats(dashRes.data);
                 setRecentOrders(ordersRes.data.content || []);
             } catch (error) {
-                console.error("Dashboard data load error (likely missing permissions):", error);
-                // Silent fail for stats, they just won't show
+                console.error("Dashboard data load error:", error);
             } finally {
                 setLoading(false);
             }
         };
         load();
-    }, [canViewStats, canManageOrders]);
+    }, [canViewStats, canManageOrders, navigate]);
 
     const fmt = (n) => new Intl.NumberFormat('vi-VN').format(n);
 

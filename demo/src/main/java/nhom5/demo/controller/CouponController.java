@@ -38,7 +38,6 @@ public class CouponController {
      * getAllCoupons: Returns all vouchers available in the system catalog.
      */
     @Operation(summary = "Tất cả mã giảm giá")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'view:coupons', 'manage:coupons')")
     @GetMapping
     public ResponseEntity<ApiResponse<List<Coupon>>> getAllCoupons() {
         return ResponseEntity.ok(ApiResponse.success(couponService.getAllCoupons()));

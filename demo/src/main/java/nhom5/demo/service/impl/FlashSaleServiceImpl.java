@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 public class FlashSaleServiceImpl implements FlashSaleService {
 
     private final FlashSaleRepository repository;
+    private final nhom5.demo.service.NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -63,13 +64,16 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         if (flashSale.getItems() != null) {
             flashSale.getItems().forEach(item -> item.setFlashSale(flashSale));
         }
-        return repository.save(flashSale);
+        FlashSale saved = repository.save(flashSale);
+        notificationService.broadcastFlashSaleRefresh();
+        return saved;
     }
 
     @Override
     @Transactional
     public void deleteFlashSale(Long id) {
         repository.deleteById(Objects.requireNonNull(id));
+        notificationService.broadcastFlashSaleRefresh();
     }
 
     @Override
@@ -79,6 +83,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
                 .orElseThrow(() -> new ResourceNotFoundException("FlashSale", "id", id));
         fs.setActive(!fs.isActive());
         repository.save(fs);
+        notificationService.broadcastFlashSaleRefresh();
     }
 
     @Override
@@ -97,6 +102,8 @@ public class FlashSaleServiceImpl implements FlashSaleService {
                 .endTime(flashSale.getEndTime())
                 .description(flashSale.getDescription())
                 .items(Objects.requireNonNull(flashSale.getItems()).stream()
+                        .filter(item -> item.getProduct() != null && 
+                                      (item.getProduct().getIsActive() == null || item.getProduct().getIsActive()))
                         .map(this::convertItemToResponse)
                         .collect(Collectors.toList()))
                 .build();
@@ -128,6 +135,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
         int count = repository.deactivateExpiredFlashSales(LocalDateTime.now());
         if (count > 0) {
             log.info("Đã tự động vô hiệu hóa {} chương trình Flash Sale quá hạn", count);
+            notificationService.broadcastFlashSaleRefresh();
         }
     }
 }

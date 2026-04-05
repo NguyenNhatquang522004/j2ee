@@ -51,7 +51,9 @@ export default function Checkout() {
         SHIPPING_FEE: 0,
         FREE_SHIPPING_THRESHOLD: 0,
         TAX: 0,
-        CURRENCY: 'đ'
+        CURRENCY: 'đ',
+        BANK_ID: '',
+        BANK_ACCOUNT_NO: ''
     });
 
     useEffect(() => {
@@ -70,7 +72,9 @@ export default function Checkout() {
                 SHIPPING_FEE: Number(s.SHIPPING_FEE) || 0,
                 FREE_SHIPPING_THRESHOLD: Number(s.FREE_SHIPPING_THRESHOLD) || 0,
                 TAX: Number(s.TAX) || 0,
-                CURRENCY: s.CURRENCY || 'đ'
+                CURRENCY: s.CURRENCY || 'đ',
+                BANK_ID: s.BANK_ID || '',
+                BANK_ACCOUNT_NO: s.BANK_ACCOUNT_NO || ''
             });
         } catch (err) {
             console.error("Failed to load settings", err);
@@ -547,11 +551,11 @@ export default function Checkout() {
 
                                     <div className="bg-gray-50 rounded-3xl p-6 mb-8 border border-dashed border-gray-200 relative group">
                                         {createdOrder && (
-                                            <img 
-                                                src={`https://qr.sepay.vn/img?acc=96924888888&bank=TPBank&amount=${createdOrder.finalAmount}&des=${createdOrder.orderCode}&template=compact`} 
-                                                alt="SePay QR Code" 
-                                                className="w-full aspect-square object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
-                                            />
+                                                <img 
+                                                    src={`https://qr.sepay.vn/img?acc=${settings.BANK_ACCOUNT_NO}&bank=${settings.BANK_ID}&amount=${createdOrder.finalAmount}&des=${createdOrder.orderCode}&template=compact`} 
+                                                    alt="SePay QR Code" 
+                                                    className="w-full aspect-square object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
+                                                />
                                         )}
                                         <div className="absolute bottom-2 right-2 bg-white/80 backdrop-blur px-2 py-1 rounded-lg text-[8px] font-black text-blue-500 uppercase tracking-tighter shadow-sm border border-blue-100">SePay Powered</div>
                                     </div>

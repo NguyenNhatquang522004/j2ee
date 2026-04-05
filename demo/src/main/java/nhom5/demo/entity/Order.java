@@ -123,6 +123,19 @@ public class Order {
     @Column(name = "refunded_at")
     private LocalDateTime refundedAt;
 
+    @Column(name = "notified_payment", nullable = false)
+    @Builder.Default
+    private Boolean notifiedPayment = false;
+
+    @Column(name = "notified_at")
+    private LocalDateTime notifiedAt;
+
+    @Column(name = "payment_proof", length = 500)
+    private String paymentProof;
+
+    @Column(name = "payment_note", length = 500)
+    private String paymentNote;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

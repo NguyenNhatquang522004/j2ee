@@ -26,13 +26,15 @@ public class RedisMessageSubscriber implements MessageListener {
         try {
             Map<String, Object> payload = objectMapper.readValue(message.getBody(), new TypeReference<Map<String, Object>>() {});
             String username = (String) payload.get("username");
+            String type = (String) payload.get("type");
             
             if (username != null) {
                 log.info("Broadcasting notification to user: {}", username);
-                // Send to the specific user's private queue
                 messagingTemplate.convertAndSendToUser(username, "/queue/notifications", payload);
+            } else if ("FLASH_SALE_UPDATE".equals(type) || "FLASH_SALE_REFRESH".equals(type)) {
+                log.info("Broadcasting Flash Sale update/refresh to all clients");
+                messagingTemplate.convertAndSend("/topic/flash-sales", payload);
             } else {
-                // Broadcast to a general topic only for system-wide alerts
                 messagingTemplate.convertAndSend("/topic/notifications", payload);
             }
             

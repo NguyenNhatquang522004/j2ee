@@ -59,6 +59,11 @@ public class AuthServiceImpl implements AuthService {
             phone = "0" + phone.substring(2);
         }
 
+        if (email.contains("mailinator.com") || email.contains("temp-mail.org") || 
+            email.contains("guerrillamail.com") || email.contains("10minutemail.com")) {
+            throw new BusinessException("Hệ thống không chấp nhận các địa chỉ email tạm thời.");
+        }
+
         if (userRepository.existsByUsername(username)) {
             throw new BusinessException("Tên đăng nhập '" + username + "' đã tồn tại");
         }
@@ -99,7 +104,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new BusinessException("Người dùng không tồn tại"));
+                .orElseThrow(() -> new BusinessException("Tên đăng nhập hoặc mật khẩu không chính xác"));
 
         if (!user.getIsActive()) {
             throw new BusinessException("Tài khoản của bạn đã bị khoá bởi Quản trị viên");
@@ -135,7 +140,7 @@ public class AuthServiceImpl implements AuthService {
             
             userRepository.save(user);
             securityLogService.log("LOGIN_FAILED", "MEDIUM", "Nhập sai mật khẩu (Lần " + attempts + ")", ip, user.getUsername());
-            throw new BusinessException("Mật khẩu không chính xác. Bạn còn " + (5 - attempts) + " lần thử.");
+            throw new BusinessException("Tên đăng nhập hoặc mật khẩu không chính xác. Bạn còn " + (5 - attempts) + " lần thử.");
         }
 
         // Check 2FA

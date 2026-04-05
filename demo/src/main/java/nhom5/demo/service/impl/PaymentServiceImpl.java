@@ -13,6 +13,7 @@ import nhom5.demo.repository.OrderRepository;
 import nhom5.demo.service.OrderService;
 import nhom5.demo.service.PaymentService;
 import nhom5.demo.service.SecurityLogService;
+import nhom5.demo.service.NotificationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +47,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final OrderRepository orderRepository;
     private final OrderService orderService;
     private final SecurityLogService securityLogService;
+    private final NotificationService notificationService;
 
     @Value("${app.sepay.token:}")
     private String sepayToken;
@@ -218,9 +220,16 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public boolean processSepayWebhook(Map<String, Object> payload, String token) {
-        // 1. Xác minh token
-        if (sepayToken == null || sepayToken.isBlank() || !sepayToken.equals(token)) {
-            log.error("SePay webhook INVALID TOKEN");
+        // 1. Xác minh token (Chặn nếu chưa cấu hình hoặc không khớp)
+        if (sepayToken == null || sepayToken.trim().isEmpty()) {
+            log.error("SePay webhook CRITICAL: Token is not configured in SERVER settings!");
+            securityLogService.log("SEPAY_CONFIG_ERROR", "CRITICAL",
+                    "Webhook received but SePay Token is NOT configured in server context", "SYSTEM");
+            return false;
+        }
+
+        if (!sepayToken.equals(token)) {
+            log.error("SePay webhook INVALID TOKEN: Match failed.");
             securityLogService.log("SEPAY_INVALID_TOKEN", "CRITICAL",
                     "Invalid SePay webhook token attempt", "SEPAY_GATEWAY");
             return false;
@@ -267,6 +276,16 @@ public class PaymentServiceImpl implements PaymentService {
 
         if (order.getStatus() == OrderStatusEnum.PENDING) {
             orderService.updateOrderStatus(Objects.requireNonNull(order.getId()), OrderStatusEnum.CONFIRMED);
+        }
+
+        // Notify user about successful payment via SePay
+        try {
+            notificationService.createNotification(order.getUser(), 
+                "Đơn hàng #" + orderCode + " đã được thanh toán tự động qua SePay.", 
+                "PAYMENT", 
+                "/orders/" + orderCode);
+        } catch (Exception e) {
+            log.error("Failed to send SePay payment notification: {}", e.getMessage());
         }
 
         log.info("SePay webhook: Payment confirmed for order {}. Amount: {}", orderCode, amount);

@@ -23,6 +23,7 @@ public class AddressServiceImpl implements AddressService {
 
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
+    private final nhom5.demo.service.SecurityLogService securityLogService;
 
     @Override
     @Transactional(readOnly = true)
@@ -70,6 +71,8 @@ public class AddressServiceImpl implements AddressService {
                 .orElseThrow(() -> new ResourceNotFoundException("Address", "id", id));
 
         if (!Objects.requireNonNull(address.getUser()).getUsername().equals(username)) {
+            securityLogService.log("UNAUTHORIZED_ADDRESS_UPDATE", "CRITICAL", 
+                "User '" + username + "' attempted to UPDATE unauthorized address ID: " + id, "IDOR_ATTEMPT");
             throw new BusinessException("Bạn không có quyền cập nhật địa chỉ này");
         }
 
@@ -97,6 +100,8 @@ public class AddressServiceImpl implements AddressService {
                 .orElseThrow(() -> new ResourceNotFoundException("Address", "id", id));
 
         if (!Objects.requireNonNull(address.getUser()).getUsername().equals(username)) {
+            securityLogService.log("UNAUTHORIZED_ADDRESS_DELETE", "CRITICAL", 
+                "User '" + username + "' attempted to DELETE unauthorized address ID: " + id, "IDOR_ATTEMPT");
             throw new BusinessException("Bạn không có quyền xóa địa chỉ này");
         }
         addressRepository.delete(Objects.requireNonNull(address));
@@ -109,6 +114,8 @@ public class AddressServiceImpl implements AddressService {
                 .orElseThrow(() -> new ResourceNotFoundException("Address", "id", id));
 
         if (!Objects.requireNonNull(address.getUser()).getUsername().equals(username)) {
+            securityLogService.log("UNAUTHORIZED_ADDRESS_DEFAULT", "CRITICAL", 
+                "User '" + username + "' attempted to MODIFY unauthorized address ID: " + id, "IDOR_ATTEMPT");
             throw new BusinessException("Bạn không có quyền sửa địa chỉ này");
         }
 

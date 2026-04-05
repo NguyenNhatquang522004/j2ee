@@ -40,6 +40,11 @@ public class WishlistServiceImpl implements WishlistService {
 
         Long userId = Objects.requireNonNull(user.getId());
         if (!wishlistItemRepository.existsByUserIdAndProductId(userId, productId)) {
+            // Check if product is active
+            if (product.getIsActive() != null && !product.getIsActive()) {
+                throw new nhom5.demo.exception.BusinessException("Sản phẩm hiện không còn kinh doanh");
+            }
+
             WishlistItem item = WishlistItem.builder()
                     .user(user)
                     .product(product)
@@ -63,6 +68,7 @@ public class WishlistServiceImpl implements WishlistService {
         User user = findUserByUsername(Objects.requireNonNull(username));
         Long userId = Objects.requireNonNull(user.getId());
         return wishlistItemRepository.findByUserId(userId).stream()
+                .filter(item -> item.getProduct() != null && (item.getProduct().getIsActive() == null || item.getProduct().getIsActive()))
                 .map(item -> toProductResponse(Objects.requireNonNull(item.getProduct())))
                 .collect(Collectors.toList());
     }

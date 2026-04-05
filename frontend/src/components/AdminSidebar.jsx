@@ -3,18 +3,18 @@ import { useAuth } from '../context/AuthContext';
 import { contactService } from '../api/services';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { 
-    HomeIcon, 
-    UserGroupIcon, 
-    ShoppingBagIcon, 
-    ClipboardDocumentListIcon, 
+import {
+    HomeIcon,
+    UserGroupIcon,
+    ShoppingBagIcon,
+    ClipboardDocumentListIcon,
     TruckIcon,
     PuzzlePieceIcon,
     ArrowLeftOnRectangleIcon,
     ChartBarIcon,
     TagIcon,
     UserIcon,
-    ShieldCheckIcon, 
+    ShieldCheckIcon,
     Cog8ToothIcon,
     BellIcon,
     PhotoIcon,
@@ -29,7 +29,7 @@ import {
 const MENU_ITEMS = [
     { name: 'Cài đặt', path: '/admin/settings', icon: Cog8ToothIcon, permission: null },
     { name: 'Tổng quan', path: '/admin', icon: ChartBarIcon, permission: 'view:reports' },
-    { name: 'Người dùng', path: '/admin/users', icon: UserGroupIcon, permission: 'manage:users' },
+    { name: 'Người dùng', path: '/admin/users', icon: UserGroupIcon, permission: 'ROLE_ADMIN' },
     { name: 'Sản phẩm', path: '/admin/products', icon: ShoppingBagIcon, permission: 'view:products' },
     { name: 'Danh mục', path: '/admin/categories', icon: TagIcon, permission: 'view:categories' },
     { name: 'Lô hàng', path: '/admin/batches', icon: PuzzlePieceIcon, permission: 'view:batches' },
@@ -39,12 +39,13 @@ const MENU_ITEMS = [
     { name: 'Mã giảm giá', path: '/admin/coupons', icon: TicketIcon, permission: 'manage:promotions' },
     { name: 'Flash Sale', path: '/admin/flash-sales', icon: BoltIcon, permission: 'manage:promotions' },
     { name: 'Đánh giá', path: '/admin/reviews', icon: UserIcon, permission: 'manage:reviews' },
-    { name: 'Nhân sự', path: '/admin/staff', icon: ShieldCheckIcon, permission: 'manage:users' },
-    { name: 'Nhật ký', path: '/admin/audit-logs', icon: ClockIcon, permission: 'view:reports' },
+    { name: 'Nhân sự', path: '/admin/staff', icon: ShieldCheckIcon, permission: 'ROLE_ADMIN' },
+    { name: 'Nhật ký', path: '/admin/audit-logs', icon: ClockIcon, permission: 'ROLE_ADMIN' },
+
     { name: 'Thư viện', path: '/admin/media', icon: PhotoIcon, permission: 'view:media' },
     { name: 'Bản tin', path: '/admin/newsletters', icon: NewspaperIcon, permission: 'manage:newsletters' },
     { name: 'Thông báo', path: '/admin/notifications', icon: BellIcon, permission: 'view:reports' },
-    { name: 'Hộp thư', path: '/admin/contacts', icon: ChatBubbleLeftRightIcon, permission: 'manage:users' },
+    { name: 'Hộp thư', path: '/admin/contacts', icon: ChatBubbleLeftRightIcon, permission: 'ROLE_ADMIN' },
     { name: 'Hướng dẫn', path: '/admin/guide', icon: InformationCircleIcon, permission: 'view:reports' },
 ];
 
@@ -80,9 +81,14 @@ export default function AdminSidebar({ onClose }) {
     };
 
     const filteredMenu = MENU_ITEMS.filter(item => {
-        // ALWAYS SHOW SETTINGS for everyone who can access sidebar
-        if (item.path === '/admin/settings') return true; 
-        
+        // No permission required -> Show for everyone
+        if (!item.permission) return true;
+
+        // If permission is 'ROLE_ADMIN', strictly check for Admin role
+        if (item.permission === 'ROLE_ADMIN') {
+            return user?.role === 'ROLE_ADMIN';
+        }
+
         // Check permissions for other items
         if (hasPermission(item.permission)) return true;
 
@@ -112,15 +118,14 @@ export default function AdminSidebar({ onClose }) {
                 {filteredMenu.map((item) => {
                     const isActive = pathname === item.path;
                     return (
-                        <Link 
-                            key={item.path} 
+                        <Link
+                            key={item.path}
                             to={item.path}
                             onClick={handleItemClick}
-                            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300 group relative overflow-hidden ${
-                                isActive 
-                                ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-100 scale-[1.02]' 
-                                : 'text-gray-500 hover:bg-green-50 hover:text-green-600'
-                            }`}
+                            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300 group relative overflow-hidden ${isActive
+                                    ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-100 scale-[1.02]'
+                                    : 'text-gray-500 hover:bg-green-50 hover:text-green-600'
+                                }`}
                         >
                             {isActive && (
                                 <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
@@ -128,9 +133,8 @@ export default function AdminSidebar({ onClose }) {
                             <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-green-600 font-bold'}`} />
                             <span className="font-semibold text-sm flex-1">{item.name}</span>
                             {item.path === '/admin/contacts' && unreadContacts > 0 && (
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                                    isActive ? 'bg-white text-green-600' : 'bg-red-500 text-white animate-pulse'
-                                }`}>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-white text-green-600' : 'bg-red-500 text-white animate-pulse'
+                                    }`}>
                                     {unreadContacts > 99 ? '99+' : unreadContacts}
                                 </span>
                             )}
@@ -142,7 +146,7 @@ export default function AdminSidebar({ onClose }) {
             <div className="p-3 border-t">
                 {/* DEBUG SECTION - Remove after fixing */}
                 <div className="mb-4 px-3 py-2 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                    <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Permissions Debug:</p>
+                    <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Có quyền:</p>
                     <div className="flex flex-wrap gap-1">
                         {user?.permissions?.length > 0 ? user.permissions.map(p => (
                             <span key={p} className="text-[8px] bg-green-100 text-green-700 px-1 rounded font-bold">{p}</span>
@@ -150,7 +154,7 @@ export default function AdminSidebar({ onClose }) {
                     </div>
                 </div>
 
-                <button 
+                <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-3.5 py-2 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all rounded-xl cursor-pointer"
                 >

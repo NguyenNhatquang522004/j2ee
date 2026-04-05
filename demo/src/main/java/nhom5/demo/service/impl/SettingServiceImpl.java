@@ -29,7 +29,8 @@ public class SettingServiceImpl implements SettingService {
         "MAINTENANCE_MODE", "STORE_NAME", "STORE_EMAIL", 
         "STORE_PHONE", "STORE_ADDRESS", "COPYRIGHT_TEXT",
         "FACEBOOK", "INSTAGRAM", "YOUTUBE", "TWITTER",
-        "SHIPPING_FEE", "FREE_SHIPPING_THRESHOLD", "TAX", "CURRENCY"
+        "SHIPPING_FEE", "FREE_SHIPPING_THRESHOLD", "TAX", "CURRENCY",
+        "BANK_ID", "BANK_ACCOUNT_NO", "BANK_ACCOUNT_NAME"
     ));
 
     @Override

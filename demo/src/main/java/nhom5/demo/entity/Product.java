@@ -53,7 +53,7 @@ public class Product {
     private String description;
 
     @NotNull
-    @DecimalMin(value = "0.0", inclusive = false)
+    @DecimalMin(value = "0.0", inclusive = true)
     @Column(name = "price", nullable = false, precision = 15, scale = 2)
     private BigDecimal price;
 

@@ -19,4 +19,9 @@ public class RegexConstants {
      * At least 1 uppercase, 1 lowercase, 1 digit, 1 special char, 8-100 chars.
      */
     public static final String PASSWORD = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{8,}$";
+
+    /**
+     * USERNAME: Alpha-numeric only, 4-20 chars, starting with a letter.
+     */
+    public static final String USERNAME = "^[a-zA-Z][a-zA-Z0-9_]{3,19}$";
 }
