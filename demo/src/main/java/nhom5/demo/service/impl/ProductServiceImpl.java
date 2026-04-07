@@ -36,19 +36,22 @@ public class ProductServiceImpl implements ProductService {
     private final AuditService auditService;
     private final ProductBatchRepository batchRepository;
     private final SearchService searchService;
+    private final nhom5.demo.repository.FlashSaleItemRepository flashSaleItemRepository;
 
     public ProductServiceImpl(ProductRepository productRepository,
                              CategoryRepository categoryRepository,
                              FarmRepository farmRepository,
                              AuditService auditService,
                              ProductBatchRepository batchRepository,
-                             SearchService searchService) {
+                             SearchService searchService,
+                             nhom5.demo.repository.FlashSaleItemRepository flashSaleItemRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.farmRepository = farmRepository;
         this.auditService = auditService;
         this.batchRepository = batchRepository;
         this.searchService = searchService;
+        this.flashSaleItemRepository = flashSaleItemRepository;
     }
 
     @Override
@@ -313,7 +316,9 @@ public class ProductServiceImpl implements ProductService {
             log.warn("Lỗi tính toán đánh giá cho SP {}: {}", product.getId(), e.getMessage());
         }
 
-        return ProductResponse.builder()
+        ProductResponse.ProductResponseBuilder responseBuilder = ProductResponse.builder();
+        
+        responseBuilder
                 .id(product.getId())
                 .name(product.getName())
                 .slug(product.getSlug())
@@ -330,7 +335,21 @@ public class ProductServiceImpl implements ProductService {
                 .farmId(product.getFarm() != null ? product.getFarm().getId() : null)
                 .totalStock(totalStock)
                 .averageRating(avgRating)
-                .reviewCount(product.getReviews() != null ? product.getReviews().size() : 0)
-                .build();
+                .reviewCount(product.getReviews() != null ? product.getReviews().size() : 0);
+
+        // Populate active Flash Sale info if exists
+        try {
+            flashSaleItemRepository.findActiveByProductId(product.getId(), java.time.LocalDateTime.now())
+                .ifPresent(item -> {
+                    responseBuilder.flashSalePrice(item.getFlashSalePrice());
+                    if (item.getFlashSale() != null) {
+                        responseBuilder.flashSaleEndDate(item.getFlashSale().getEndTime());
+                    }
+                });
+        } catch (Exception e) {
+            log.warn("Lỗi truy vấn Flash Sale cho SP {}: {}", product.getId(), e.getMessage());
+        }
+
+        return responseBuilder.build();
     }
 }

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 import { SparklesIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 export default function Login() {
-    const { login, verify2fa } = useAuth();
+    const { login, verify2fa, googleLogin } = useAuth();
     const navigate = useNavigate();
     const [form, setForm] = useState({ username: '', password: '' });
     const [loading, setLoading] = useState(false);
@@ -13,6 +15,31 @@ export default function Login() {
     const [twoFactorMethod, setTwoFactorMethod] = useState('TOTP'); // 'TOTP' or 'EMAIL'
     const [otpCode, setOtpCode] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+
+    const handleGoogleSuccess = async (tokenResponse) => {
+        setLoading(true);
+        try {
+            // Lấy thông tin user từ Google
+            const { data: profile } = await axios.get(
+                'https://www.googleapis.com/oauth2/v3/userinfo',
+                { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
+            );
+
+            const data = await googleLogin(profile);
+            toast.success(`Chào mừng, ${data.fullName || data.username}!`);
+            navigate(data.role === 'ROLE_ADMIN' || data.role === 'ADMIN' ? '/admin' : '/');
+        } catch (err) {
+            console.error(err);
+            toast.error('Đăng nhập Google thất bại');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const googleLoginTrigger = useGoogleLogin({
+        onSuccess: handleGoogleSuccess,
+        onError: () => toast.error('Kết nối Google thất bại'),
+    });
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -160,8 +187,10 @@ export default function Login() {
 
                 <div className="grid grid-cols-2 gap-4 mb-8">
                     <button
-                        onClick={() => toast.success('Đang kết nối tới Google...')}
-                        className="flex items-center justify-center py-2.5 border border-gray-100 rounded-xl hover:bg-gray-50 transition-all font-semibold text-gray-700 shadow-sm"
+                        type="button"
+                        onClick={() => googleLoginTrigger()}
+                        disabled={loading}
+                        className="flex items-center justify-center py-2.5 border border-gray-100 rounded-xl hover:bg-gray-50 transition-all font-semibold text-gray-700 shadow-sm disabled:opacity-50"
                     >
                         <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 mr-2" alt="Google" />
                         Google

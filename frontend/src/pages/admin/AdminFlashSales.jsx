@@ -10,7 +10,9 @@ import {
     CalendarIcon,
     TagIcon,
     XMarkIcon,
-    ChevronRightIcon
+    ChevronRightIcon,
+    PencilIcon,
+    EyeIcon
 } from '@heroicons/react/24/outline';
 
 const EMPTY_FS = { name: '', startTime: '', endTime: '', description: '', items: [] };
@@ -24,6 +26,7 @@ export default function AdminFlashSales() {
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState(EMPTY_FS);
     const [saving, setSaving] = useState(false);
+    const [isReadOnly, setIsReadOnly] = useState(false);
 
     const fetchAll = useCallback(async () => {
         setLoading(true);
@@ -43,6 +46,22 @@ export default function AdminFlashSales() {
             setProducts(res.data.content || res.data || []);
         });
     }, [fetchAll]);
+
+    const handleEdit = (fs) => {
+        setForm({
+            id: fs.id,
+            name: fs.name,
+            startTime: fs.startTime.slice(0, 16), // Format for datetime-local
+            endTime: fs.endTime.slice(0, 16),
+            description: fs.description || '',
+            items: fs.items.map(it => ({
+                productId: it.product.id,
+                flashSalePrice: it.flashSalePrice,
+                quantityLimit: it.quantityLimit
+            }))
+        });
+        setShowModal(true);
+    };
 
     const handleAddItem = () => {
         setForm({ ...form, items: [...form.items, { ...EMPTY_ITEM }] });
@@ -78,8 +97,13 @@ export default function AdminFlashSales() {
                 }))
             };
 
-            await flashSaleService.create(payload);
-            toast.success('Đã tạo Flash Sale mới');
+            if (form.id) {
+                await flashSaleService.update(form.id, payload);
+                toast.success('Đã cập nhật Flash Sale');
+            } else {
+                await flashSaleService.create(payload);
+                toast.success('Đã tạo Flash Sale mới');
+            }
             setShowModal(false);
             setForm(EMPTY_FS);
             fetchAll();
@@ -117,7 +141,7 @@ export default function AdminFlashSales() {
                     <p className="text-gray-500 font-medium text-sm">Quản lý các chương trình giảm giá chớp nhoáng.</p>
                 </div>
                 <button 
-                    onClick={() => setShowModal(true)}
+                    onClick={() => { setForm(EMPTY_FS); setIsReadOnly(false); setShowModal(true); }}
                     className="flex items-center gap-2 bg-yellow-500 text-white font-black px-6 py-3 rounded-2xl shadow-lg shadow-yellow-100 hover:bg-yellow-600 transition-all active:scale-95"
                 >
                     <PlusIcon className="w-5 h-5 stroke-[3]" /> Tạo chương trình
@@ -137,12 +161,29 @@ export default function AdminFlashSales() {
                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">ID: #{fs.id}</p>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => handleDelete(fs.id)}
-                                className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
-                            >
-                                <TrashIcon className="w-5 h-5" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => { handleEdit(fs); setIsReadOnly(true); }}
+                                    className="p-2 text-gray-300 hover:text-green-600 hover:bg-green-50 rounded-full transition-all"
+                                    title="Xem chi tiết"
+                                >
+                                    <EyeIcon className="w-5 h-5" /> 
+                                </button>
+                                <button 
+                                    onClick={() => { handleEdit(fs); setIsReadOnly(false); }}
+                                    className="p-2 text-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+                                    title="Sửa chương trình"
+                                >
+                                    <PencilIcon className="w-5 h-5" /> 
+                                </button>
+                                <button 
+                                    onClick={() => handleDelete(fs.id)}
+                                    className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
+                                    title="Xoá chương trình"
+                                >
+                                    <TrashIcon className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
                         <div className="p-6">
                             <div className="flex items-center gap-6 mb-6">
@@ -197,8 +238,12 @@ export default function AdminFlashSales() {
                     <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
                         <div className="flex items-center justify-between px-8 py-6 border-b border-gray-50 bg-gray-50/30">
                             <div>
-                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Tạo Flash Sale Mới</h2>
-                                <p className="text-[11px] text-gray-500 font-medium leading-none mt-1">Lên kế hoạch và chọn sản phẩm giảm giá chớp nhoáng.</p>
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                                    {isReadOnly ? 'Chi tiết Flash Sale' : form.id ? 'Chỉnh Sửa Flash Sale' : 'Tạo Flash Sale Mới'}
+                                </h2>
+                                <p className="text-[11px] text-gray-500 font-medium leading-none mt-1">
+                                    {isReadOnly ? 'Thông tin chi tiết về chương trình đang diễn ra.' : form.id ? 'Cập nhật lại thông tin và sản phẩm cho chương trình.' : 'Lên kế hoạch và chọn sản phẩm giảm giá chớp nhoáng.'}
+                                </p>
                             </div>
                             <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all">
                                 <XMarkIcon className="w-6 h-6 stroke-[3]" />
@@ -214,7 +259,8 @@ export default function AdminFlashSales() {
                                         placeholder="Vd: Săn deal cuối tuần"
                                         value={form.name} 
                                         onChange={(e) => setForm({...form, name: e.target.value})} 
-                                        className="w-full px-6 py-3.5 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-yellow-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-yellow-500 text-sm" 
+                                        className="w-full px-6 py-3.5 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-yellow-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-yellow-500 text-sm disabled:opacity-50" 
+                                        disabled={isReadOnly}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -224,7 +270,8 @@ export default function AdminFlashSales() {
                                         required 
                                         value={form.startTime} 
                                         onChange={(e) => setForm({...form, startTime: e.target.value})} 
-                                        className="w-full px-6 py-3.5 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-yellow-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-yellow-500 text-sm" 
+                                        className="w-full px-6 py-3.5 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-yellow-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-yellow-500 text-sm disabled:opacity-50" 
+                                        disabled={isReadOnly}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -234,7 +281,8 @@ export default function AdminFlashSales() {
                                         required 
                                         value={form.endTime} 
                                         onChange={(e) => setForm({...form, endTime: e.target.value})} 
-                                        className="w-full px-6 py-3.5 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-yellow-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-yellow-500 text-sm" 
+                                        className="w-full px-6 py-3.5 bg-gray-50 border-none rounded-2xl font-black text-gray-900 focus:ring-4 focus:ring-yellow-500/10 focus:bg-white transition-all outline-none border border-transparent focus:border-yellow-500 text-sm disabled:opacity-50" 
+                                        disabled={isReadOnly}
                                     />
                                 </div>
                             </div>
@@ -242,13 +290,15 @@ export default function AdminFlashSales() {
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-1">Danh sách sản phẩm ({form.items.length})</label>
-                                    <button 
-                                        type="button"
-                                        onClick={handleAddItem}
-                                        className="text-[10px] font-black text-yellow-600 hover:text-yellow-700 uppercase tracking-widest flex items-center gap-1"
-                                    >
-                                        <PlusIcon className="w-3.4 h-3.5 stroke-[4]" /> Thêm dòng
-                                    </button>
+                                    {!isReadOnly && (
+                                        <button 
+                                            type="button"
+                                            onClick={handleAddItem}
+                                            className="text-[10px] font-black text-yellow-600 hover:text-yellow-700 uppercase tracking-widest flex items-center gap-1"
+                                        >
+                                            <PlusIcon className="w-3.4 h-3.5 stroke-[4]" /> Thêm dòng
+                                        </button>
+                                    )}
                                 </div>
 
                                 <div className="space-y-3">
@@ -261,7 +311,8 @@ export default function AdminFlashSales() {
                                                 <select 
                                                     value={it.productId} 
                                                     onChange={(e) => updateItem(idx, 'productId', e.target.value)}
-                                                    className="w-full bg-transparent font-bold text-gray-700 outline-none border-b-2 border-gray-100 focus:border-yellow-500 transition-all text-xs"
+                                                    className="w-full bg-transparent font-bold text-gray-700 outline-none border-b-2 border-gray-100 focus:border-yellow-500 transition-all text-xs disabled:opacity-50"
+                                                    disabled={isReadOnly}
                                                 >
                                                     <option value="">-- Chọn sản phẩm --</option>
                                                     {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.price?.toLocaleString()}đ)</option>)}
@@ -273,7 +324,8 @@ export default function AdminFlashSales() {
                                                     placeholder="Giá Sale"
                                                     value={it.flashSalePrice}
                                                     onChange={(e) => updateItem(idx, 'flashSalePrice', e.target.value)}
-                                                    className="w-full bg-transparent font-black text-red-600 outline-none border-b-2 border-gray-100 focus:border-yellow-500 transition-all text-xs text-center"
+                                                    className="w-full bg-transparent font-black text-red-600 outline-none border-b-2 border-gray-100 focus:border-yellow-500 transition-all text-xs text-center disabled:opacity-50"
+                                                    disabled={isReadOnly}
                                                 />
                                             </div>
                                             <div className="w-24">
@@ -282,16 +334,19 @@ export default function AdminFlashSales() {
                                                     placeholder="Số lượng"
                                                     value={it.quantityLimit}
                                                     onChange={(e) => updateItem(idx, 'quantityLimit', e.target.value)}
-                                                    className="w-full bg-transparent font-black text-gray-700 outline-none border-b-2 border-gray-100 focus:border-yellow-500 transition-all text-xs text-center"
+                                                    className="w-full bg-transparent font-black text-gray-700 outline-none border-b-2 border-gray-100 focus:border-yellow-500 transition-all text-xs text-center disabled:opacity-50"
+                                                    disabled={isReadOnly}
                                                 />
                                             </div>
-                                            <button 
-                                                type="button"
-                                                onClick={() => handleRemoveItem(idx)}
-                                                className="p-2 text-gray-300 hover:text-red-500 transition-all"
-                                            >
-                                                <TrashIcon className="w-4 h-4" />
-                                            </button>
+                                            {!isReadOnly && (
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => handleRemoveItem(idx)}
+                                                    className="p-2 text-gray-300 hover:text-red-500 transition-all"
+                                                >
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -307,12 +362,12 @@ export default function AdminFlashSales() {
                                 Hủy bỏ
                             </button>
                             <button 
-                                type="submit" 
-                                onClick={handleSave}
+                                type={isReadOnly ? "button" : "submit"} 
+                                onClick={isReadOnly ? () => setShowModal(false) : handleSave}
                                 disabled={saving} 
                                 className="flex-1 px-8 py-4 bg-yellow-500 text-white rounded-2xl font-black shadow-xl shadow-yellow-100 hover:bg-yellow-600 transition-all active:scale-95 disabled:opacity-50 text-sm"
                             >
-                                {saving ? 'Đang tạo...' : 'Kích hoạt Flash Sale'}
+                                {saving ? 'Đang lưu...' : (isReadOnly ? 'Đóng' : form.id ? 'Lưu thay đổi' : 'Kích hoạt Flash Sale')}
                             </button>
                         </div>
                     </div>

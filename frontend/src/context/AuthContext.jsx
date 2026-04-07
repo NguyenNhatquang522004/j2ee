@@ -75,8 +75,21 @@ export function AuthProvider({ children }) {
         return check(p);
     };
 
+    const googleLogin = async (userData) => {
+        const { data } = await authService.socialLogin({
+            email: userData.email,
+            provider: 'GOOGLE',
+            providerId: userData.sub,
+            fullName: userData.name
+        });
+        localStorage.setItem('token', data.accessToken);
+        localStorage.setItem('user', JSON.stringify(data));
+        setUser(data);
+        return data;
+    };
+
     return (
-        <AuthContext.Provider value={{ user, setUser, login, register, logout, verify2fa, isAdmin, isStaff, isManagement, hasPermission }}>
+        <AuthContext.Provider value={{ user, setUser, login, googleLogin, register, logout, verify2fa, isAdmin, isStaff, isManagement, hasPermission }}>
             {children}
         </AuthContext.Provider>
     );

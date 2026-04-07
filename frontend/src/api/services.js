@@ -285,6 +285,7 @@ export const flashSaleService = {
     getUpcoming: () => api.get('/flash-sales/upcoming'),
     getAll: () => api.get('/flash-sales'),
     create: (data) => api.post('/flash-sales', data),
+    update: (id, data) => api.put(`/flash-sales/${id}`, data),
     delete: (id) => api.delete(`/flash-sales/${id}`),
     toggle: (id) => api.patch(`/flash-sales/${id}/toggle`),
 };

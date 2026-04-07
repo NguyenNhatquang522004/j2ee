@@ -10,6 +10,7 @@ public interface FlashSaleService {
     
     // Admin methods
     FlashSale createFlashSale(FlashSale flashSale);
+    FlashSale updateFlashSale(Long id, FlashSale flashSale);
     void deleteFlashSale(Long id);
     void toggleStatus(Long id);
     List<FlashSaleResponse> getAllFlashSales();

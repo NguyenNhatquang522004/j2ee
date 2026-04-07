@@ -72,6 +72,17 @@ public class FlashSaleController {
     }
 
     /**
+     * update: Modifies an existing campaign.
+     * Overwrites settings and product lists based on user input.
+     */
+    @Operation(summary = "Cập nhật Flash Sale (Admin)")
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<FlashSale>> update(@PathVariable Long id, @RequestBody FlashSale flashSale) {
+        return ResponseEntity.ok(ApiResponse.success("Đã cập nhật Flash Sale thành công", flashSaleService.updateFlashSale(id, flashSale)));
+    }
+
+    /**
      * delete: Permanent removal of a flash sale record.
      */
     @Operation(summary = "Xoá Flash Sale (Admin)")

@@ -21,7 +21,7 @@ public class FlashSaleItem {
     private FlashSale flashSale;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
+    @JoinColumn(name = "product_id", nullable = false, updatable = false)
     private Product product;
 
     @Column(nullable = false, precision = 15, scale = 2)

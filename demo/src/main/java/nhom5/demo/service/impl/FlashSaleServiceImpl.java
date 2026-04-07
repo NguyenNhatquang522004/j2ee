@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 public class FlashSaleServiceImpl implements FlashSaleService {
 
     private final FlashSaleRepository repository;
+    private final nhom5.demo.repository.ProductRepository productRepository;
     private final nhom5.demo.service.NotificationService notificationService;
 
     @Override
@@ -60,9 +61,16 @@ public class FlashSaleServiceImpl implements FlashSaleService {
             throw new BusinessException("Năm không hợp lệ (tối đa 2099)");
         }
 
-        // Link items back to parent
+        // Link items back to parent and ensure product is managed to avoid cascade-insert issues
         if (flashSale.getItems() != null) {
-            flashSale.getItems().forEach(item -> item.setFlashSale(flashSale));
+            flashSale.getItems().forEach(item -> {
+                item.setFlashSale(flashSale);
+                // Ensure product reference is managed
+                if (item.getProduct() != null && item.getProduct().getId() != null) {
+                    item.setProduct(productRepository.findById(Objects.requireNonNull(item.getProduct().getId()))
+                        .orElseThrow(() -> new BusinessException("Sản phẩm không tồn tại: " + item.getProduct().getId())));
+                }
+            });
         }
         FlashSale saved = repository.save(flashSale);
         notificationService.broadcastFlashSaleRefresh();
@@ -127,6 +135,35 @@ public class FlashSaleServiceImpl implements FlashSaleService {
                 .soldQuantity(item.getSoldQuantity())
                 .remainingQuantity(item.getRemainingQuantity())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public FlashSale updateFlashSale(Long id, FlashSale flashSale) {
+        FlashSale existing = repository.findById(Objects.requireNonNull(id))
+                .orElseThrow(() -> new ResourceNotFoundException("FlashSale", "id", id));
+        
+        if (flashSale.getStartTime() != null) existing.setStartTime(flashSale.getStartTime());
+        if (flashSale.getEndTime() != null) existing.setEndTime(flashSale.getEndTime());
+        if (flashSale.getName() != null) existing.setName(flashSale.getName());
+        if (flashSale.getDescription() != null) existing.setDescription(flashSale.getDescription());
+        
+        // Update items: Simple strategy - clear and re-add for admin ease
+        if (flashSale.getItems() != null) {
+            existing.getItems().clear();
+            flashSale.getItems().forEach(item -> {
+                item.setFlashSale(existing);
+                if (item.getProduct() != null && item.getProduct().getId() != null) {
+                    item.setProduct(productRepository.findById(Objects.requireNonNull(item.getProduct().getId()))
+                        .orElseThrow(() -> new BusinessException("Sản phẩm không tồn tại: " + item.getProduct().getId())));
+                }
+                existing.getItems().add(item);
+            });
+        }
+        
+        FlashSale saved = Objects.requireNonNull(repository.save(existing));
+        notificationService.broadcastFlashSaleRefresh();
+        return saved;
     }
 
     @Override
